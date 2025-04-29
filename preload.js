@@ -7,6 +7,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Settings operations
     getTheme: () => ipcRenderer.invoke('get-theme'),
     setTheme: (theme) => ipcRenderer.invoke('set-theme', theme),
+    syncTheme: (theme) => ipcRenderer.send('sync-theme', theme),
+    openSettings: () => ipcRenderer.invoke('open-settings'),
+    
+    // Event listeners
+    onThemeChanged: (callback) => ipcRenderer.on('theme-changed', (_, theme) => callback(theme)),
     
     // Database operations
     getAllApps: () => ipcRenderer.invoke('get-all-apps'),

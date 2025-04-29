@@ -275,16 +275,30 @@ themeToggle.addEventListener('click', () => {
     
     // Check if we're currently in dark theme after toggling
     const isNowDarkTheme = document.body.classList.contains('dark-theme');
+    const newTheme = isNowDarkTheme ? 'dark' : 'light';
     
     // Save the theme setting
-    window.electronAPI.setTheme(isNowDarkTheme ? 'dark' : 'light')
+    window.electronAPI.setTheme(newTheme)
         .catch(err => console.error('Error saving theme:', err));
+    
+    // Notify settings window if it's open (will be handled in main.js)
+    window.electronAPI.syncTheme(newTheme);
     
     // Update button to show what it would switch to (not the current theme)
     const nextTheme = isNowDarkTheme ? 'Light' : 'Dark';
     const nextIcon = isNowDarkTheme ? 'fa-sun' : 'fa-moon';
     
     themeToggle.innerHTML = `<i class="fas ${nextIcon}"></i> Theme: ${nextTheme}`;
+});
+
+// Update the settings button to open the separate settings window
+const settingsButton = document.querySelector('#optionsMenu .menu-item:nth-child(3)');
+settingsButton.addEventListener('click', () => {
+    // Close options menu first
+    optionsMenu.style.display = 'none';
+    
+    // Open the settings window via IPC
+    window.electronAPI.openSettings();
 });
 
 // Initial load
@@ -303,6 +317,19 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => {
             console.error('Error loading theme:', err);
         });
+    
+    // Listen for theme changes from the settings window
+    window.electronAPI.onThemeChanged((theme) => {
+        // Update visual state in the main app
+        const isDarkTheme = theme === 'dark';
+        document.body.classList.toggle('dark-theme', isDarkTheme);
+        
+        // Update button to show what it would switch to (not the current theme)
+        const nextTheme = isDarkTheme ? 'Light' : 'Dark';
+        const nextIcon = isDarkTheme ? 'fa-sun' : 'fa-moon';
+        
+        themeToggle.innerHTML = `<i class="fas ${nextIcon}"></i> Theme: ${nextTheme}`;
+    });
     
     // Set up interval to refresh drive info every minute
     setInterval(loadDriveInfo, 60000);

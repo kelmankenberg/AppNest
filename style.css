@@ -567,3 +567,306 @@ body {
 #systemDriveIndicator.expanded .expand-icon i {
     transform: rotate(180deg);
 }
+
+/* Settings dialog styles */
+.settings-dialog {
+    /* Special positioning for this dialog */
+    display: none; 
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2000; /* Higher z-index to ensure it's above everything */
+}
+
+.settings-container {
+    width: 900px;
+    height: 600px;
+    max-width: 95vw;
+    max-height: 90vh;
+    cursor: default;
+    position: absolute; /* Ensure absolute positioning for proper placement */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2001;
+}
+
+.settings-header {
+    cursor: move; /* Make the header a drag handle */
+    user-select: none; /* Prevent text selection during drag */
+}
+
+.settings-body {
+    display: flex;
+    height: calc(100% - 120px); /* Account for header and footer */
+    overflow: hidden;
+}
+
+.settings-nav {
+    width: 260px;
+    background-color: var(--bg-primary);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+}
+
+.settings-content {
+    width: 630px;
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background-color 0.2s ease;
+}
+
+.nav-item.active {
+    background-color: var(--menu-hover);
+    border-left-color: var(--accent-color);
+}
+
+.nav-item:hover:not(.active) {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.nav-item i {
+    margin-right: 15px;
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+}
+
+.settings-section {
+    display: none;
+}
+
+.settings-section.active {
+    display: block;
+}
+
+.settings-section h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.setting-group {
+    margin-bottom: 25px;
+}
+
+.setting-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.setting-input, .setting-select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* Toggle switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.toggle-input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-label {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    border-radius: 24px;
+    transition: .4s;
+}
+
+.toggle-label:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    border-radius: 50%;
+    transition: .4s;
+}
+
+.toggle-input:checked + .toggle-label {
+    background-color: var(--accent-color);
+}
+
+.toggle-input:checked + .toggle-label:before {
+    transform: translateX(26px);
+}
+
+/* Theme options */
+.theme-options {
+    display: flex;
+    gap: 20px;
+}
+
+.theme-option {
+    cursor: pointer;
+    text-align: center;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.theme-option.active {
+    opacity: 1;
+}
+
+.theme-preview {
+    width: 80px;
+    height: 60px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    border: 2px solid var(--border-color);
+}
+
+.light-theme-preview {
+    background-color: #f4f4f4;
+    box-shadow: inset 0 0 0 1px #dddddd;
+}
+
+.dark-theme-preview {
+    background-color: #1e1e1e;
+    box-shadow: inset 0 0 0 1px #444444;
+}
+
+/* Slider */
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.slider {
+    flex: 1;
+    height: 5px;
+    border-radius: 5px;
+    background: var(--border-color);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    cursor: pointer;
+}
+
+/* Path input container */
+.path-input-container {
+    display: flex;
+    gap: 0;
+}
+
+.path-input-container .setting-input {
+    flex: 1;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.browse-button {
+    padding: 8px 12px;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    cursor: pointer;
+}
+
+/* Custom folders list */
+.custom-folders-list {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.folder-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.folder-item:last-child {
+    border-bottom: none;
+}
+
+.folder-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.edit-button, .delete-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.edit-button {
+    color: var(--accent-color);
+}
+
+.delete-button {
+    color: #dc3545;
+}
+
+.add-button {
+    padding: 8px 12px;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.settings-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.right-buttons {
+    display: flex;
+    gap: 10px;
+}

@@ -1,0 +1,201 @@
+/* Settings Window Specific Styles */
+.settings-body {
+    background-color: var(--bg-primary);
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-window {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.settings-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.settings-nav {
+    width: 260px;
+    background-color: var(--bg-primary);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+}
+
+.settings-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: var(--bg-secondary);
+}
+
+.settings-footer {
+    padding: 15px 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-toolbar);
+}
+
+/* Custom Titlebar */
+.custom-titlebar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background-color: var(--bg-toolbar);
+    border-bottom: 1px solid var(--border-color);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-app-region: drag; /* Make the titlebar draggable */
+}
+
+.custom-titlebar h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+}
+
+.titlebar-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    -webkit-app-region: no-drag; /* Make buttons clickable */
+}
+
+.custom-titlebar .close-button,
+.custom-titlebar .reset-button {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 16px;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+}
+
+.custom-titlebar .reset-button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: var(--accent-color);
+}
+
+.custom-titlebar .close-button:hover {
+    background-color: rgba(255, 0, 0, 0.1);
+}
+
+/* Nav Items */
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background-color 0.2s ease;
+}
+
+.nav-item.active {
+    background-color: var(--menu-hover);
+    border-left-color: var(--accent-color);
+}
+
+.nav-item:hover:not(.active) {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.nav-item i {
+    margin-right: 15px;
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+}
+
+/* Settings sections */
+.settings-section {
+    display: none;
+}
+
+.settings-section.active {
+    display: block;
+}
+
+.settings-section h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.setting-group {
+    margin-bottom: 25px;
+}
+
+.setting-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.setting-input, .setting-select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* Theme options */
+.theme-options {
+    display: flex;
+    gap: 20px;
+}
+
+.theme-option {
+    cursor: pointer;
+    text-align: center;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.theme-option.active {
+    opacity: 1;
+}
+
+.theme-preview {
+    width: 80px;
+    height: 60px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    border: 2px solid var(--border-color);
+}
+
+.light-theme-preview {
+    background-color: #f4f4f4;
+    box-shadow: inset 0 0 0 1px #dddddd;
+}
+
+.dark-theme-preview {
+    background-color: #1e1e1e;
+    box-shadow: inset 0 0 0 1px #444444;
+}
+
+/* Buttons */
+.right-buttons {
+    display: flex;
+    gap: 10px;
+}

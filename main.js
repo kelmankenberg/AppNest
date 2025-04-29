@@ -23,6 +23,7 @@ let store;
 })();
 
 let mainWindow;
+let settingsWindow; // Add a reference for the settings window
 
 // Add function to get drive information
 function getDriveInfo() {
@@ -212,6 +213,46 @@ ipcMain.on('app-quit', () => {
     app.quit();
 });
 
+// Create and show settings window
+function createSettingsWindow() {
+    // Don't create multiple instances
+    if (settingsWindow) {
+        settingsWindow.focus();
+        return;
+    }
+    
+    // Create the browser window for settings
+    settingsWindow = new BrowserWindow({
+        width: 900,
+        height: 600,
+        frame: false, // Remove the default window frame
+        resizable: true,
+        minimizable: false,
+        maximizable: false,
+        parent: mainWindow, // Set main window as parent to ensure proper modal behavior
+        modal: true,        // Make it a modal window
+        show: false,        // Don't show it immediately
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: __dirname + '/preload.js'
+        }
+    });
+    
+    // Load the settings HTML file
+    settingsWindow.loadFile('settings.html');
+    
+    // When settings window is ready, show it
+    settingsWindow.once('ready-to-show', () => {
+        settingsWindow.show();
+    });
+    
+    // Clear reference when closed
+    settingsWindow.on('closed', () => {
+        settingsWindow = null;
+    });
+}
+
 // Database IPC handlers
 ipcMain.handle('get-all-apps', async () => {
     try {
@@ -384,5 +425,23 @@ ipcMain.handle('get-theme', () => {
 
 ipcMain.handle('set-theme', (_, theme) => {
     store.set('theme', theme);
+    return true;
+});
+
+// Handle theme synchronization between windows
+ipcMain.on('sync-theme', (_, theme) => {
+    // If settings window exists, send it the new theme
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+        settingsWindow.webContents.send('theme-changed', theme);
+    }
+    // If main window exists and the event didn't come from it, update it too
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('theme-changed', theme);
+    }
+});
+
+// Add a handler to open settings window
+ipcMain.handle('open-settings', () => {
+    createSettingsWindow();
     return true;
 });

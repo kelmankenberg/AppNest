@@ -182,6 +182,131 @@
         </div>
     </div>
 
+    <!-- Settings Dialog -->
+    <div id="settingsDialog" class="dialog settings-dialog">
+        <div class="dialog-content settings-container">
+            <div class="dialog-header settings-header">
+                <h2>Settings</h2>
+                <button id="closeSettingsDialog" class="close-button"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="settings-body">
+                <div class="settings-nav">
+                    <div class="nav-item active" data-section="general">
+                        <i class="fas fa-cog"></i>
+                        <span>General</span>
+                    </div>
+                    <div class="nav-item" data-section="appearance">
+                        <i class="fas fa-palette"></i>
+                        <span>Appearance</span>
+                    </div>
+                    <div class="nav-item" data-section="app-config">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>App Config</span>
+                    </div>
+                    <div class="nav-item" data-section="folders">
+                        <i class="fas fa-folder"></i>
+                        <span>Folders</span>
+                    </div>
+                </div>
+                <div class="settings-content">
+                    <div id="general" class="settings-section active">
+                        <h3>General Settings</h3>
+                        <div class="setting-group">
+                            <label class="setting-label">Application Name</label>
+                            <input type="text" id="appName" class="setting-input" value="MyPAs Launcher">
+                        </div>
+                        <div class="setting-group">
+                            <label class="setting-label">Start with Windows</label>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="startWithWindows" class="toggle-input">
+                                <label for="startWithWindows" class="toggle-label"></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="appearance" class="settings-section">
+                        <h3>Appearance Settings</h3>
+                        <div class="setting-group">
+                            <label class="setting-label">Theme</label>
+                            <div class="theme-options">
+                                <div class="theme-option" data-theme="light">
+                                    <div class="theme-preview light-theme-preview"></div>
+                                    <span>Light</span>
+                                </div>
+                                <div class="theme-option" data-theme="dark">
+                                    <div class="theme-preview dark-theme-preview"></div>
+                                    <span>Dark</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="setting-group">
+                            <label class="setting-label">Font Size</label>
+                            <div class="slider-container">
+                                <input type="range" min="12" max="20" value="16" id="fontSize" class="slider">
+                                <span id="fontSizeValue">16px</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="app-config" class="settings-section">
+                        <h3>Application Configuration</h3>
+                        <div class="setting-group">
+                            <label class="setting-label">Default View</label>
+                            <select id="defaultView" class="setting-select">
+                                <option value="all">All Applications</option>
+                                <option value="recent">Recently Used</option>
+                                <option value="favorite">Favorites</option>
+                                <option value="category">Categories</option>
+                            </select>
+                        </div>
+                        <div class="setting-group">
+                            <label class="setting-label">Search Mode</label>
+                            <select id="searchMode" class="setting-select">
+                                <option value="name">Name Only</option>
+                                <option value="all">Name and Description</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="folders" class="settings-section">
+                        <h3>Folder Settings</h3>
+                        <div class="setting-group">
+                            <label class="setting-label">Default Application Folder</label>
+                            <div class="path-input-container">
+                                <input type="text" id="defaultAppFolder" class="setting-input">
+                                <button id="browseDefaultFolder" class="browse-button">Browse</button>
+                            </div>
+                        </div>
+                        <div class="setting-group">
+                            <label class="setting-label">Custom Folders</label>
+                            <div class="custom-folders-list">
+                                <div class="folder-item">
+                                    <span>Documents</span>
+                                    <div class="folder-actions">
+                                        <button class="edit-button"><i class="fas fa-edit"></i></button>
+                                        <button class="delete-button"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                                <div class="folder-item">
+                                    <span>Pictures</span>
+                                    <div class="folder-actions">
+                                        <button class="edit-button"><i class="fas fa-edit"></i></button>
+                                        <button class="delete-button"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="addFolder" class="add-button"><i class="fas fa-plus"></i> Add Folder</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="dialog-footer settings-footer">
+                <button id="resetSettings" class="secondary-button">Reset to Default</button>
+                <div class="right-buttons">
+                    <button id="cancelSettings" class="secondary-button">Cancel</button>
+                    <button id="saveSettings" class="primary-button">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Load the external script -->
     <script src="renderer.js"></script>
 </body>
