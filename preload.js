@@ -20,5 +20,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     
     // File operations
     selectExecutable: () => ipcRenderer.invoke('select-executable'),
-    openExplorer: () => ipcRenderer.invoke('open-explorer')
+    openExplorer: () => ipcRenderer.invoke('open-explorer'),
+    
+    // Drive information
+    getDriveInfo: () => ipcRenderer.invoke('get-drive-info')
 });

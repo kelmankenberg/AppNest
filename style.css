@@ -37,14 +37,15 @@ body {
     height: 100vh;
     background-color: var(--bg-primary);
     color: var(--text-primary);
+    overflow: hidden; /* Prevent body scrollbars */
 }
 
 .content {
     flex: 1;
     padding: 20px;
-    overflow-y: auto;
     display: flex;
     background-color: var(--bg-primary);
+    overflow: hidden; /* Hide content scrollbar when not needed */
 }
 
 .content .left-column {
@@ -53,12 +54,14 @@ body {
     background-color: var(--bg-secondary);
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-y: auto; /* Only show scrollbars in the left column when needed */
 }
 
 .content .right-column {
     width: 40%;
     padding: 10px;
     color: var(--text-primary);
+    overflow-y: auto; /* Only show scrollbars in the right column when needed */
 }
 
 .search-input {
@@ -125,8 +128,14 @@ body {
     padding: 0 10px;
 }
 
+.toolbar .left-side {
+    display: flex;
+    align-items: center;
+}
+
 .toolbar .right-buttons {
     display: flex;
+    align-items: center;
     gap: 10px;
 }
 
@@ -172,6 +181,114 @@ body {
     height: 100%;
     background-color: var(--indicator-fill);
     width: 50%; /* Example: 50% filled */
+}
+
+/* Drive indicators */
+.drive-indicators {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-right: 5px;
+}
+
+.drive-indicator {
+    display: flex;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+}
+
+.drive-circle {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drive-circle svg {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    transform: rotate(-90deg); /* Start from the top */
+}
+
+.circle-bg {
+    fill: none;
+    stroke: var(--indicator-bg);
+    stroke-width: 2.8;
+}
+
+.circle-fill {
+    fill: none;
+    stroke: var(--indicator-fill);
+    stroke-width: 2.8;
+    transition: stroke-dasharray 0.8s ease;
+}
+
+/* Color coding for different capacity levels */
+.drive-circle.warning .circle-fill {
+    stroke: #f9a825; /* Yellow warning color */
+}
+
+.drive-circle.danger .circle-fill {
+    stroke: #e53935; /* Red danger color */
+}
+
+.drive-letter {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--text-primary);
+    position: relative;
+    z-index: 1;
+}
+
+/* Expanded drive panel */
+.drive-panel {
+    position: absolute;
+    bottom: 100%;
+    right: 0; /* Changed from left: 0 to right: 0 for right alignment */
+    background-color: var(--bg-secondary);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    z-index: 100;
+    display: flex;
+    gap: 15px;
+    transform: translateY(100%);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.drive-panel.active {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: all;
+}
+
+.system-drive-indicator {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.system-drive-indicator .main-drive {
+    display: flex;
+    align-items: center;
+}
+
+.expand-icon {
+    font-size: 10px;
+    margin-left: 5px;
+    transition: transform 0.3s ease;
+}
+
+.system-drive-indicator.expanded .expand-icon {
+    transform: rotate(180deg);
 }
 
 .vertical-button {
@@ -395,4 +512,58 @@ body {
 
 .primary-button.danger:hover {
     background-color: #c82333;
+}
+
+/* Drive panel specific styles */
+.footer {
+    position: relative;
+}
+
+#systemDriveIndicator {
+    position: relative;
+    z-index: 101;
+    transition: transform 0.3s ease;
+}
+
+#systemDriveIndicator.expanded {
+    transform: translateY(-5px);
+}
+
+#systemDriveIndicator .main-drive {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#drivePanel {
+    position: absolute;
+    bottom: 50px; /* Height of the toolbar */
+    right: 0; /* Changed from left: 0 to right: 0 for right alignment */
+    background-color: var(--bg-secondary);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    z-index: 100;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    transform: translateY(100%);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+}
+
+#drivePanel.active {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: all;
+}
+
+.expand-icon i {
+    transition: transform 0.3s ease;
+}
+
+#systemDriveIndicator.expanded .expand-icon i {
+    transform: rotate(180deg);
 }

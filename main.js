@@ -2,8 +2,89 @@ const { app, BrowserWindow, screen, ipcMain, globalShortcut, dialog } = require(
 const { powerDownApp } = require('./functions');
 const db = require('./database');
 const { exec } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
 let mainWindow;
+
+// Add function to get drive information
+function getDriveInfo() {
+    return new Promise((resolve, reject) => {
+        if (process.platform === 'win32') {
+            // On Windows, use wmic to get disk info
+            exec('wmic logicaldisk get caption,freespace,size', (error, stdout, stderr) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+
+                const lines = stdout.trim().split('\n').slice(1);
+                const drives = [];
+
+                lines.forEach(line => {
+                    // Parse the output to extract drive info
+                    const parts = line.trim().split(/\s+/);
+                    if (parts.length >= 3) {
+                        const caption = parts[0];
+                        const freespace = parseFloat(parts[1]);
+                        const size = parseFloat(parts[2]);
+
+                        if (!isNaN(freespace) && !isNaN(size) && size > 0) {
+                            const used = size - freespace;
+                            const percentUsed = Math.round((used / size) * 100);
+
+                            drives.push({
+                                letter: caption,
+                                total: size,
+                                free: freespace,
+                                used: used,
+                                percentUsed: percentUsed
+                            });
+                        }
+                    }
+                });
+                
+                resolve(drives);
+            });
+        } else {
+            // For non-Windows platforms, use a simplified approach
+            const drives = [];
+            const rootPath = '/';
+            
+            try {
+                const stats = fs.statfsSync(rootPath);
+                const total = stats.blocks * stats.bsize;
+                const free = stats.bfree * stats.bsize;
+                const used = total - free;
+                const percentUsed = Math.round((used / total) * 100);
+                
+                drives.push({
+                    letter: '/',
+                    total: total,
+                    free: free,
+                    used: used,
+                    percentUsed: percentUsed
+                });
+                
+                resolve(drives);
+            } catch (err) {
+                reject(err);
+            }
+        }
+    });
+}
+
+// Add IPC handler for getting drive information
+ipcMain.handle('get-drive-info', async () => {
+    try {
+        const drives = await getDriveInfo();
+        return drives;
+    } catch (err) {
+        console.error('Error getting drive information:', err);
+        return [];
+    }
+});
 
 // Open Windows File Explorer to the app's location
 ipcMain.handle('open-explorer', (event) => {
