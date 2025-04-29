@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeSliders();
     initializeInputs();
     initializeThemeChangeListener();
+    initializeFolderControls();
     loadSettingsFromStore();
 });
 
@@ -164,6 +165,167 @@ function initializeInputs() {
     }
 }
 
+// Initialize folder segment controls and folder toggles
+function initializeFolderControls() {
+    // Handle segment control switching
+    const segmentOptions = document.querySelectorAll('.segment-option');
+    const folderContents = document.querySelectorAll('.folder-type-content');
+    
+    segmentOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            // Remove active class from all options
+            segmentOptions.forEach(opt => opt.classList.remove('active'));
+            
+            // Add active class to clicked option
+            option.classList.add('active');
+            
+            // Show the corresponding folder content
+            const folderType = option.getAttribute('data-folder-type');
+            folderContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.getElementById(`${folderType}Folders`).classList.add('active');
+            
+            // Save the active folder type preference and sync with main window
+            saveFolderPreferences();
+        });
+    });
+    
+    // Initialize app folder toggles
+    initializeFolderToggles('app', ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads']);
+    
+    // Initialize Windows folder toggles
+    initializeFolderToggles('win', ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads']);
+    
+    // Handle app folder path change
+    const pathChangeButton = document.querySelector('.path-change-button');
+    if (pathChangeButton) {
+        pathChangeButton.addEventListener('click', () => {
+            // This would open a folder selection dialog
+            // window.electronAPI.selectAppFolderPath()
+            //    .then(path => {
+            //        if (path) {
+            //            document.querySelector('.path-value').textContent = path;
+            //            // Save the selected app folder path
+            //            // window.electronAPI.setAppFolderPath(path)
+            //            //    .catch(err => console.error('Error saving app folder path:', err));
+            //        }
+            //    })
+            //    .catch(err => console.error('Error selecting app folder path:', err));
+        });
+    }
+}
+
+// Initialize and handle folder toggles for a specific folder type (app or win)
+function initializeFolderToggles(prefix, folderTypes) {
+    folderTypes.forEach(type => {
+        const toggleId = `${prefix}${type}`;
+        const toggleElement = document.getElementById(toggleId);
+        
+        if (toggleElement) {
+            // Add change event listener
+            toggleElement.addEventListener('change', () => {
+                // Save folder preferences when a toggle changes
+                saveFolderPreferences();
+            });
+        }
+    });
+}
+
+// Save folder visibility setting and sync with main window
+function saveFolderPreferences() {
+    // Get active folder type (app or windows)
+    const activeFolderType = document.querySelector('.segment-option.active').getAttribute('data-folder-type');
+    
+    // Build the folder preferences object
+    const folderPreferences = {
+        folderType: activeFolderType,
+        appFolders: {
+            documents: document.getElementById('appDocuments').checked,
+            music: document.getElementById('appMusic').checked,
+            pictures: document.getElementById('appPictures').checked,
+            videos: document.getElementById('appVideos').checked,
+            downloads: document.getElementById('appDownloads').checked
+        },
+        windowsFolders: {
+            documents: document.getElementById('winDocuments').checked,
+            music: document.getElementById('winMusic').checked,
+            pictures: document.getElementById('winPictures').checked,
+            videos: document.getElementById('winVideos').checked,
+            downloads: document.getElementById('winDownloads').checked
+        }
+    };
+    
+    // Save to electron store
+    window.electronAPI.setFolderPreferences(folderPreferences)
+        .then(() => {
+            console.log('Folder preferences saved');
+            // Notify main window to update folder button visibility
+            window.electronAPI.syncFolderPreferences(folderPreferences);
+        })
+        .catch(err => {
+            console.error('Error saving folder preferences:', err);
+        });
+}
+
+// Save the currently selected folders
+function saveSelectedFolders() {
+    // Get all selected folder cards in the currently active folder type
+    const activeFolderType = document.querySelector('.segment-option.active').getAttribute('data-folder-type');
+    const activeSection = document.getElementById(`${activeFolderType}Folders`);
+    const selectedCards = activeSection.querySelectorAll('.folder-card.selected');
+    
+    // Extract folder paths
+    const selectedPaths = Array.from(selectedCards).map(card => {
+        return card.querySelector('.folder-card-path').textContent;
+    });
+    
+    // Save the selected folders when API is available
+    // window.electronAPI.setSelectedFolders(activeFolderType, selectedPaths)
+    //    .catch(err => console.error('Error saving selected folders:', err));
+    
+    console.log(`Selected ${activeFolderType} folders:`, selectedPaths);
+}
+
+// Add a folder card to the current active folder section
+function addFolderCard(folderPath) {
+    const activeFolderType = document.querySelector('.segment-option.active').getAttribute('data-folder-type');
+    const folderCardsContainer = document.querySelector(`#${activeFolderType}Folders .folder-cards`);
+    
+    // Extract folder name from path
+    const folderName = folderPath.split('\\').pop();
+    
+    const newCard = document.createElement('div');
+    newCard.className = 'folder-card selected';
+    
+    newCard.innerHTML = `
+        <i class="fas fa-folder"></i>
+        <div class="folder-card-title">${folderName}</div>
+        <div class="folder-card-path">${folderPath}</div>
+    `;
+    
+    // Add click handler to the new card
+    newCard.addEventListener('click', () => {
+        newCard.classList.toggle('selected');
+        saveSelectedFolders();
+    });
+    
+    // Insert the new card before the "Add Custom Folder" card
+    const addCard = Array.from(folderCardsContainer.children).find(card => {
+        return card.querySelector('.folder-card-title').textContent === 'Add Custom Folder';
+    });
+    
+    if (addCard) {
+        folderCardsContainer.insertBefore(newCard, addCard);
+    } else {
+        folderCardsContainer.appendChild(newCard);
+    }
+    
+    // Save selected folders
+    saveSelectedFolders();
+}
+
 // Load settings from electron-store
 function loadSettingsFromStore() {
     // Load theme
@@ -181,8 +343,93 @@ function loadSettingsFromStore() {
         .catch(err => {
             console.error('Error loading theme setting:', err);
         });
+    
+    // Load folder visibility settings
+    loadFolderVisibilitySettings();
+    
+    // Load active folder type
+    loadActiveFolderType();
         
     // Load other settings when they're implemented
+}
+
+// Load folder visibility settings for both app and windows folder types
+function loadFolderVisibilitySettings() {
+    const folderTypes = ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads'];
+    
+    // Load app folder visibility settings
+    folderTypes.forEach(type => {
+        loadFolderVisibility('app', type);
+    });
+    
+    // Load Windows folder visibility settings
+    folderTypes.forEach(type => {
+        loadFolderVisibility('win', type);
+    });
+    
+    // Load app folder path
+    // window.electronAPI.getAppFolderPath()
+    //    .then(path => {
+    //        const pathValueElement = document.querySelector('.path-value');
+    //        if (pathValueElement && path) {
+    //            pathValueElement.textContent = path;
+    //        }
+    //    })
+    //    .catch(err => console.error('Error loading app folder path:', err));
+}
+
+// Load folder visibility setting for a specific folder type
+function loadFolderVisibility(prefix, folderType) {
+    const settingKey = `${prefix}Folder_${folderType}`;
+    const toggleId = `${prefix}${folderType}`;
+    const toggleElement = document.getElementById(toggleId);
+    
+    if (toggleElement) {
+        // Default to visible (checked) if setting doesn't exist
+        let isVisible = true;
+        
+        // Uncomment when API is available:
+        // window.electronAPI.getFolderVisibility(settingKey)
+        //    .then(visibility => {
+        //        // If the setting exists, use it, otherwise default to true
+        //        isVisible = visibility !== undefined ? visibility : true;
+        //        toggleElement.checked = isVisible;
+        //    })
+        //    .catch(err => {
+        //        console.error(`Error loading ${settingKey} visibility:`, err);
+        //        toggleElement.checked = true; // Default to visible on error
+        //    });
+    }
+}
+
+// Load the active folder type (app or windows)
+function loadActiveFolderType() {
+    // Default to app folders if no preference is saved
+    let activeFolderType = 'app';
+    
+    // Uncomment when API is available:
+    // window.electronAPI.getActiveFolderType()
+    //    .then(type => {
+    //        // If the setting exists, use it, otherwise default to app
+    //        activeFolderType = type || 'app';
+    //        activateFolderType(activeFolderType);
+    //    })
+    //    .catch(err => {
+    //        console.error('Error loading active folder type:', err);
+    //        activateFolderType('app'); // Default to app folders on error
+    //    });
+    
+    // For now, without the API, just use the default
+    activateFolderType(activeFolderType);
+}
+
+// Activate the given folder type segment
+function activateFolderType(folderType) {
+    const segmentOption = document.querySelector(`.segment-option[data-folder-type="${folderType}"]`);
+    if (segmentOption) {
+        // Programmatically click the segment to activate it
+        segmentOption.click();
+    }
 }
 
 // Apply theme to the settings window
@@ -222,6 +469,25 @@ function resetToDefaults() {
             //    .catch(err => console.error('Error saving font size:', err));
         }
         
+        // Reset folder toggles - show all folders by default
+        resetFolderToggles('app', ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads']);
+        resetFolderToggles('win', ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads']);
+        
+        // Reset to App folders by default
+        const appFolderSegment = document.querySelector('.segment-option[data-folder-type="app"]');
+        if (appFolderSegment) {
+            appFolderSegment.click(); // This will trigger the click handler to display app folders
+        }
+        
+        // Reset app folder path to default
+        const pathValueElement = document.querySelector('.path-value');
+        if (pathValueElement) {
+            pathValueElement.textContent = './AppData';
+            // Save when API is available
+            // window.electronAPI.setAppFolderPath('./AppData')
+            //    .catch(err => console.error('Error saving app folder path:', err));
+        }
+        
         // Reset other settings to their defaults
         // App name
         const appNameInput = document.getElementById('appName');
@@ -251,6 +517,22 @@ function resetToDefaults() {
             // Save when API is available
         }
     }
+}
+
+// Reset folder toggles to default (all visible)
+function resetFolderToggles(prefix, folderTypes) {
+    folderTypes.forEach(type => {
+        const toggleId = `${prefix}${type}`;
+        const toggleElement = document.getElementById(toggleId);
+        
+        if (toggleElement) {
+            // Set all toggles to checked (visible)
+            toggleElement.checked = true;
+            
+            // Save the visibility setting
+            saveFolderPreferences();
+        }
+    });
 }
 
 // Close the settings window

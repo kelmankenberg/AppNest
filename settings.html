@@ -101,31 +101,148 @@
                 <div id="folders" class="settings-section">
                     <h3>Folder Settings</h3>
                     <div class="setting-group">
-                        <label class="setting-label">Default Application Folder</label>
-                        <div class="path-input-container">
-                            <input type="text" id="defaultAppFolder" class="setting-input">
-                            <button id="browseDefaultFolder" class="browse-button">Browse</button>
+                        <label class="setting-label">Folder Button Visibility</label>
+                        <p class="setting-description">Choose which folder buttons to display in the main window.</p>
+                        
+                        <div class="segmented-control">
+                            <button class="segment-option active" data-folder-type="app">
+                                <i class="fas fa-puzzle-piece"></i> App Folders
+                            </button>
+                            <button class="segment-option" data-folder-type="windows">
+                                <i class="fas fa-folder-open"></i> Windows User Folders
+                            </button>
                         </div>
-                    </div>
-                    <div class="setting-group">
-                        <label class="setting-label">Custom Folders</label>
-                        <div class="custom-folders-list">
-                            <div class="folder-item">
-                                <span>Documents</span>
-                                <div class="folder-actions">
-                                    <button class="edit-button"><i class="fas fa-edit"></i></button>
-                                    <button class="delete-button"><i class="fas fa-trash"></i></button>
+                        
+                        <div id="folderContent" class="folder-content">
+                            <!-- App Folders Content -->
+                            <div id="appFolders" class="folder-type-content active">
+                                <p class="folder-help-text">Enable or disable buttons for application-specific folders:</p>
+                                
+                                <div class="folder-toggle-list">
+                                    <div class="folder-toggle-item">
+                                        <div class="folder-info">
+                                            <i class="fas fa-file-alt"></i>
+                                            <span class="folder-name">Documents</span>
+                                        </div>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="appDocuments" class="toggle-input" checked>
+                                            <label for="appDocuments" class="toggle-label"></label>
+                                        </div>
+                                    </div>
+                                    <div class="folder-toggle-item">
+                                        <div class="folder-info">
+                                            <i class="fas fa-music"></i>
+                                            <span class="folder-name">Music</span>
+                                        </div>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="appMusic" class="toggle-input" checked>
+                                            <label for="appMusic" class="toggle-label"></label>
+                                        </div>
+                                    </div>
+                                    <div class="folder-toggle-item">
+                                        <div class="folder-info">
+                                            <i class="fas fa-image"></i>
+                                            <span class="folder-name">Pictures</span>
+                                        </div>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="appPictures" class="toggle-input" checked>
+                                            <label for="appPictures" class="toggle-label"></label>
+                                        </div>
+                                    </div>
+                                    <div class="folder-toggle-item">
+                                        <div class="folder-info">
+                                            <i class="fas fa-video"></i>
+                                            <span class="folder-name">Videos</span>
+                                        </div>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="appVideos" class="toggle-input" checked>
+                                            <label for="appVideos" class="toggle-label"></label>
+                                        </div>
+                                    </div>
+                                    <div class="folder-toggle-item">
+                                        <div class="folder-info">
+                                            <i class="fas fa-download"></i>
+                                            <span class="folder-name">Downloads</span>
+                                        </div>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="appDownloads" class="toggle-input" checked>
+                                            <label for="appDownloads" class="toggle-label"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="folder-path">
+                                    <span class="path-label">App Folders Path:</span>
+                                    <code class="path-value">./AppData</code>
+                                    <button class="path-change-button" title="Change App Folders Location">
+                                        <i class="fas fa-folder-open"></i>
+                                    </button>
                                 </div>
                             </div>
-                            <div class="folder-item">
-                                <span>Pictures</span>
-                                <div class="folder-actions">
-                                    <button class="edit-button"><i class="fas fa-edit"></i></button>
-                                    <button class="delete-button"><i class="fas fa-trash"></i></button>
+                            
+                            <!-- Windows User Folders Content -->
+                            <div id="windowsFolders" class="folder-type-content">
+                                <p class="folder-help-text">Enable or disable buttons for Windows user folders:</p>
+                                
+                                <div class="folder-toggle-list">
+                                    <div class="folder-toggle-item">
+                                        <div class="folder-info">
+                                            <i class="fas fa-file-alt"></i>
+                                            <span class="folder-name">Documents</span>
+                                        </div>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="winDocuments" class="toggle-input" checked>
+                                            <label for="winDocuments" class="toggle-label"></label>
+                                        </div>
+                                    </div>
+                                    <div class="folder-toggle-item">
+                                        <div class="folder-info">
+                                            <i class="fas fa-music"></i>
+                                            <span class="folder-name">Music</span>
+                                        </div>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="winMusic" class="toggle-input" checked>
+                                            <label for="winMusic" class="toggle-label"></label>
+                                        </div>
+                                    </div>
+                                    <div class="folder-toggle-item">
+                                        <div class="folder-info">
+                                            <i class="fas fa-image"></i>
+                                            <span class="folder-name">Pictures</span>
+                                        </div>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="winPictures" class="toggle-input" checked>
+                                            <label for="winPictures" class="toggle-label"></label>
+                                        </div>
+                                    </div>
+                                    <div class="folder-toggle-item">
+                                        <div class="folder-info">
+                                            <i class="fas fa-video"></i>
+                                            <span class="folder-name">Videos</span>
+                                        </div>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="winVideos" class="toggle-input" checked>
+                                            <label for="winVideos" class="toggle-label"></label>
+                                        </div>
+                                    </div>
+                                    <div class="folder-toggle-item">
+                                        <div class="folder-info">
+                                            <i class="fas fa-download"></i>
+                                            <span class="folder-name">Downloads</span>
+                                        </div>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="winDownloads" class="toggle-input" checked>
+                                            <label for="winDownloads" class="toggle-label"></label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <button id="addFolder" class="add-button"><i class="fas fa-plus"></i> Add Folder</button>
+                        
+                        <div class="folder-note">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Note: The "Explore" button will always remain visible in the main window.</span>
+                        </div>
                     </div>
                 </div>
             </div>

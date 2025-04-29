@@ -10,8 +10,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     syncTheme: (theme) => ipcRenderer.send('sync-theme', theme),
     openSettings: () => ipcRenderer.invoke('open-settings'),
     
+    // Folder preferences operations
+    getFolderPreferences: () => ipcRenderer.invoke('get-folder-preferences'),
+    setFolderPreferences: (preferences) => ipcRenderer.invoke('set-folder-preferences', preferences),
+    syncFolderPreferences: (preferences) => ipcRenderer.send('sync-folder-preferences', preferences),
+    
     // Event listeners
     onThemeChanged: (callback) => ipcRenderer.on('theme-changed', (_, theme) => callback(theme)),
+    onFolderPreferencesChanged: (callback) => ipcRenderer.on('folder-preferences-changed', (_, preferences) => callback(preferences)),
     
     // Database operations
     getAllApps: () => ipcRenderer.invoke('get-all-apps'),

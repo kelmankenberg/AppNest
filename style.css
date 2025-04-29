@@ -61,7 +61,7 @@ body {
     width: 40%;
     padding: 10px;
     color: var(--text-primary);
-    overflow-y: auto; /* Only show scrollbars in the right column when needed */
+    overflow-y: hidden; /* Changed from 'auto' to 'hidden' to remove the scrollbar */
 }
 
 .search-input {
@@ -869,4 +869,60 @@ body {
 .right-buttons {
     display: flex;
     gap: 10px;
+}
+
+/* Folder button sets */
+.folder-buttons {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+/* .folder-buttons .vertical-button {
+    margin-bottom: 2px;
+} */
+
+/* Folder Button Sets Styling */
+.folder-type-toggle {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.folder-toggle-btn {
+    flex: 1;
+    padding: 6px 10px;
+    background-color: var(--button-bg);
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background-color 0.2s;
+    color: var(--text-color);
+}
+
+.folder-toggle-btn:first-child {
+    border-right: 1px solid var(--border-color);
+}
+
+.folder-toggle-btn.active {
+    background-color: var(--accent-color);
+    color: #fff;
+}
+
+.folder-toggle-btn:hover:not(.active) {
+    background-color: var(--button-hover);
+}
+
+.folder-buttons {
+    display: none;
+    flex-direction: column;
+    /* gap: 4px; */
+    /* margin-bottom: 10px; */
+}
+
+.folder-buttons.active {
+    display: flex;
 }

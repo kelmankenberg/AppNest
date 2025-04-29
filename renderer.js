@@ -301,10 +301,75 @@ settingsButton.addEventListener('click', () => {
     window.electronAPI.openSettings();
 });
 
+// Function to load folder button preferences
+function loadFolderButtonPreferences() {
+    window.electronAPI.getFolderPreferences()
+        .then(prefs => {
+            // If no preferences are set yet, use default (app folders)
+            if (!prefs) {
+                prefs = {
+                    folderType: 'app',  // Default to app folders
+                    appFolders: {
+                        documents: true,
+                        music: true,
+                        pictures: true,
+                        videos: true,
+                        downloads: true
+                    },
+                    windowsFolders: {
+                        documents: true,
+                        music: true,
+                        pictures: true,
+                        videos: true,
+                        downloads: true
+                    }
+                };
+            }
+            
+            // Apply folder button visibility
+            updateFolderButtonVisibility(prefs);
+        })
+        .catch(err => {
+            console.error('Error loading folder preferences:', err);
+        });
+}
+
+// Function to update folder button visibility based on settings
+function updateFolderButtonVisibility(prefs) {
+    // Show the correct folder set
+    const appFoldersContainer = document.querySelector('.folder-buttons.app-folders');
+    const windowsFoldersContainer = document.querySelector('.folder-buttons.windows-folders');
+    
+    if (prefs.folderType === 'app') {
+        appFoldersContainer.style.display = 'flex';
+        windowsFoldersContainer.style.display = 'none';
+    } else {
+        appFoldersContainer.style.display = 'none';
+        windowsFoldersContainer.style.display = 'flex';
+    }
+    
+    // Set individual button visibility for app folders
+    for (const folder in prefs.appFolders) {
+        const button = document.getElementById(`app${folder.charAt(0).toUpperCase() + folder.slice(1)}`);
+        if (button) {
+            button.style.display = prefs.appFolders[folder] ? 'flex' : 'none';
+        }
+    }
+    
+    // Set individual button visibility for Windows folders
+    for (const folder in prefs.windowsFolders) {
+        const button = document.getElementById(`win${folder.charAt(0).toUpperCase() + folder.slice(1)}`);
+        if (button) {
+            button.style.display = prefs.windowsFolders[folder] ? 'flex' : 'none';
+        }
+    }
+}
+
 // Initial load
 document.addEventListener('DOMContentLoaded', () => {
     loadApplications();
     loadDriveInfo();
+    loadFolderButtonPreferences();
     
     // Load saved theme
     window.electronAPI.getTheme()
@@ -329,6 +394,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const nextIcon = isDarkTheme ? 'fa-sun' : 'fa-moon';
         
         themeToggle.innerHTML = `<i class="fas ${nextIcon}"></i> Theme: ${nextTheme}`;
+    });
+    
+    // Listen for folder preferences changes from the settings window
+    window.electronAPI.onFolderPreferencesChanged((folderSettings) => {
+        updateFolderButtonVisibility(folderSettings);
     });
     
     // Set up interval to refresh drive info every minute

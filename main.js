@@ -13,7 +13,24 @@ let store;
         const { default: Store } = await import('electron-store');
         store = new Store({
             defaults: {
-                theme: 'light'
+                theme: 'light',
+                folderPreferences: {
+                    folderType: 'app', // Default to app folders
+                    appFolders: {
+                        documents: true,
+                        music: true,
+                        pictures: true,
+                        videos: true,
+                        downloads: true
+                    },
+                    windowsFolders: {
+                        documents: true,
+                        music: true,
+                        pictures: true,
+                        videos: true,
+                        downloads: true
+                    }
+                }
             }
         });
         console.log('Store initialized successfully');
@@ -444,4 +461,22 @@ ipcMain.on('sync-theme', (_, theme) => {
 ipcMain.handle('open-settings', () => {
     createSettingsWindow();
     return true;
+});
+
+// Folder preferences handlers
+ipcMain.handle('get-folder-preferences', () => {
+    return store.get('folderPreferences');
+});
+
+ipcMain.handle('set-folder-preferences', (_, preferences) => {
+    store.set('folderPreferences', preferences);
+    return true;
+});
+
+// Handle folder preferences synchronization between windows
+ipcMain.on('sync-folder-preferences', (_, preferences) => {
+    // If main window exists, update it with the new preferences
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('folder-preferences-changed', preferences);
+    }
 });

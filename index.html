@@ -25,18 +25,45 @@
             </table>
         </div>
         <div class="right-column">
-            <button class="vertical-button">
-                <i class="fas fa-folder"></i> Documents
-            </button>
-            <button class="vertical-button">
-                <i class="fas fa-music"></i> Music
-            </button>
-            <button class="vertical-button">
-                <i class="fas fa-image"></i> Pictures
-            </button>
-            <button class="vertical-button">
-                <i class="fas fa-video"></i> Videos
-            </button>
+            <!-- App Folders Button Set (Default) -->
+            <div class="folder-buttons app-folders active">
+                <button class="vertical-button" id="appDocuments" data-folder="documents">
+                    <i class="fas fa-file-alt"></i> Documents
+                </button>
+                <button class="vertical-button" id="appMusic" data-folder="music">
+                    <i class="fas fa-music"></i> Music
+                </button>
+                <button class="vertical-button" id="appPictures" data-folder="pictures">
+                    <i class="fas fa-image"></i> Pictures
+                </button>
+                <button class="vertical-button" id="appVideos" data-folder="videos">
+                    <i class="fas fa-video"></i> Videos
+                </button>
+                <button class="vertical-button" id="appDownloads" data-folder="downloads">
+                    <i class="fas fa-download"></i> Downloads
+                </button>
+            </div>
+            
+            <!-- Windows User Folders Button Set (Hidden by default) -->
+            <div class="folder-buttons windows-folders">
+                <button class="vertical-button" id="winDocuments" data-folder="documents">
+                    <i class="fas fa-file-alt"></i> Documents
+                </button>
+                <button class="vertical-button" id="winMusic" data-folder="music">
+                    <i class="fas fa-music"></i> Music
+                </button>
+                <button class="vertical-button" id="winPictures" data-folder="pictures">
+                    <i class="fas fa-image"></i> Pictures
+                </button>
+                <button class="vertical-button" id="winVideos" data-folder="videos">
+                    <i class="fas fa-video"></i> Videos
+                </button>
+                <button class="vertical-button" id="winDownloads" data-folder="downloads">
+                    <i class="fas fa-download"></i> Downloads
+                </button>
+            </div>
+            
+            <!-- Always visible buttons -->
             <button class="vertical-button" id="exploreButton">
                 <i class="fas fa-compass"></i> Explore
             </button>
