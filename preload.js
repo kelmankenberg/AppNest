@@ -27,14 +27,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getMostUsedApps: () => ipcRenderer.invoke('get-most-used-apps'),
     searchApps: (term) => ipcRenderer.invoke('search-apps', term),
     addApp: (app) => ipcRenderer.invoke('add-app', app),
-    updateApp: (appId, app) => ipcRenderer.invoke('update-app', appId, app),
-    deleteApp: (appId) => ipcRenderer.invoke('delete-app', appId),
+    getAppById: (appId) => ipcRenderer.invoke('get-app', appId), // Alias for getApp for better readability
+    updateApp: (app) => ipcRenderer.invoke('update-app', app), // Updated to accept a single app object
+    removeApp: (appId) => ipcRenderer.invoke('delete-app', appId), // Alias for deleteApp
     getApp: (appId) => ipcRenderer.invoke('get-app', appId),
     launchApp: (appId) => ipcRenderer.invoke('launch-app', appId),
     getCategories: () => ipcRenderer.invoke('get-categories'),
     
     // File operations
     selectExecutable: () => ipcRenderer.invoke('select-executable'),
+    openFileDialog: () => ipcRenderer.invoke('select-executable'), // Added alias to match the function name used in renderer.js
     openExplorer: () => ipcRenderer.invoke('open-explorer'),
     
     // Drive information

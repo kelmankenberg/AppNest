@@ -6,7 +6,24 @@ async function initStore() {
         const { default: Store } = await import('electron-store');
         store = new Store({
             defaults: {
-                theme: 'light'
+                theme: 'light',
+                folderPreferences: {
+                    folderType: 'app',  // Default to app folders
+                    appFolders: {
+                        documents: true,
+                        music: true,
+                        pictures: true,
+                        videos: true,
+                        downloads: true
+                    },
+                    windowsFolders: {
+                        documents: true,
+                        music: true,
+                        pictures: true,
+                        videos: true,
+                        downloads: true
+                    }
+                }
             }
         });
         return store;
@@ -25,5 +42,13 @@ module.exports = {
     setTheme: async (theme) => {
         if (!store) await initStore();
         store.set('theme', theme);
+    },
+    getFolderPreferences: async () => {
+        if (!store) await initStore();
+        return store.get('folderPreferences');
+    },
+    setFolderPreferences: async (preferences) => {
+        if (!store) await initStore();
+        store.set('folderPreferences', preferences);
     }
 };

@@ -211,6 +211,61 @@
         </div>
     </div>
 
+    <!-- Edit App Dialog -->
+    <div id="editAppDialog" class="dialog">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h2>Edit Application</h2>
+                <button id="closeEditAppDialog" class="close-button"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="dialog-body">
+                <div class="form-group">
+                    <label for="editAppName">Application Name:</label>
+                    <input type="text" id="editAppName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editExecutablePath">Executable Path:</label>
+                    <div class="path-input">
+                        <input type="text" id="editExecutablePath" required>
+                        <button id="editBrowseExecutable"><i class="fas fa-folder-open"></i></button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editAppCategory">Category:</label>
+                    <select id="editAppCategory">
+                        <option value="">Select a category</option>
+                        <!-- Categories will be loaded dynamically -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editIsPortable">Type:</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="editAppType" value="portable" checked> Portable
+                        </label>
+                        <label>
+                            <input type="radio" name="editAppType" value="installed"> Installed
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editAppDescription">Description:</label>
+                    <textarea id="editAppDescription"></textarea>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="editIsFavorite"> Add to favorites
+                    </label>
+                </div>
+                <input type="hidden" id="editAppId">
+            </div>
+            <div class="dialog-footer">
+                <button id="cancelEditApp" class="secondary-button">Cancel</button>
+                <button id="updateApp" class="primary-button">Update Application</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Settings Dialog -->
     <div id="settingsDialog" class="dialog settings-dialog">
         <div class="dialog-content settings-container">

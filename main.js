@@ -8,6 +8,8 @@ const os = require('os');
 
 // Initialize settings store using dynamic import for ES module compatibility
 let store;
+let storeInitialized = false;
+
 (async () => {
     try {
         const { default: Store } = await import('electron-store');
@@ -33,6 +35,7 @@ let store;
                 }
             }
         });
+        storeInitialized = true;
         console.log('Store initialized successfully');
     } catch (err) {
         console.error('Failed to initialize store:', err);
@@ -157,10 +160,11 @@ app.on('ready', () => {
 
     mainWindow = new BrowserWindow({
         // width: 400,
-        width: 400,
+        // width: 400,
+        width: 650,
         height: 600, // Set the height to 600 as requested
-        x: width - 400, // Position the window to the lower right corner
-        // x: width - 650, // Position the window to the lower right corner
+        // x: width - 400, // Position the window to the lower right corner
+        x: width - 650, // Position the window to the lower right corner
         y: height - 600,
         frame: false, // Make the window frameless
         resizable: false, // Make the window not resizable
@@ -187,7 +191,7 @@ app.on('ready', () => {
     mainWindow.loadFile('index.html');
 
     // Open the DevTools.
-    // mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
     mainWindow.on('closed', () => {
         mainWindow = null;
@@ -406,9 +410,8 @@ ipcMain.handle('select-executable', async () => {
 // Get a specific application by ID
 ipcMain.handle('get-app', async (_, appId) => {
     try {
-        const apps = await db.getAllApplications();
-        const app = apps.find(a => a.id === appId);
-        return app || null;
+        // Use the new getApplicationById function instead of searching through all apps
+        return await db.getApplicationById(appId);
     } catch (err) {
         console.error('Error getting app details:', err);
         return null;
@@ -416,9 +419,9 @@ ipcMain.handle('get-app', async (_, appId) => {
 });
 
 // Update an existing application
-ipcMain.handle('update-app', async (_, appId, app) => {
+ipcMain.handle('update-app', async (_, app) => {
     try {
-        return await db.updateApplication(appId, app);
+        return await db.updateApplication(app.id, app);
     } catch (err) {
         console.error('Error updating app:', err);
         throw err;
@@ -465,12 +468,62 @@ ipcMain.handle('open-settings', () => {
 
 // Folder preferences handlers
 ipcMain.handle('get-folder-preferences', () => {
-    return store.get('folderPreferences');
+    if (!storeInitialized) {
+        console.log('Store not yet initialized, returning default folder preferences');
+        return {
+            folderType: 'app',
+            appFolders: {
+                documents: true,
+                music: true,
+                pictures: true,
+                videos: true,
+                downloads: true
+            },
+            windowsFolders: {
+                documents: true,
+                music: true,
+                pictures: true,
+                videos: true,
+                downloads: true
+            }
+        };
+    }
+    try {
+        return store.get('folderPreferences');
+    } catch (err) {
+        console.error('Error getting folder preferences:', err);
+        return {
+            folderType: 'app',
+            appFolders: {
+                documents: true,
+                music: true,
+                pictures: true,
+                videos: true,
+                downloads: true
+            },
+            windowsFolders: {
+                documents: true,
+                music: true,
+                pictures: true,
+                videos: true,
+                downloads: true
+            }
+        };
+    }
 });
 
 ipcMain.handle('set-folder-preferences', (_, preferences) => {
-    store.set('folderPreferences', preferences);
-    return true;
+    if (!storeInitialized) {
+        console.error('Store not yet initialized when trying to set folder preferences');
+        return false;
+    }
+    try {
+        store.set('folderPreferences', preferences);
+        return true;
+    } catch (err) {
+        console.error('Error setting folder preferences:', err);
+        return false;
+    }
 });
 
 // Handle folder preferences synchronization between windows

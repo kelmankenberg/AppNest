@@ -358,12 +358,47 @@ function updateApplication(appId, application) {
 
 function deleteApplication(appId) {
     return new Promise((resolve, reject) => {
-        db.run(`DELETE FROM Applications WHERE id = ?`, [appId], function(err) {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(this.changes > 0);
+        // Begin a transaction for atomicity
+        db.serialize(() => {
+            db.run('BEGIN TRANSACTION', (err) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                
+                // First, delete any records in AppTags that reference this application
+                db.run('DELETE FROM AppTags WHERE app_id = ?', [appId], (err) => {
+                    if (err) {
+                        db.run('ROLLBACK', () => reject(err));
+                        return;
+                    }
+                    
+                    // Then, delete any records in LaunchHistory that reference this application
+                    db.run('DELETE FROM LaunchHistory WHERE app_id = ?', [appId], (err) => {
+                        if (err) {
+                            db.run('ROLLBACK', () => reject(err));
+                            return;
+                        }
+                        
+                        // Finally, delete the application itself
+                        db.run('DELETE FROM Applications WHERE id = ?', [appId], function(err) {
+                            if (err) {
+                                db.run('ROLLBACK', () => reject(err));
+                                return;
+                            }
+                            
+                            // Commit the transaction
+                            db.run('COMMIT', (err) => {
+                                if (err) {
+                                    db.run('ROLLBACK', () => reject(err));
+                                    return;
+                                }
+                                resolve(this.changes > 0);
+                            });
+                        });
+                    });
+                });
+            });
         });
     });
 }
@@ -413,6 +448,23 @@ function getCategories() {
     });
 }
 
+function getApplicationById(appId) {
+    return new Promise((resolve, reject) => {
+        db.get(`
+            SELECT a.*, c.name as category_name 
+            FROM Applications a 
+            LEFT JOIN Categories c ON a.category_id = c.id 
+            WHERE a.id = ?
+        `, [appId], (err, row) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve(row);
+        });
+    });
+}
+
 // Close the database connection
 function closeDatabase() {
     if (db) {
@@ -439,5 +491,6 @@ module.exports = {
     deleteApplication,
     updateApplicationUsage,
     getCategories,
+    getApplicationById,
     closeDatabase
 };
