@@ -19,5 +19,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getCategories: () => ipcRenderer.invoke('get-categories'),
     
     // File operations
-    selectExecutable: () => ipcRenderer.invoke('select-executable')
+    selectExecutable: () => ipcRenderer.invoke('select-executable'),
+    openExplorer: () => ipcRenderer.invoke('open-explorer')
 });

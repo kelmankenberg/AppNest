@@ -5,6 +5,29 @@ const { exec } = require('child_process');
 
 let mainWindow;
 
+// Open Windows File Explorer to the app's location
+ipcMain.handle('open-explorer', (event) => {
+    try {
+        const appPath = app.getAppPath();
+        console.log('Opening explorer at:', appPath);
+        exec(`explorer "${appPath}"`, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Explorer exec error: ${error}`);
+                return false;
+            }
+            if (stderr) {
+                console.error(`Explorer stderr: ${stderr}`);
+                return false;
+            }
+            return true;
+        });
+        return true;
+    } catch (err) {
+        console.error('Error opening File Explorer:', err);
+        return false;
+    }
+});
+
 app.on('ready', () => {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
@@ -19,13 +42,13 @@ app.on('ready', () => {
 
     mainWindow = new BrowserWindow({
         // width: 400,
-        width: 650,
+        width: 400,
         height: 600, // Set the height to 600 as requested
-        // x: width - 400, // Position the window to the lower right corner
-        x: width - 650, // Position the window to the lower right corner
+        x: width - 400, // Position the window to the lower right corner
+        // x: width - 650, // Position the window to the lower right corner
         y: height - 600,
         frame: false, // Make the window frameless
-        resizable: true, // Make the window not resizable
+        resizable: false, // Make the window not resizable
         webPreferences: {
             nodeIntegration: false, // Disable nodeIntegration for security
             contextIsolation: true, // Enable contextIsolation for security
@@ -49,7 +72,7 @@ app.on('ready', () => {
     mainWindow.loadFile('index.html');
 
     // Open the DevTools.
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
 
     mainWindow.on('closed', () => {
         mainWindow = null;
@@ -75,7 +98,7 @@ app.on('activate', () => {
             x: width - 400,
             y: height - 600,
             frame: false, // Make the window frameless
-            resizable: true, // Make the window not resizable
+            resizable: false, // Make the window not resizable
             webPreferences: {
                 nodeIntegration: false, // Disable nodeIntegration for security
                 contextIsolation: true, // Enable contextIsolation for security

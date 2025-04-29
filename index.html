@@ -39,7 +39,7 @@
             <button class="vertical-button">
                 <i class="fas fa-video"></i> Videos
             </button>
-            <button class="vertical-button">
+            <button class="vertical-button" id="exploreButton">
                 <i class="fas fa-compass"></i> Explore
             </button>
             <hr class="separator">
@@ -614,6 +614,17 @@
                 }
             }).catch(err => {
                 console.error('Error selecting executable:', err);
+            });
+        });
+
+        // Add event listener for the Explore button
+        document.getElementById('exploreButton').addEventListener('click', () => {
+            window.electronAPI.openExplorer().then(success => {
+                if (!success) {
+                    console.error('Failed to open File Explorer');
+                }
+            }).catch(err => {
+                console.error('Error opening File Explorer:', err);
             });
         });
     </script>
