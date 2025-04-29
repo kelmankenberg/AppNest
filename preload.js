@@ -4,6 +4,10 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
     quitApp: () => ipcRenderer.send('app-quit'),
     
+    // Settings operations
+    getTheme: () => ipcRenderer.invoke('get-theme'),
+    setTheme: (theme) => ipcRenderer.invoke('set-theme', theme),
+    
     // Database operations
     getAllApps: () => ipcRenderer.invoke('get-all-apps'),
     getAppsByCategory: () => ipcRenderer.invoke('get-apps-by-category'),

@@ -6,6 +6,22 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
+// Initialize settings store using dynamic import for ES module compatibility
+let store;
+(async () => {
+    try {
+        const { default: Store } = await import('electron-store');
+        store = new Store({
+            defaults: {
+                theme: 'light'
+            }
+        });
+        console.log('Store initialized successfully');
+    } catch (err) {
+        console.error('Failed to initialize store:', err);
+    }
+})();
+
 let mainWindow;
 
 // Add function to get drive information
@@ -359,4 +375,14 @@ ipcMain.handle('delete-app', async (_, appId) => {
         console.error('Error deleting app:', err);
         throw err;
     }
+});
+
+// Settings handlers
+ipcMain.handle('get-theme', () => {
+    return store.get('theme');
+});
+
+ipcMain.handle('set-theme', (_, theme) => {
+    store.set('theme', theme);
+    return true;
 });
