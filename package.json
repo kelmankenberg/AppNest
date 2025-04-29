@@ -1,0 +1,19 @@
+{
+  "name": "MyPAs",
+  "version": "0.1.0",
+  "description": "The MyPAs Launcher is a lightweight Electron-based application designed to help users launch installed and portable applications from their file system.",
+  "license": "ISC",
+  "author": "Kel Mankenberg",
+  "type": "commonjs",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^36.0.0"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.7"
+  }
+}

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyPAs Launcher</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="content">
+        <div class="left-column">
+            <table class="app-table">
+                <thead>
+                    <tr class="search-row">
+                        <th colspan="1">
+                            <input type="text" placeholder="Search for an app..." class="search-input">
+                        </th>
+                    </tr>
+                    <tr>
+                        <th>App Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Placeholder for app rows -->
+                </tbody>
+            </table>
+        </div>
+        <div class="right-column">
+            <button class="vertical-button">
+                <i class="fas fa-folder"></i> Documents
+            </button>
+            <button class="vertical-button">
+                <i class="fas fa-music"></i> Music
+            </button>
+            <button class="vertical-button">
+                <i class="fas fa-image"></i> Pictures
+            </button>
+            <button class="vertical-button">
+                <i class="fas fa-video"></i> Videos
+            </button>
+            <button class="vertical-button">
+                <i class="fas fa-compass"></i> Explore
+            </button>
+            <hr class="separator">
+            <button class="vertical-button">
+                <i class="fas fa-cloud-upload-alt"></i> Backup
+            </button>
+            <button class="vertical-button" id="appsButton">
+                <i class="fas fa-th-large"></i> Apps
+            </button>
+            <!-- Apps Menu -->
+            <div class="apps-menu" id="appsMenu">
+                <button class="menu-item" id="addAppButton">
+                    <i class="fas fa-plus-circle"></i> Add New App
+                </button>
+                <hr class="menu-separator">
+                <button class="menu-item">
+                    <i class="fas fa-sync"></i> Refresh App Icons
+                </button>
+            </div>
+            <button class="vertical-button" id="optionsButton">
+                <i class="fas fa-cogs"></i> Options
+            </button>
+            <!-- Options Menu -->
+            <div class="apps-menu" id="optionsMenu">
+                <button class="menu-item" id="themeToggle">
+                    <i class="fas fa-moon"></i> Theme: Dark
+                </button>
+                <hr class="menu-separator">
+                <button class="menu-item">
+                    <i class="fas fa-sliders-h"></i> Settings
+                </button>
+            </div>
+            <hr class="separator">
+            <button class="vertical-button">
+                <i class="fas fa-search"></i> Search
+            </button>
+            <button class="vertical-button">
+                <i class="fas fa-question-circle"></i> Help
+            </button>
+        </div>
+    </div>
+    <div class="toolbar">
+        <div class="drive-space">
+            <span class="label">C: Drive</span>
+            <div class="indicator">
+                <div class="fill" style="width: 50%;"></div>
+            </div>
+        </div>
+        <div class="right-buttons">
+            <button title="Power">
+                <i class="fas fa-power-off"></i>
+            </button>
+            <button title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Context menu for app items -->
+    <div class="context-menu" id="appContextMenu">
+        <button class="menu-item" id="editAppButton">
+            <i class="fas fa-edit"></i> Edit app info
+        </button>
+        <button class="menu-item" id="removeAppButton">
+            <i class="fas fa-trash-alt"></i> Remove
+        </button>
+    </div>
+
+    <!-- Confirmation dialog for removing apps -->
+    <div id="confirmRemoveDialog" class="dialog">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h2>Confirm Removal</h2>
+                <button id="closeConfirmDialog" class="close-button"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="dialog-body">
+                <p>Are you sure you want to remove <span id="appNameToRemove"></span>?</p>
+            </div>
+            <div class="dialog-footer">
+                <button id="cancelRemoveApp" class="secondary-button">Cancel</button>
+                <button id="confirmRemoveApp" class="primary-button danger">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add App Dialog -->
+    <div id="addAppDialog" class="dialog">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h2>Add New Application</h2>
+                <button id="closeAddAppDialog" class="close-button"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="dialog-body">
+                <div class="form-group">
+                    <label for="appName">Application Name:</label>
+                    <input type="text" id="appName" required>
+                </div>
+                <div class="form-group">
+                    <label for="executablePath">Executable Path:</label>
+                    <div class="path-input">
+                        <input type="text" id="executablePath" required>
+                        <button id="browseExecutable"><i class="fas fa-folder-open"></i></button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="appCategory">Category:</label>
+                    <select id="appCategory">
+                        <option value="">Select a category</option>
+                        <!-- Categories will be loaded dynamically -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="isPortable">Type:</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="appType" value="portable" checked> Portable
+                        </label>
+                        <label>
+                            <input type="radio" name="appType" value="installed"> Installed
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="appDescription">Description:</label>
+                    <textarea id="appDescription"></textarea>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="isFavorite"> Add to favorites
+                    </label>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button id="cancelAddApp" class="secondary-button">Cancel</button>
+                <button id="saveApp" class="primary-button">Add Application</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('button[title="Power"]').addEventListener('click', () => {
+            window.electronAPI.quitApp();
+        });
+
+        // Add functionality for Apps menu toggle
+        const appsButton = document.getElementById('appsButton');
+        const appsMenu = document.getElementById('appsMenu');
+        const optionsButton = document.getElementById('optionsButton');
+        const optionsMenu = document.getElementById('optionsMenu');
+        const themeToggle = document.getElementById('themeToggle');
+        const addAppButton = document.getElementById('addAppButton');
+        const addAppDialog = document.getElementById('addAppDialog');
+        const closeAddAppDialog = document.getElementById('closeAddAppDialog');
+        const cancelAddApp = document.getElementById('cancelAddApp');
+        const saveApp = document.getElementById('saveApp');
+
+        // Global variables for active app
+        let activeAppId = null;
+        let activeAppData = null;
+        const appContextMenu = document.getElementById('appContextMenu');
+        const editAppButton = document.getElementById('editAppButton');
+        const removeAppButton = document.getElementById('removeAppButton');
+        const confirmRemoveDialog = document.getElementById('confirmRemoveDialog');
+        const closeConfirmDialog = document.getElementById('closeConfirmDialog');
+        const cancelRemoveApp = document.getElementById('cancelRemoveApp');
+        const confirmRemoveApp = document.getElementById('confirmRemoveApp');
+        const appNameToRemove = document.getElementById('appNameToRemove');
+
+        // Context menu for app items
+        function showContextMenu(e, appId) {
+            e.preventDefault(); // Prevent default context menu
+            
+            // Store the active app ID
+            activeAppId = appId;
+            
+            // Position the context menu at the mouse position
+            appContextMenu.style.top = `${e.clientY}px`;
+            appContextMenu.style.left = `${e.clientX}px`;
+            appContextMenu.style.display = 'block';
+            
+            // Load the app data
+            window.electronAPI.getApp(appId).then(app => {
+                activeAppData = app;
+            }).catch(err => {
+                console.error('Error loading app data:', err);
+            });
+        }
+
+        // Hide context menu when clicking elsewhere
+        document.addEventListener('click', function(e) {
+            if (!appContextMenu.contains(e.target)) {
+                appContextMenu.style.display = 'none';
+            }
+        });
+
+        // Edit app button
+        editAppButton.addEventListener('click', () => {
+            appContextMenu.style.display = 'none';
+            openEditAppDialog(activeAppId, activeAppData);
+        });
+
+        // Remove app button
+        removeAppButton.addEventListener('click', () => {
+            appContextMenu.style.display = 'none';
+            
+            // Show confirmation dialog
+            if (activeAppData) {
+                appNameToRemove.textContent = activeAppData.name;
+                confirmRemoveDialog.style.display = 'block';
+            }
+        });
+
+        // Cancel app removal
+        closeConfirmDialog.addEventListener('click', () => {
+            confirmRemoveDialog.style.display = 'none';
+        });
+
+        cancelRemoveApp.addEventListener('click', () => {
+            confirmRemoveDialog.style.display = 'none';
+        });
+
+        // Confirm app removal
+        confirmRemoveApp.addEventListener('click', () => {
+            if (activeAppId) {
+                window.electronAPI.deleteApp(activeAppId).then(success => {
+                    if (success) {
+                        confirmRemoveDialog.style.display = 'none';
+                        // Reload the application list
+                        loadApplications();
+                    } else {
+                        alert('Failed to remove application. Please try again.');
+                    }
+                }).catch(err => {
+                    console.error('Error removing application:', err);
+                    alert('Failed to remove application. Please try again.');
+                });
+            }
+        });
+
+        // Function to open edit app dialog
+        function openEditAppDialog(appId, appData) {
+            if (!appData) return;
+            
+            // Update dialog title
+            document.querySelector('#addAppDialog .dialog-header h2').textContent = 'Edit Application';
+            document.querySelector('#saveApp').textContent = 'Save Changes';
+            
+            // Populate form fields with app data
+            document.getElementById('appName').value = appData.name || '';
+            document.getElementById('executablePath').value = appData.executable_path || '';
+            document.getElementById('appDescription').value = appData.description || '';
+            document.getElementById('isFavorite').checked = appData.is_favorite === 1;
+            
+            // Set app type radio button
+            const appTypeRadio = document.querySelector(`input[name="appType"][value="${appData.is_portable ? 'portable' : 'installed'}"]`);
+            if (appTypeRadio) appTypeRadio.checked = true;
+            
+            // Load and select the category
+            loadCategories().then(() => {
+                const categorySelect = document.getElementById('appCategory');
+                if (appData.category_id) {
+                    // Find and select the option with the matching category_id
+                    for (let i = 0; i < categorySelect.options.length; i++) {
+                        if (parseInt(categorySelect.options[i].value) === appData.category_id) {
+                            categorySelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            });
+            
+            // Show dialog
+            addAppDialog.style.display = 'block';
+            
+            // Update save button function to handle updates instead of adding new apps
+            editMode = true;
+            editingAppId = appId;
+        }
+
+        // Reset the app dialog to default state for adding new apps
+        function resetAppDialog() {
+            document.querySelector('#addAppDialog .dialog-header h2').textContent = 'Add New Application';
+            document.querySelector('#saveApp').textContent = 'Add Application';
+            
+            document.getElementById('appName').value = '';
+            document.getElementById('executablePath').value = '';
+            document.getElementById('appCategory').selectedIndex = 0;
+            document.getElementById('appDescription').value = '';
+            document.getElementById('isFavorite').checked = false;
+            document.querySelector('input[name="appType"][value="portable"]').checked = true;
+            
+            // Reset save button function to handle new app creation
+            editMode = false;
+            editingAppId = null;
+        }
+
+        // Function to close all menus
+        function closeAllMenus() {
+            appsMenu.style.display = 'none';
+            optionsMenu.style.display = 'none';
+        }
+
+        appsButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            // Close options menu if it's open
+            optionsMenu.style.display = 'none';
+            
+            // Toggle apps menu
+            const isVisible = appsMenu.style.display === 'block';
+            appsMenu.style.display = isVisible ? 'none' : 'block';
+            
+            if (!isVisible) {
+                // Position the menu below the Apps button
+                const buttonRect = appsButton.getBoundingClientRect();
+                appsMenu.style.top = buttonRect.bottom + 'px';
+                appsMenu.style.left = (buttonRect.left - appsMenu.offsetWidth + buttonRect.width) + 'px';
+            }
+        });
+
+        optionsButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            // Close apps menu if it's open
+            appsMenu.style.display = 'none';
+            
+            // Toggle options menu
+            const isVisible = optionsMenu.style.display === 'block';
+            optionsMenu.style.display = isVisible ? 'none' : 'block';
+            
+            if (!isVisible) {
+                // Position the menu below the Options button
+                const buttonRect = optionsButton.getBoundingClientRect();
+                optionsMenu.style.top = buttonRect.bottom + 'px';
+                optionsMenu.style.left = (buttonRect.left - optionsMenu.offsetWidth + buttonRect.width) + 'px';
+            }
+        });
+
+        // Close menus when clicking elsewhere
+        document.addEventListener('click', closeAllMenus);
+
+        // Prevent menu from closing when clicking inside it
+        appsMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        optionsMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Toggle theme functionality
+        themeToggle.addEventListener('click', () => {
+            // Toggle the theme
+            document.body.classList.toggle('dark-theme');
+            
+            // Check if we're currently in dark theme after toggling
+            const isNowDarkTheme = document.body.classList.contains('dark-theme');
+            
+            // Update button to show what it would switch to (not the current theme)
+            // If we're in dark theme, button should say "Light" (what it would switch to)
+            const nextTheme = isNowDarkTheme ? 'Light' : 'Dark';
+            const nextIcon = isNowDarkTheme ? 'fa-sun' : 'fa-moon';
+            
+            themeToggle.innerHTML = `<i class="fas ${nextIcon}"></i> Theme: ${nextTheme}`;
+        });
+
+        // Load applications from the database
+        function loadApplications() {
+            window.electronAPI.getAllApps().then(apps => {
+                displayApplications(apps);
+            }).catch(err => {
+                console.error('Error loading applications:', err);
+            });
+        }
+
+        // Display applications in the table
+        function displayApplications(apps) {
+            const tableBody = document.querySelector('.app-table tbody');
+            tableBody.innerHTML = ''; // Clear existing rows
+            
+            if (apps.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="1" class="no-apps">No applications found</td>';
+                tableBody.appendChild(row);
+                return;
+            }
+            
+            apps.forEach(app => {
+                const row = document.createElement('tr');
+                row.className = 'app-row';
+                row.dataset.appId = app.id;
+                
+                // Create app name cell
+                const nameCell = document.createElement('td');
+                nameCell.textContent = app.name;
+                row.appendChild(nameCell);
+                
+                // Add click event to launch the application
+                row.addEventListener('click', () => {
+                    launchApplication(app.id);
+                });
+
+                // Add right-click event for context menu
+                row.addEventListener('contextmenu', (e) => {
+                    showContextMenu(e, app.id);
+                });
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Launch an application
+        function launchApplication(appId) {
+            window.electronAPI.launchApp(appId).then(() => {
+                console.log(`Launched application ${appId}`);
+            }).catch(err => {
+                console.error(`Error launching application ${appId}:`, err);
+            });
+        }
+
+        // Search applications
+        document.querySelector('.search-input').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.trim();
+            
+            if (searchTerm === '') {
+                loadApplications(); // Show all apps when search is empty
+                return;
+            }
+            
+            window.electronAPI.searchApps(searchTerm).then(apps => {
+                displayApplications(apps);
+            }).catch(err => {
+                console.error('Error searching applications:', err);
+            });
+        });
+
+        // Initial load of applications
+        document.addEventListener('DOMContentLoaded', () => {
+            loadApplications();
+        });
+
+        // Variable to track if we're in edit mode
+        let editMode = false;
+        let editingAppId = null;
+
+        // Add App Dialog functionality
+        addAppButton.addEventListener('click', () => {
+            // Reset to add mode
+            editMode = false;
+            editingAppId = null;
+            
+            // Update dialog appearance for add mode
+            document.querySelector('#addAppDialog .dialog-header h2').textContent = 'Add New Application';
+            document.querySelector('#saveApp').textContent = 'Add Application';
+            
+            // Clear form fields
+            document.getElementById('appName').value = '';
+            document.getElementById('executablePath').value = '';
+            document.getElementById('appCategory').selectedIndex = 0;
+            document.getElementById('appDescription').value = '';
+            document.getElementById('isFavorite').checked = false;
+            document.querySelector('input[name="appType"][value="portable"]').checked = true;
+            
+            // Show the dialog and load categories
+            addAppDialog.style.display = 'block';
+            loadCategories();
+        });
+
+        closeAddAppDialog.addEventListener('click', () => {
+            addAppDialog.style.display = 'none';
+        });
+
+        cancelAddApp.addEventListener('click', () => {
+            addAppDialog.style.display = 'none';
+        });
+
+        // Combined save function for both adding and editing
+        saveApp.addEventListener('click', () => {
+            const appName = document.getElementById('appName').value.trim();
+            const executablePath = document.getElementById('executablePath').value.trim();
+            const categoryId = parseInt(document.getElementById('appCategory').value) || null;
+            const isPortable = document.querySelector('input[name="appType"]:checked').value === 'portable';
+            const description = document.getElementById('appDescription').value.trim();
+            const isFavorite = document.getElementById('isFavorite').checked;
+
+            if (!appName || !executablePath) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            const appData = {
+                name: appName,
+                executable_path: executablePath,
+                is_portable: isPortable,
+                category_id: categoryId,
+                description: description,
+                is_favorite: isFavorite
+            };
+
+            // If in edit mode, update the existing app
+            if (editMode && editingAppId) {
+                window.electronAPI.updateApp(editingAppId, appData)
+                    .then(success => {
+                        if (success) {
+                            alert('Application updated successfully!');
+                            addAppDialog.style.display = 'none';
+                            loadApplications(); // Reload the application list
+                        } else {
+                            alert('Failed to update application. Please try again.');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error updating application:', err);
+                        alert('Failed to update application. Please try again.');
+                    });
+            } 
+            // Otherwise, add a new app
+            else {
+                window.electronAPI.addApp(appData)
+                    .then(() => {
+                        alert('Application added successfully!');
+                        addAppDialog.style.display = 'none';
+                        loadApplications(); // Reload the application list
+                    })
+                    .catch(err => {
+                        console.error('Error adding application:', err);
+                        alert('Failed to add application. Please try again.');
+                    });
+            }
+        });
+
+        // Load categories for the dropdown
+        function loadCategories() {
+            return new Promise((resolve, reject) => {
+                const categorySelect = document.getElementById('appCategory');
+                
+                // Clear existing options except the first one
+                while (categorySelect.options.length > 1) {
+                    categorySelect.remove(1);
+                }
+                
+                window.electronAPI.getCategories().then(categories => {
+                    categories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.id;
+                        option.textContent = category.name;
+                        categorySelect.appendChild(option);
+                    });
+                    resolve();
+                }).catch(err => {
+                    console.error('Error loading categories:', err);
+                    reject(err);
+                });
+            });
+        }
+
+        // Browse for executable file
+        document.getElementById('browseExecutable').addEventListener('click', () => {
+            window.electronAPI.selectExecutable().then(filePath => {
+                if (filePath) {
+                    document.getElementById('executablePath').value = filePath;
+                    
+                    // Try to extract a default name from the file path
+                    const fileName = filePath.split('\\').pop().split('/').pop();
+                    const nameWithoutExt = fileName.split('.')[0];
+                    
+                    // If the name field is empty, fill it with the file name
+                    const nameField = document.getElementById('appName');
+                    if (!nameField.value) {
+                        nameField.value = nameWithoutExt;
+                    }
+                }
+            }).catch(err => {
+                console.error('Error selecting executable:', err);
+            });
+        });
+    </script>
+</body>
+</html>

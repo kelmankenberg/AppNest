@@ -1,0 +1,258 @@
+const { app, BrowserWindow, screen, ipcMain, globalShortcut, dialog } = require('electron');
+const { powerDownApp } = require('./functions');
+const db = require('./database');
+const { exec } = require('child_process');
+
+let mainWindow;
+
+app.on('ready', () => {
+    const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+
+    // Initialize the database
+    db.initDatabase()
+        .then(() => {
+            console.log('Database initialized successfully');
+        })
+        .catch(err => {
+            console.error('Failed to initialize database:', err);
+        });
+
+    mainWindow = new BrowserWindow({
+        // width: 400,
+        width: 650,
+        height: 600, // Set the height to 600 as requested
+        // x: width - 400, // Position the window to the lower right corner
+        x: width - 650, // Position the window to the lower right corner
+        y: height - 600,
+        frame: false, // Make the window frameless
+        resizable: true, // Make the window not resizable
+        webPreferences: {
+            nodeIntegration: false, // Disable nodeIntegration for security
+            contextIsolation: true, // Enable contextIsolation for security
+            preload: __dirname + '/preload.js' // Use the preload script
+        }
+    });
+
+    // Register keyboard shortcuts for DevTools
+    globalShortcut.register('CommandOrControl+Shift+I', () => {
+        if (mainWindow) {
+            mainWindow.webContents.toggleDevTools();
+        }
+    });
+    
+    globalShortcut.register('F12', () => {
+        if (mainWindow) {
+            mainWindow.webContents.toggleDevTools();
+        }
+    });
+
+    mainWindow.loadFile('index.html');
+
+    // Open the DevTools.
+    mainWindow.webContents.openDevTools();
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+
+    // Removed DOM-related code from the main process
+    // All DOM interactions should be handled in the renderer process
+});
+
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
+});
+
+app.on('activate', () => {
+    if (mainWindow === null) {
+        const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+
+        mainWindow = new BrowserWindow({
+            width: 400,
+            height: 600, // Set the height to 600 as requested
+            x: width - 400,
+            y: height - 600,
+            frame: false, // Make the window frameless
+            resizable: true, // Make the window not resizable
+            webPreferences: {
+                nodeIntegration: false, // Disable nodeIntegration for security
+                contextIsolation: true, // Enable contextIsolation for security
+                preload: __dirname + '/preload.js' // Use the preload script
+            }
+        });
+
+        mainWindow.loadFile('index.html');
+    }
+});
+
+// Handle the quit event from the renderer process
+ipcMain.on('app-quit', () => {
+    app.quit();
+});
+
+// Database IPC handlers
+ipcMain.handle('get-all-apps', async () => {
+    try {
+        return await db.getAllApplications();
+    } catch (err) {
+        console.error('Error getting apps:', err);
+        return [];
+    }
+});
+
+ipcMain.handle('get-apps-by-category', async () => {
+    try {
+        return await db.getApplicationsByCategory();
+    } catch (err) {
+        console.error('Error getting apps by category:', err);
+        return [];
+    }
+});
+
+ipcMain.handle('get-favorite-apps', async () => {
+    try {
+        return await db.getFavoriteApplications();
+    } catch (err) {
+        console.error('Error getting favorite apps:', err);
+        return [];
+    }
+});
+
+ipcMain.handle('get-recently-used-apps', async () => {
+    try {
+        return await db.getRecentlyUsedApplications();
+    } catch (err) {
+        console.error('Error getting recently used apps:', err);
+        return [];
+    }
+});
+
+ipcMain.handle('get-most-used-apps', async () => {
+    try {
+        return await db.getMostUsedApplications();
+    } catch (err) {
+        console.error('Error getting most used apps:', err);
+        return [];
+    }
+});
+
+ipcMain.handle('search-apps', async (_, searchTerm) => {
+    try {
+        return await db.searchApplications(searchTerm);
+    } catch (err) {
+        console.error('Error searching apps:', err);
+        return [];
+    }
+});
+
+ipcMain.handle('add-app', async (_, app) => {
+    try {
+        return await db.addApplication(app);
+    } catch (err) {
+        console.error('Error adding app:', err);
+        throw err;
+    }
+});
+
+ipcMain.handle('get-categories', async () => {
+    try {
+        return await db.getCategories();
+    } catch (err) {
+        console.error('Error getting categories:', err);
+        return [];
+    }
+});
+
+ipcMain.handle('launch-app', async (_, appId) => {
+    try {
+        // Get the app details
+        const apps = await db.getAllApplications();
+        const app = apps.find(a => a.id === appId);
+        
+        if (!app) {
+            throw new Error(`Application with ID ${appId} not found`);
+        }
+        
+        // Launch the application
+        let command = `"${app.executable_path}"`;
+        if (app.launch_arguments) {
+            command += ` ${app.launch_arguments}`;
+        }
+        
+        const options = {};
+        if (app.working_directory) {
+            options.cwd = app.working_directory;
+        }
+        
+        exec(command, options, (err) => {
+            if (err) {
+                console.error(`Failed to launch application ${app.name}:`, err);
+                return;
+            }
+            
+            // Update usage statistics
+            db.updateApplicationUsage(appId)
+                .catch(err => console.error(`Failed to update usage for ${app.name}:`, err));
+        });
+        
+        return true;
+    } catch (err) {
+        console.error('Error launching app:', err);
+        throw err;
+    }
+});
+
+// File dialog for selecting executables
+ipcMain.handle('select-executable', async () => {
+    try {
+        const result = await dialog.showOpenDialog({
+            properties: ['openFile'],
+            filters: [
+                { name: 'Executables', extensions: ['exe', 'bat', 'cmd'] },
+                { name: 'All Files', extensions: ['*'] }
+            ]
+        });
+        
+        if (!result.canceled && result.filePaths.length > 0) {
+            return result.filePaths[0];
+        }
+        return null;
+    } catch (err) {
+        console.error('Error selecting executable:', err);
+        return null;
+    }
+});
+
+// Get a specific application by ID
+ipcMain.handle('get-app', async (_, appId) => {
+    try {
+        const apps = await db.getAllApplications();
+        const app = apps.find(a => a.id === appId);
+        return app || null;
+    } catch (err) {
+        console.error('Error getting app details:', err);
+        return null;
+    }
+});
+
+// Update an existing application
+ipcMain.handle('update-app', async (_, appId, app) => {
+    try {
+        return await db.updateApplication(appId, app);
+    } catch (err) {
+        console.error('Error updating app:', err);
+        throw err;
+    }
+});
+
+// Delete an application
+ipcMain.handle('delete-app', async (_, appId) => {
+    try {
+        return await db.deleteApplication(appId);
+    } catch (err) {
+        console.error('Error deleting app:', err);
+        throw err;
+    }
+});
