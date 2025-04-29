@@ -133,6 +133,25 @@ body {
     align-items: center;
 }
 
+.toolbar .app-branding {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    margin-left: 10px;
+}
+
+.toolbar .app-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.toolbar .app-version {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-left: 5px;
+}
+
 .toolbar .right-buttons {
     display: flex;
     align-items: center;
