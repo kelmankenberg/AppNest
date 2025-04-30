@@ -10,6 +10,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     syncTheme: (theme) => ipcRenderer.send('sync-theme', theme),
     openSettings: () => ipcRenderer.invoke('open-settings'),
     
+    // Continue iteration functionality
+    getContinueIteration: () => ipcRenderer.invoke('continue-iteration'),
+    setContinueIteration: (value) => ipcRenderer.invoke('set-continue-iteration', value),
+    
     // Folder preferences operations
     getFolderPreferences: () => ipcRenderer.invoke('get-folder-preferences'),
     setFolderPreferences: (preferences) => ipcRenderer.invoke('set-folder-preferences', preferences),
