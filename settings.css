@@ -410,3 +410,121 @@
     color: var(--text-secondary);
     margin-bottom: 15px;
 }
+
+/* Windows Built-in Apps Styles */
+.windows-apps-section {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.windows-apps-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    margin-top: 15px;
+}
+
+.windows-app-category h4 {
+    margin: 0 0 15px 0;
+    color: var(--accent-color);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.windows-app-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.windows-app-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-radius: 6px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.windows-app-item:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.app-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.app-info i {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    color: var(--accent-color);
+}
+
+.app-name {
+    font-weight: 500;
+}
+
+.add-app-button {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.add-app-button:hover {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+}
+
+.app-add-status {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 4px;
+    display: none;
+}
+
+.app-add-status.success {
+    display: block;
+    background-color: rgba(0, 128, 0, 0.1);
+    color: green;
+    border: 1px solid rgba(0, 128, 0, 0.2);
+}
+
+.app-add-status.error {
+    display: block;
+    background-color: rgba(255, 0, 0, 0.1);
+    color: red;
+    border: 1px solid rgba(255, 0, 0, 0.2);
+}
+
+.windows-apps-note {
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: rgba(255, 165, 0, 0.1);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.windows-apps-note i {
+    color: orange;
+}

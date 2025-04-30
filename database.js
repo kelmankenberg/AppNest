@@ -139,12 +139,17 @@ function createTables() {
             
             // Insert default categories if they don't exist
             const defaultCategories = [
-                { name: 'Productivity', display_order: 1 },
+                { name: 'Accessibility', display_order: 1 },
                 { name: 'Development', display_order: 2 },
-                { name: 'Media', display_order: 3 },
+                { name: 'Education', display_order: 3 },
                 { name: 'Games', display_order: 4 },
-                { name: 'Utilities', display_order: 5 },
-                { name: 'Other', display_order: 6 }
+                { name: 'Graphics & Pictures', display_order: 5 },
+                { name: 'Internet', display_order: 6 },
+                { name: 'Media', display_order: 7 },
+                { name: 'Office', display_order: 8 },
+                { name: 'Productivity', display_order: 9 },
+                { name: 'Security', display_order: 10 },
+                { name: 'Utilities', display_order: 11 }
             ];
             
             const insertCategory = db.prepare('INSERT OR IGNORE INTO Categories (name, display_order) VALUES (?, ?)');

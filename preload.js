@@ -38,6 +38,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     launchApp: (appId) => ipcRenderer.invoke('launch-app', appId),
     getCategories: () => ipcRenderer.invoke('get-categories'),
     
+    // Windows built-in apps
+    addWindowsApp: (appInfo) => ipcRenderer.invoke('add-windows-app', appInfo),
+    
     // File operations
     selectExecutable: () => ipcRenderer.invoke('select-executable'),
     openFileDialog: () => ipcRenderer.invoke('select-executable'), // Added alias to match the function name used in renderer.js

@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeInputs();
     initializeThemeChangeListener();
     initializeFolderControls();
+    initializeWindowsBuiltInApps(); // Add initialization for Windows built-in apps
     loadSettingsFromStore();
 });
 
@@ -538,4 +539,47 @@ function resetFolderToggles(prefix, folderTypes) {
 // Close the settings window
 function closeWindow() {
     window.close();
+}
+
+// Initialize Windows built-in apps section
+function initializeWindowsBuiltInApps() {
+    const addAppButtons = document.querySelectorAll('.add-app-button');
+    const appAddStatus = document.getElementById('appAddStatus');
+    
+    addAppButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+            const appName = button.getAttribute('data-app-name');
+            const appPath = button.getAttribute('data-app-path');
+            const appCategory = button.getAttribute('data-app-category');
+            const appPathType = button.getAttribute('data-app-path-type') || 'system';
+            
+            try {
+                // Call the IPC method to add the Windows app
+                await window.electronAPI.addWindowsApp({
+                    name: appName,
+                    path: appPath,
+                    category: appCategory,
+                    pathType: appPathType
+                });
+                
+                // Show success message
+                appAddStatus.textContent = `${appName} was added to your launcher successfully!`;
+                appAddStatus.className = 'app-add-status success';
+                
+                // Hide the message after 3 seconds
+                setTimeout(() => {
+                    appAddStatus.style.display = 'none';
+                }, 3000);
+            } catch (error) {
+                // Show error message
+                appAddStatus.textContent = `Failed to add ${appName}: ${error.message}`;
+                appAddStatus.className = 'app-add-status error';
+                
+                // Hide the message after 5 seconds
+                setTimeout(() => {
+                    appAddStatus.style.display = 'none';
+                }, 5000);
+            }
+        });
+    });
 }

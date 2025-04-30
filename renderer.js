@@ -127,16 +127,49 @@ document.getElementById('editAppButton').addEventListener('click', () => {
             console.log('App data retrieved:', app);
             // Populate the edit form with app data
             const editNameElem = document.getElementById('editAppName');
-            console.log('editAppName element exists:', !!editNameElem);
             if (editNameElem) editNameElem.value = app.name;
             
             const editPathElem = document.getElementById('editExecutablePath');
-            console.log('editExecutablePath element exists:', !!editPathElem);
             if (editPathElem) editPathElem.value = app.executable_path;
             
             const editCategoryElem = document.getElementById('editAppCategory');
-            console.log('editAppCategory element exists:', !!editCategoryElem);
-            if (editCategoryElem) editCategoryElem.value = app.category || '';
+            if (editCategoryElem) {
+                // Ensure categories are loaded before trying to select one
+                window.electronAPI.getCategories().then(categories => {
+                    // If no categories are loaded yet, populate the dropdown
+                    if (editCategoryElem.options.length <= 1) {
+                        categories.forEach(category => {
+                            const option = document.createElement('option');
+                            option.value = category.id;
+                            option.textContent = category.name;
+                            editCategoryElem.appendChild(option);
+                        });
+                    }
+                    
+                    // Now set the selected category based on the app's category_id
+                    if (app.category_id) {
+                        console.log('Setting category to:', app.category_id);
+                        editCategoryElem.value = app.category_id;
+                        
+                        // Double check if value was set correctly
+                        // Sometimes setting the value directly doesn't work if the options aren't fully loaded
+                        if (editCategoryElem.value !== app.category_id.toString()) {
+                            // Find the option with matching value and select it
+                            for (let i = 0; i < editCategoryElem.options.length; i++) {
+                                if (editCategoryElem.options[i].value === app.category_id.toString()) {
+                                    editCategoryElem.selectedIndex = i;
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        // If no category is set, select the blank option
+                        editCategoryElem.value = '';
+                    }
+                }).catch(err => {
+                    console.error('Error loading categories:', err);
+                });
+            }
             
             const editDescriptionElem = document.getElementById('editAppDescription');
             console.log('editAppDescription element exists:', !!editDescriptionElem);
@@ -248,7 +281,7 @@ document.getElementById('updateApp').addEventListener('click', () => {
     const appId = document.getElementById('editAppId').value;
     const name = document.getElementById('editAppName').value;
     const executable_path = document.getElementById('editExecutablePath').value;
-    const category = document.getElementById('editAppCategory').value;
+    const category_id = document.getElementById('editAppCategory').value;
     const description = document.getElementById('editAppDescription').value;
     const is_favorite = document.getElementById('editIsFavorite').checked;
     const is_portable = document.querySelector('input[name="editAppType"]:checked').value === 'portable';
@@ -265,7 +298,7 @@ document.getElementById('updateApp').addEventListener('click', () => {
         id: appId,
         name,
         executable_path,
-        category,
+        category_id,
         description,
         is_favorite,
         is_portable
