@@ -608,7 +608,9 @@ function updateFolderButtonVisibility(prefs) {
 
 // Function to load categories into the select elements
 function loadCategories() {
+    console.log('Loading categories...');
     window.electronAPI.getCategories().then(categories => {
+        console.log('Categories loaded:', categories);
         // Get the category select elements
         const addCategorySelect = document.getElementById('appCategory');
         const editCategorySelect = document.getElementById('editAppCategory');
@@ -624,6 +626,7 @@ function loadCategories() {
         
         // Add category options to both select elements
         categories.forEach(category => {
+            console.log('Adding category option:', category);
             // Add to 'Add App' dialog
             const addOption = document.createElement('option');
             addOption.value = category.id; // Use category ID as value

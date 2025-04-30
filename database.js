@@ -313,6 +313,19 @@ function addApplication(application) {
     });
 }
 
+// Get all categories from the database
+function getCategories() {
+    return new Promise((resolve, reject) => {
+        db.all('SELECT id, name, display_order FROM Categories ORDER BY display_order', (err, rows) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve(rows);
+        });
+    });
+}
+
 function updateApplication(appId, application) {
     return new Promise((resolve, reject) => {
         db.run(`
@@ -429,21 +442,6 @@ function updateApplicationUsage(appId) {
                 }
                 resolve();
             });
-        });
-    });
-}
-
-function getCategories() {
-    return new Promise((resolve, reject) => {
-        db.all(`
-            SELECT * FROM Categories 
-            ORDER BY display_order, name
-        `, (err, rows) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(rows);
         });
     });
 }

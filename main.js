@@ -12,6 +12,7 @@ let mainWindow;
 let settingsWindow; // Add a reference for the settings window
 let storeInitialized = false; // Track if store is initialized
 let storeInitPromise = null; // Promise for async initialization
+let dbInitialized = false; // Track if database is initialized
 
 // Initialize store asynchronously
 async function initializeStore() {
@@ -96,6 +97,22 @@ function getOrInitializeStore() {
         return store;
     }
     return initializeStoreSync();
+}
+
+// Initialize the database
+async function initializeDatabase() {
+    if (dbInitialized) {
+        return;
+    }
+    
+    try {
+        await db.initDatabase();
+        dbInitialized = true;
+        console.log('Database initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize database:', error);
+        throw error;
+    }
 }
 
 // Register IPC handlers
@@ -509,8 +526,17 @@ function createSettingsWindow() {
     }
 
     settingsWindow = new BrowserWindow({
-        width: 600,
-        height: 400,
+        width: 890,
+        height: 490,
+        resizable: false,
+        maximizable: false,
+        minimizable: true,
+        fullscreenable: false,
+        center: true,
+        parent: mainWindow,
+        modal: true,
+        frame: false,
+        icon: path.join(__dirname, 'icon.ico'),
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -529,16 +555,31 @@ function createSettingsWindow() {
 // Create main window function
 function createWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-
+    
+    // Define window dimensions
+    const windowWidth = 400;
+    const windowHeight = 600;
+    // Account for taskbar offset (difference between window height and position offset)
+    const taskbarOffset = 40; 
+    
+    // Fixed size window with specific dimensions
     mainWindow = new BrowserWindow({
-        width: Math.round(width * 0.8),
-        height: Math.round(height * 0.8),
+        width: windowWidth,
+        height: windowHeight,
+        resizable: false,
+        frame: false,
+        transparent: false,
+        icon: path.join(__dirname, 'icon.ico'),
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
         }
     });
+
+    // Position the window to be flush with the taskbar in the bottom right
+    // Subtract window width from screen width and account for taskbar offset when positioning
+    mainWindow.setPosition(width - windowWidth, height - (windowHeight - taskbarOffset));
 
     globalShortcut.register('CommandOrControl+Shift+I', () => {
         if (mainWindow) {
@@ -560,8 +601,13 @@ async function startApp() {
     try {
         // Initialize store first before registering handlers
         await initializeStore();
-        // Register IPC handlers after store is initialized
+        
+        // Initialize database before registering handlers
+        await initializeDatabase();
+        
+        // Register IPC handlers after store and database are initialized
         registerIPCHandlers();
+        
         // Create the main window
         createWindow();
     } catch (error) {
@@ -602,7 +648,8 @@ if (process.env.NODE_ENV === 'test') {
 module.exports = {
     initializeStore,
     initializeStoreSync,
-    getOrInitializeStore, // Export the new helper function
+    getOrInitializeStore,
+    initializeDatabase, // Export the new database initialization function
     registerIPCHandlers,
     createWindow,
     createSettingsWindow,
