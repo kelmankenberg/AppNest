@@ -31,7 +31,25 @@ async function initializeStore() {
             store = new Store({
                 defaults: {
                     'continue-iteration': true, // Set default value
-                    'theme': 'light'
+                    'theme': 'light',
+                    'font-size': 16, // Default font size for app table
+                    'folderPreferences': {
+                        folderType: 'app',
+                        appFolders: {
+                            documents: true,
+                            music: true,
+                            pictures: true,
+                            videos: true,
+                            downloads: true
+                        },
+                        windowsFolders: {
+                            documents: true,
+                            music: true,
+                            pictures: true,
+                            videos: true,
+                            downloads: true
+                        }
+                    }
                 },
                 // Add a name to ensure consistency across processes
                 name: 'mypa-settings'
@@ -60,7 +78,25 @@ function initializeStoreSync() {
         store = new Store({
             defaults: {
                 'continue-iteration': true, // Set default value
-                'theme': 'light'
+                'theme': 'light',
+                'font-size': 16, // Default font size for app table
+                'folderPreferences': {
+                    folderType: 'app',
+                    appFolders: {
+                        documents: true,
+                        music: true,
+                        pictures: true,
+                        videos: true,
+                        downloads: true
+                    },
+                    windowsFolders: {
+                        documents: true,
+                        music: true,
+                        pictures: true,
+                        videos: true,
+                        downloads: true
+                    }
+                }
             },
             // Add a name to ensure consistency across processes
             name: 'mypa-settings'
@@ -193,6 +229,39 @@ function registerIPCHandlers() {
         // If main window exists and the event didn't come from it, update it too
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('theme-changed', theme);
+        }
+    });
+    
+    // Font size sync handler
+    ipcMain.on('sync-font-size', (_, size) => {
+        // If main window exists, update it with the new font size in real-time
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('font-size-changed', size);
+        }
+    });
+
+    // Font size handlers
+    ipcMain.handle('get-font-size', async () => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            return storeToUse ? storeToUse.get('font-size', '16') : '16';
+        } catch (error) {
+            console.error('Error in get-font-size handler:', error);
+            return '16';
+        }
+    });
+
+    ipcMain.handle('set-font-size', async (_, size) => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            if (storeToUse) {
+                storeToUse.set('font-size', size);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error in set-font-size handler:', error);
+            return false;
         }
     });
 
@@ -579,7 +648,8 @@ function createWindow() {
 
     // Position the window to be flush with the taskbar in the bottom right
     // Subtract window width from screen width and account for taskbar offset when positioning
-    mainWindow.setPosition(width - windowWidth, height - (windowHeight - taskbarOffset));
+    // mainWindow.setPosition(width - windowWidth, height - (windowHeight - taskbarOffset));
+    mainWindow.setPosition(width - windowWidth, height - (windowHeight));
 
     globalShortcut.register('CommandOrControl+Shift+I', () => {
         if (mainWindow) {

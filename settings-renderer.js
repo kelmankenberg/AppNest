@@ -107,14 +107,17 @@ function initializeSliders() {
         fontSizeSlider.addEventListener('input', () => {
             const value = fontSizeSlider.value;
             fontSizeValue.textContent = `${value}px`;
+            
+            // Dynamically update app-table font size in real-time
+            window.electronAPI.syncFontSize(value);
         });
         
         fontSizeSlider.addEventListener('change', () => {
             // Save the value when slider stops (mouseup)
             const value = fontSizeSlider.value;
-            // Implement font size saving when API is available
-            // window.electronAPI.setFontSize(value)
-            //    .catch(err => console.error('Error saving font size:', err));
+            // Save font size to settings
+            window.electronAPI.setFontSize(value)
+                .catch(err => console.error('Error saving font size:', err));
         });
     }
 }
@@ -345,6 +348,21 @@ function loadSettingsFromStore() {
             console.error('Error loading theme setting:', err);
         });
     
+    // Load font size
+    window.electronAPI.getFontSize()
+        .then(fontSize => {
+            const fontSizeSlider = document.getElementById('fontSize');
+            const fontSizeValue = document.getElementById('fontSizeValue');
+            
+            if (fontSizeSlider && fontSizeValue && fontSize) {
+                fontSizeSlider.value = fontSize;
+                fontSizeValue.textContent = `${fontSize}px`;
+            }
+        })
+        .catch(err => {
+            console.error('Error loading font size setting:', err);
+        });
+    
     // Load folder visibility settings
     loadFolderVisibilitySettings();
     
@@ -465,9 +483,9 @@ function resetToDefaults() {
         if (fontSizeSlider && fontSizeValue) {
             fontSizeSlider.value = 16;
             fontSizeValue.textContent = '16px';
-            // Save when API is available
-            // window.electronAPI.setFontSize(16)
-            //    .catch(err => console.error('Error saving font size:', err));
+            // Save font size setting
+            window.electronAPI.setFontSize(16)
+                .catch(err => console.error('Error saving font size:', err));
         }
         
         // Reset folder toggles - show all folders by default

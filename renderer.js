@@ -684,6 +684,19 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFolderButtonPreferences();
     loadCategories(); // Add this call to load categories when the app starts
     
+    // Load saved font size
+    window.electronAPI.getFontSize()
+        .then(fontSize => {
+            // Apply font size to app table
+            const appTable = document.querySelector('.app-table');
+            if (appTable && fontSize) {
+                appTable.style.fontSize = `${fontSize}px`;
+            }
+        })
+        .catch(err => {
+            console.error('Error loading font size:', err);
+        });
+    
     // Add New App button event listener
     document.getElementById('addAppButton').addEventListener('click', () => {
         // Close apps menu
@@ -789,6 +802,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Listen for folder preferences changes from the settings window
     window.electronAPI.onFolderPreferencesChanged((folderSettings) => {
         updateFolderButtonVisibility(folderSettings);
+    });
+    
+    // Listen for font size changes from the settings window
+    window.electronAPI.onFontSizeChanged((size) => {
+        // Update the app-table font size in real-time
+        const appTable = document.querySelector('.app-table');
+        if (appTable) {
+            appTable.style.fontSize = `${size}px`;
+        }
     });
     
     // Set up interval to refresh drive info every minute

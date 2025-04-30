@@ -8,6 +8,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getTheme: () => ipcRenderer.invoke('get-theme'),
     setTheme: (theme) => ipcRenderer.invoke('set-theme', theme),
     syncTheme: (theme) => ipcRenderer.send('sync-theme', theme),
+    getFontSize: () => ipcRenderer.invoke('get-font-size'),
+    setFontSize: (size) => ipcRenderer.invoke('set-font-size', size),
+    syncFontSize: (size) => ipcRenderer.send('sync-font-size', size),
     openSettings: () => ipcRenderer.invoke('open-settings'),
     
     // Continue iteration functionality
@@ -22,6 +25,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Event listeners
     onThemeChanged: (callback) => ipcRenderer.on('theme-changed', (_, theme) => callback(theme)),
     onFolderPreferencesChanged: (callback) => ipcRenderer.on('folder-preferences-changed', (_, preferences) => callback(preferences)),
+    onFontSizeChanged: (callback) => ipcRenderer.on('font-size-changed', (_, size) => callback(size)),
     
     // Database operations
     getAllApps: () => ipcRenderer.invoke('get-all-apps'),
