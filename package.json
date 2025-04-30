@@ -1,7 +1,7 @@
 {
-  "name": "MyPAs",
+  "name": "AppNest",
   "version": "0.1.0",
-  "description": "The MyPAs Launcher is a lightweight Electron-based application designed to help users launch installed and portable applications from their file system.",
+  "description": "AppNest is designed to work in harmony with the Windows Start menu or as a standalone launcher. Its goal is to provide a seamless, efficient way to launch both installed and portable applications, enhancing workflow and organization for all types of users.",
   "license": "ISC",
   "author": "Kel Mankenberg",
   "type": "commonjs",
@@ -30,8 +30,8 @@
     "sqlite3": "^5.1.7"
   },
   "build": {
-    "appId": "com.kelmankenberg.mypas",
-    "productName": "MyPAs",
+    "appId": "com.kelmankenberg.appnest",
+    "productName": "AppNest",
     "directories": {
       "output": "dist"
     },
@@ -52,7 +52,7 @@
       "createDesktopShortcut": true
     },
     "portable": {
-      "artifactName": "WindowsDesktopLauncher-Portable-${version}.exe"
+      "artifactName": "AppNest-Portable-${version}.exe"
     },
     "forceCodeSigning": false,
     "asar": true,

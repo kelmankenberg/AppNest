@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; font-src https://cdnjs.cloudflare.com; script-src 'self'">
-    <title>MyPAs Launcher</title>
+    <title>AppNest</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -109,7 +109,11 @@
     <div class="toolbar">
         <div class="left-side">
             <div class="app-branding">
-                <span class="app-title">MyPAs</span><span class="app-version">v0.1.0</span>
+                <div class="app-title-version">
+                    <span class="app-title">AppNest</span>
+                    <span class="app-version">v0.1.0</span>
+                </div>
+                <span class="app-tagline">– All Your Apps, One Nest</span>
             </div>
         </div>
         <div class="right-buttons">
@@ -123,9 +127,6 @@
             </div>
             <button title="Power">
                 <i class="fas fa-power-off"></i>
-            </button>
-            <button title="Close">
-                <i class="fas fa-times"></i>
             </button>
         </div>
     </div>
@@ -297,7 +298,7 @@
                         <h3>General Settings</h3>
                         <div class="setting-group">
                             <label class="setting-label">Application Name</label>
-                            <input type="text" id="appName" class="setting-input" value="MyPAs Launcher">
+                            <input type="text" id="appName" class="setting-input" value="AppNest Launcher">
                         </div>
                         <div class="setting-group">
                             <label class="setting-label">Start with Windows</label>

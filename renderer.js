@@ -331,10 +331,6 @@ document.querySelector('button[title="Power"]').addEventListener('click', () => 
     window.electronAPI.quitApp();
 });
 
-document.querySelector('button[title="Close"]').addEventListener('click', () => {
-    window.electronAPI.quitApp();
-});
-
 // Variables for drive panel functionality
 let isPanelActive = false;
 const systemDriveIndicator = document.getElementById('systemDriveIndicator');

@@ -1,6 +1,6 @@
-# Windows Desktop Launcher
+# AppNest – All Your Apps, One Nest
 
-A lightweight Electron-based application for Windows that helps users launch installed and portable applications from their file system. Inspired by the PortableApps menu.
+A lightweight Electron-based application for Windows that helps users launch installed and portable applications from their file system. AppNest is designed to work in harmony with the Windows Start menu or as a standalone launcher. Its goal is to provide a seamless, efficient way to launch both installed and portable applications, enhancing workflow and organization for all types of users.
 
 ## Features
 

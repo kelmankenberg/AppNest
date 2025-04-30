@@ -52,7 +52,7 @@ async function initializeStore() {
                     }
                 },
                 // Add a name to ensure consistency across processes
-                name: 'mypa-settings'
+                name: 'appnest-settings'
             });
             storeInitialized = true;
             console.log('Store initialized asynchronously');
@@ -99,7 +99,7 @@ function initializeStoreSync() {
                 }
             },
             // Add a name to ensure consistency across processes
-            name: 'mypa-settings'
+            name: 'appnest-settings'
         });
         storeInitialized = true;
         console.log('Store initialized synchronously');

@@ -136,9 +136,15 @@ body {
 
 .toolbar .app-branding {
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-left: 10px;
+}
+
+.toolbar .app-title-version {
+    display: flex;
     flex-direction: row;
     align-items: baseline;
-    margin-left: 10px;
 }
 
 .toolbar .app-title {
@@ -201,6 +207,31 @@ body {
     height: 100%;
     background-color: var(--indicator-fill);
     width: 50%; /* Example: 50% filled */
+}
+
+/* App branding */
+.app-branding {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+}
+
+.app-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.app-version {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.app-tagline {
+    font-size: 12px;
+    color: var(--text-color);
+    font-style: italic;
+    margin-left: 4px;
 }
 
 /* Drive indicators */
