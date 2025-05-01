@@ -53,3 +53,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Drive information
     getDriveInfo: () => ipcRenderer.invoke('get-drive-info')
 });
+
+contextBridge.exposeInMainWorld('api', {
+    getSearchbarStyle: () => ipcRenderer.invoke('get-searchbar-style'),
+    setSearchbarStyle: (style) => ipcRenderer.invoke('set-searchbar-style', style),
+    onSearchbarStyleChanged: (callback) => {
+        ipcRenderer.on('searchbar-style-changed', (_, style) => callback(style));
+        return () => {
+            ipcRenderer.removeAllListeners('searchbar-style-changed');
+        };
+    },
+    syncSearchbarStyle: (style) => ipcRenderer.send('sync-searchbar-style', style),
+    
+    // Search functionality
+    focusSearch: () => ipcRenderer.invoke('focus-search'),
+    onFocusSearch: (callback) => {
+        ipcRenderer.on('focus-search', () => callback());
+        return () => ipcRenderer.removeAllListeners('focus-search');
+    }
+});

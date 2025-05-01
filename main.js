@@ -33,6 +33,18 @@ async function initializeStore() {
                     'continue-iteration': true, // Set default value
                     'theme': 'light',
                     'font-size': 16, // Default font size for app table
+                    'searchbar-style': {
+                        'borderTop': false,
+                        'borderRight': false,
+                        'borderBottom': true,
+                        'borderLeft': false,
+                        'minimized': false,    // Not fully minimized
+                        'compact': true,       // Add compact mode setting
+                        'paddingTop': '2px',   // Minimal top padding
+                        'paddingBottom': '2px', // Minimal bottom padding
+                        'marginTop': '0px',    // No top margin
+                        'marginBottom': '0px'  // No bottom margin
+                    },
                     'folderPreferences': {
                         folderType: 'app',
                         appFolders: {
@@ -80,6 +92,18 @@ function initializeStoreSync() {
                 'continue-iteration': true, // Set default value
                 'theme': 'light',
                 'font-size': 16, // Default font size for app table
+                'searchbar-style': {
+                    'borderTop': false,
+                    'borderRight': false,
+                    'borderBottom': true,
+                    'borderLeft': false,
+                    'minimized': false,    // Not fully minimized
+                    'compact': true,       // Add compact mode setting
+                    'paddingTop': '2px',   // Minimal top padding
+                    'paddingBottom': '2px', // Minimal bottom padding
+                    'marginTop': '0px',    // No top margin
+                    'marginBottom': '0px'  // No bottom margin
+                },
                 'folderPreferences': {
                     folderType: 'app',
                     appFolders: {
@@ -520,6 +544,76 @@ function registerIPCHandlers() {
         createSettingsWindow();
         return true;
     });
+
+    // Add searchbar style handlers
+    ipcMain.handle('get-searchbar-style', async () => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            const defaultStyle = {
+                borderTop: false,
+                borderRight: false,
+                borderBottom: true,
+                borderLeft: false,
+                minimized: false,
+                compact: true,
+                paddingTop: '2px',
+                paddingBottom: '2px',
+                marginTop: '0px',
+                marginBottom: '0px'
+            };
+            return storeToUse ? storeToUse.get('searchbar-style', defaultStyle) : defaultStyle;
+        } catch (error) {
+            console.error('Error in get-searchbar-style handler:', error);
+            return {
+                borderTop: false,
+                borderRight: false,
+                borderBottom: true,
+                borderLeft: false,
+                minimized: false,
+                compact: true,
+                paddingTop: '2px',
+                paddingBottom: '2px',
+                marginTop: '0px',
+                marginBottom: '0px'
+            };
+        }
+    });
+
+    ipcMain.handle('set-searchbar-style', async (_, styleOptions) => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            if (storeToUse) {
+                storeToUse.set('searchbar-style', styleOptions);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error in set-searchbar-style handler:', error);
+            return false;
+        }
+    });
+
+    // Handle searchbar style synchronization between windows
+    ipcMain.on('sync-searchbar-style', (_, styleOptions) => {
+        // If main window exists, update it with the new searchbar style
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('searchbar-style-changed', styleOptions);
+        }
+        // If settings window exists, update it with the new searchbar style
+        if (settingsWindow && !settingsWindow.isDestroyed()) {
+            settingsWindow.webContents.send('searchbar-style-changed', styleOptions);
+        }
+    });
+
+    // Add a handler for focusing the search from menu
+    ipcMain.handle('focus-search', () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('focus-search');
+            mainWindow.focus();
+            return true;
+        }
+        return false;
+    });
 }
 
 // Add function to get drive information
@@ -660,6 +754,14 @@ function createWindow() {
     globalShortcut.register('F12', () => {
         if (mainWindow) {
             mainWindow.webContents.toggleDevTools();
+        }
+    });
+
+    // Register search shortcut (Ctrl+F)
+    globalShortcut.register('CommandOrControl+F', () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('focus-search');
+            mainWindow.focus(); // Make sure window is focused
         }
     });
 

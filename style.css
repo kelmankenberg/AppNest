@@ -977,3 +977,8 @@ body {
 .folder-buttons.active {
     display: flex;
 }
+
+/* Hidden element class */
+.hidden {
+    display: none !important;
+}

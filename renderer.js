@@ -673,12 +673,85 @@ function loadCategories() {
     });
 }
 
+// Apply search bar styles based on configuration
+async function applySearchBarStyles() {
+    try {
+        // Get the search input element
+        const searchInput = document.querySelector('.search-input');
+        if (!searchInput) {
+            console.warn('Search input element not found');
+            return;
+        }
+        
+        // Get style configuration from main process
+        const style = await window.api.getSearchbarStyle();
+        console.log('Applying search bar styles:', style);
+        
+        // Apply style using direct DOM manipulation to override any existing styles
+        // Remove all borders first
+        searchInput.style.border = 'none';
+        
+        // Conditionally apply borders based on configuration
+        if (style.borderTop) searchInput.style.borderTop = '1px solid var(--border-color, #ccc)';
+        if (style.borderRight) searchInput.style.borderRight = '1px solid var(--border-color, #ccc)';
+        if (style.borderBottom) searchInput.style.borderBottom = '1px solid var(--border-color, #ccc)';
+        if (style.borderLeft) searchInput.style.borderLeft = '1px solid var(--border-color, #ccc)';
+        
+        // Apply minimized state if configured
+        if (style.minimized) {
+            searchInput.classList.add('minimized');
+        } else {
+            searchInput.classList.remove('minimized');
+        }
+    } catch (error) {
+        console.error('Error applying search bar styles:', error);
+    }
+}
+
+// Global store for app data
+window.appData = {
+    apps: [],
+    categories: []
+};
+
+// Function to load all apps
+async function loadAllApps() {
+    try {
+        if (!window.api || !window.api.getAllApps) {
+            console.error('API not available for loading apps');
+            return;
+        }
+        
+        // Load apps from API
+        const apps = await window.api.getAllApps();
+        console.log(`Loaded ${apps.length} apps`);
+        
+        // Store apps in global data
+        window.appData.apps = apps;
+        
+        // Display apps in app table
+        updateAppTable(apps);
+        
+        // Dispatch event to notify other modules
+        const event = new CustomEvent('apps-loaded', { detail: apps });
+        window.dispatchEvent(event);
+        
+        return apps;
+    } catch (error) {
+        console.error('Error loading apps:', error);
+        return [];
+    }
+}
+
 // Initial load
 document.addEventListener('DOMContentLoaded', () => {
     loadApplications();
     loadDriveInfo();
     loadFolderButtonPreferences();
     loadCategories(); // Add this call to load categories when the app starts
+    
+    // Apply search bar styles when page loads
+    applySearchBarStyles();
     
     // Load saved font size
     window.electronAPI.getFontSize()
@@ -809,6 +882,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // Listen for style changes from settings window or other sources
+    window.api.onSearchbarStyleChanged((style) => {
+        applySearchBarStyles();
+    });
+    
     // Set up interval to refresh drive info every minute
     setInterval(loadDriveInfo, 60000);
+    
+    // Load all apps
+    loadAllApps();
 });
