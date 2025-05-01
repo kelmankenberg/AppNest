@@ -73,6 +73,14 @@ function createTables() {
                     reject(err);
                     return;
                 }
+                
+                // Add icon_data column if it doesn't exist
+                db.run(`ALTER TABLE Applications ADD COLUMN icon_data TEXT`, (err) => {
+                    // Ignore error if column already exists
+                    if (err && !err.message.includes('duplicate column name')) {
+                        console.error('Error adding icon_data column:', err);
+                    }
+                });
             });
             
             // Create Tags table

@@ -891,7 +891,7 @@ document.getElementById('saveApp').addEventListener('click', () => {
     const newApp = {
         name,
         executable_path,
-        category,
+        category_id: category ? parseInt(category) : null,
         description,
         is_favorite,
         is_portable,
