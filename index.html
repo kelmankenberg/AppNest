@@ -179,8 +179,13 @@
                     <label for="appName">Application Name:</label>
                     <div class="name-icon-group">
                         <input type="text" id="appName" required>
-                        <img id="appIcon" class="app-icon" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23a8a8a8'/%3E%3C/svg%3E" alt="App Icon">
+                        <div id="appIconContainer" class="icon-container">
+                            <svg id="appIcon" class="icon-svg" viewBox="0 0 32 32">
+                                <rect width="32" height="32" fill="#a8a8a8"/>
+                            </svg>
+                        </div>
                     </div>
+                    <input type="hidden" id="appIconPath" name="appIconPath">
                 </div>
                 <div class="form-group">
                     <label for="executablePath">Executable Path:</label>

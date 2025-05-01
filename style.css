@@ -1000,11 +1000,23 @@ body {
 }
 
 .app-icon-container {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 32px;
+    height: 32px;
+    display: inline-block;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+.icon-svg {
+    width: 32px;
+    height: 32px;
+}
+
+.icon-container img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    display: block;
 }
 
 .app-icon {
@@ -1067,18 +1079,9 @@ body {
     height: 32px;
     min-width: 32px;
     min-height: 32px;
-    object-fit: contain;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     display: block;
     flex-shrink: 0;
-    background-color: #a8a8a8;
-    visibility: visible;
-}
-
-#addAppDialog .app-icon:not([src]) {
-    display: block;
-    background-color: #a8a8a8;
-    border: 1px solid var(--border-color);
     visibility: visible;
 }

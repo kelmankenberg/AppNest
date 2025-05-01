@@ -350,6 +350,16 @@ function registerIPCHandlers() {
         }
     });
 
+    // Handle icon conversion to base64
+    ipcMain.handle('convert-icon-to-base64', async (_, iconPath) => {
+        try {
+            return await convertIconToBase64(iconPath);
+        } catch (err) {
+            console.error('Error converting icon to base64:', err);
+            return null;
+        }
+    });
+
     // Add IPC handler for getting drive information
     ipcMain.handle('get-drive-info', async () => {
         try {
@@ -381,6 +391,17 @@ function registerIPCHandlers() {
         } catch (err) {
             console.error('Error opening File Explorer:', err);
             return false;
+        }
+    });
+
+    // Add IPC handler for getting executable metadata
+    ipcMain.handle('get-executable-metadata', async (_, filePath) => {
+        try {
+            console.log('Getting metadata for file:', filePath);
+            return await getExecutableMetadata(filePath);
+        } catch (error) {
+            console.error('Error getting executable metadata:', error);
+            throw error;
         }
     });
 
@@ -843,30 +864,32 @@ module.exports = {
     initializeDatabase, // Export the new database initialization function
     registerIPCHandlers,
     createWindow,
-    createSettingsWindow,
-    startApp,
-    getStore: () => store, // Expose store getter for tests
 };
 
 async function getExecutableMetadata(filePath) {
     try {
         // Extract version info using PowerShell
-        const { stdout } = await exec(`powershell -Command "(Get-Item '${filePath}').VersionInfo"`);
+        const { stdout, stderr } = await exec(`powershell -Command "(Get-Item '${filePath}').VersionInfo | Format-List *"`);
         
         // Parse the output to get metadata
         const metadata = {
             name: '',
             description: '',
-            icon: ''
+            iconPath: ''
         };
         
+        console.log('Metadata extraction output:', stdout);
+        console.log('Metadata extraction error:', stderr);
+        
         // Extract FileDescription and ProductName
-        const lines = stdout.split('\n');
-        for (const line of lines) {
-            if (line.includes('FileDescription')) {
-                metadata.description = line.split(':')[1].trim();
-            } else if (line.includes('ProductName')) {
-                metadata.name = line.split(':')[1].trim();
+        if (stdout) {
+            const lines = stdout.toString().split('\n');
+            for (const line of lines) {
+                if (line.includes('FileDescription')) {
+                    metadata.description = line.split(':')[1].trim();
+                } else if (line.includes('ProductName')) {
+                    metadata.name = line.split(':')[1].trim();
+                }
             }
         }
         
@@ -875,16 +898,37 @@ async function getExecutableMetadata(filePath) {
             metadata.name = path.basename(filePath, '.exe');
         }
         
-        // Extract icon and convert to base64
+        // Extract icon using a more reliable approach
         const pngPath = path.join(os.tmpdir(), `app-icon-${Date.now()}.png`);
-        await exec(`powershell -Command "Add-Type -AssemblyName System.Drawing; $icon = [System.Drawing.Icon]::ExtractAssociatedIcon('${filePath}'); $icon.ToBitmap().Save('${pngPath}', [System.Drawing.Imaging.ImageFormat]::Png)"`);
         
-        // Read the PNG file and convert to base64
-        const iconBuffer = fs.readFileSync(pngPath);
-        metadata.icon = `data:image/png;base64,${iconBuffer.toString('base64')}`;
+        // Use a more reliable PowerShell command to extract the icon
+        const iconCmd = `powershell -Command "Add-Type -AssemblyName System.Drawing; $icon = [System.Drawing.Icon]::ExtractAssociatedIcon('${filePath}'); $bitmap = $icon.ToBitmap(); $bitmap.Save('${pngPath}', [System.Drawing.Imaging.ImageFormat]::Png); if (Test-Path '${pngPath}') { Write-Output 'Icon saved successfully' } else { Write-Output 'Icon save failed' }"`;
         
-        // Clean up the temporary file
-        fs.unlinkSync(pngPath);
+        try {
+            const { stdout, stderr } = await exec(iconCmd);
+            
+            console.log('Icon extraction output:', stdout);
+            console.log('Icon extraction error:', stderr);
+            
+            // Wait a moment for the file to be fully written
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Check if the file was created and has content
+            if (fs.existsSync(pngPath)) {
+                const stats = fs.statSync(pngPath);
+                if (stats.size > 0) {
+                    metadata.iconPath = pngPath;
+                    console.log('Icon extracted successfully');
+                } else {
+                    console.log('Icon file exists but is empty');
+                }
+            } else {
+                console.log('Icon file was not created');
+            }
+        } catch (error) {
+            console.error('Error extracting icon:', error);
+            throw error; // Re-throw the error to ensure it's not silently ignored
+        }
         
         return metadata;
     } catch (error) {
@@ -892,7 +936,27 @@ async function getExecutableMetadata(filePath) {
         return {
             name: path.basename(filePath, '.exe'),
             description: '',
-            icon: ''
+            iconPath: ''
         };
+    }
+}
+
+// Function to convert PNG to base64 for database storage
+async function convertIconToBase64(iconPath) {
+    try {
+        if (!iconPath || !fs.existsSync(iconPath)) {
+            return null;
+        }
+        
+        const iconBuffer = fs.readFileSync(iconPath);
+        const base64 = `data:image/png;base64,${iconBuffer.toString('base64')}`;
+        
+        // Clean up the temporary file after conversion
+        fs.unlinkSync(iconPath);
+        
+        return base64;
+    } catch (error) {
+        console.error('Error converting icon to base64:', error);
+        return null;
     }
 }

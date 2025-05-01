@@ -779,10 +779,11 @@ function clearAddAppForm() {
     document.getElementById('appDescription').value = '';
     document.getElementById('isFavorite').checked = false;
     document.querySelector('input[name="appType"][value="portable"]').checked = true;
-    const iconImg = document.getElementById('appIcon');
-    if (iconImg) {
-        iconImg.src = '';
-        iconImg.style.display = 'none';
+    const icon = document.getElementById('appIcon');
+    if (icon) {
+        // Ensure the SVG is visible with the grey background
+        icon.style.display = 'block';
+        icon.innerHTML = '<rect width="32" height="32" fill="#a8a8a8"/>';
     }
 }
 
@@ -836,32 +837,47 @@ window.electronAPI.onShowAddAppDialog(() => {
 document.getElementById('browseExecutable').addEventListener('click', () => {
     window.electronAPI.openFileDialog().then(filePath => {
         if (filePath) {
-            document.getElementById('executablePath').value = filePath;
-            
-            // Get and populate metadata
+            // Get executable metadata
             window.electronAPI.getExecutableMetadata(filePath).then(metadata => {
-                const nameInput = document.getElementById('appName');
-                const descriptionInput = document.getElementById('appDescription');
-                const iconImg = document.getElementById('appIcon');
+                // Update form fields with metadata
+                document.getElementById('appName').value = metadata.name;
+                document.getElementById('appDescription').value = metadata.description;
+                document.getElementById('executablePath').value = filePath;
                 
-                if (nameInput && !nameInput.value) {
-                    nameInput.value = metadata.name;
+                // Store the icon path in a hidden input
+                const iconPathInput = document.getElementById('appIconPath');
+                if (iconPathInput) {
+                    iconPathInput.value = metadata.iconPath;
                 }
                 
-                if (descriptionInput && !descriptionInput.value) {
-                    descriptionInput.value = metadata.description;
-                }
-                
-                if (iconImg) {
-                    if (metadata.icon) {
-                        iconImg.src = metadata.icon;
-                        iconImg.style.display = 'block';
+                // Update icon display
+                const iconContainer = document.getElementById('appIconContainer');
+                if (iconContainer) {
+                    if (metadata.iconPath) {
+                        // Create a new img element to display the icon
+                        const img = document.createElement('img');
+                        img.src = metadata.iconPath;
+                        img.style.width = '32px';
+                        img.style.height = '32px';
+                        img.style.objectFit = 'contain';
+                        img.style.display = 'block';
+                        
+                        // Add error handling for image load
+                        img.onerror = () => {
+                            console.log('Error loading icon image');
+                            iconContainer.innerHTML = '<svg class="icon-svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#a8a8a8"/></svg>';
+                        };
+                        
+                        // Clear any existing content and add the new img
+                        iconContainer.innerHTML = '';
+                        iconContainer.appendChild(img);
+                        console.log('Icon displayed successfully');
                     } else {
-                        iconImg.style.display = 'none';
+                        console.log('No icon path received');
+                        // If no icon, show the grey background again
+                        iconContainer.innerHTML = '<svg class="icon-svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#a8a8a8"/></svg>';
                     }
                 }
-            }).catch(err => {
-                console.error('Error getting executable metadata:', err);
             });
         }
     }).catch(err => {
@@ -870,7 +886,7 @@ document.getElementById('browseExecutable').addEventListener('click', () => {
 });
 
 // Save new app button handler
-document.getElementById('saveApp').addEventListener('click', () => {
+document.getElementById('saveApp').addEventListener('click', async () => {
     // Get values from the form
     const name = document.getElementById('appName').value;
     const executable_path = document.getElementById('executablePath').value;
@@ -899,7 +915,18 @@ document.getElementById('saveApp').addEventListener('click', () => {
     };
     
     // Add the app
-    window.electronAPI.addApp(newApp).then(() => {
+    try {
+        // If we have an icon path, convert it to base64 before saving
+        const iconPath = document.getElementById('appIcon').src;
+        if (iconPath) {
+            const base64Icon = await window.electronAPI.convertIconToBase64(iconPath);
+            if (base64Icon) {
+                newApp.icon_data = base64Icon;
+            }
+        }
+        
+        await window.electronAPI.addApp(newApp);
+        
         // Close the dialog
         document.getElementById('addAppDialog').style.display = 'none';
         
@@ -908,10 +935,10 @@ document.getElementById('saveApp').addEventListener('click', () => {
         
         // Reload the application list
         loadApplications();
-    }).catch(err => {
+    } catch (err) {
         console.error('Error adding app:', err);
         alert('Failed to add application. Please try again.');
-    });
+    }
 });
 
 // Load saved theme
