@@ -36,8 +36,8 @@ function displayApplications(apps) {
         const icon = document.createElement('img');
         icon.className = 'app-icon';
         
-        if (app.icon_data) {
-            icon.src = app.icon_data;
+        if (app.icon_path) {
+            icon.src = app.icon_path;
         } else {
             // Create fallback icon with first letter
             const fallbackIcon = document.createElement('div');
@@ -683,7 +683,7 @@ function loadCategories() {
         
         // Add category options to both select elements
         categories.forEach(category => {
-            console.log('Adding category option:', category);
+            // console.log('Adding category option:', category);
             // Add to 'Add App' dialog
             const addOption = document.createElement('option');
             addOption.value = category.id; // Use category ID as value
@@ -779,11 +779,11 @@ function clearAddAppForm() {
     document.getElementById('appDescription').value = '';
     document.getElementById('isFavorite').checked = false;
     document.querySelector('input[name="appType"][value="portable"]').checked = true;
-    const icon = document.getElementById('appIcon');
-    if (icon) {
-        // Ensure the SVG is visible with the grey background
-        icon.style.display = 'block';
-        icon.innerHTML = '<rect width="32" height="32" fill="#a8a8a8"/>';
+    const iconContainer = document.getElementById('appIconContainer');
+    if (iconContainer) {
+        // Reset to default grey block
+        iconContainer.innerHTML = '<svg class="icon-svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#a8a8a8"/></svg>';
+        iconContainer.style.display = 'block';
     }
 }
 
@@ -835,7 +835,7 @@ window.electronAPI.onShowAddAppDialog(() => {
 
 // Browse executable button handler
 document.getElementById('browseExecutable').addEventListener('click', () => {
-    window.electronAPI.openFileDialog().then(filePath => {
+    window.electronAPI.selectExecutable().then(filePath => {
         if (filePath) {
             // Get executable metadata
             window.electronAPI.getExecutableMetadata(filePath).then(metadata => {
@@ -894,7 +894,8 @@ document.getElementById('saveApp').addEventListener('click', async () => {
     const description = document.getElementById('appDescription').value;
     const is_favorite = document.getElementById('isFavorite').checked;
     const is_portable = document.querySelector('input[name="appType"]:checked').value === 'portable';
-    const icon_data = document.getElementById('appIcon').src;
+    const iconContainer = document.getElementById('appIconContainer');
+    const icon_path = iconContainer.querySelector('img')?.src || null;
     
     // Validate form
     if (!name || !executable_path) {
@@ -911,20 +912,11 @@ document.getElementById('saveApp').addEventListener('click', async () => {
         description,
         is_favorite,
         is_portable,
-        icon_data: icon_data || null
+        icon_path: icon_path
     };
     
     // Add the app
     try {
-        // If we have an icon path, convert it to base64 before saving
-        const iconPath = document.getElementById('appIcon').src;
-        if (iconPath) {
-            const base64Icon = await window.electronAPI.convertIconToBase64(iconPath);
-            if (base64Icon) {
-                newApp.icon_data = base64Icon;
-            }
-        }
-        
         await window.electronAPI.addApp(newApp);
         
         // Close the dialog

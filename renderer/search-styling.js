@@ -10,7 +10,7 @@ async function applySearchBarStyles() {
         
         // Get the style configuration from the main process
         const style = await window.api.getSearchbarStyle();
-        console.log('Applying search bar styles:', style);
+        // console.log('Applying search bar styles:', style);
         
         searchInputs.forEach(input => {
             // Apply border styles

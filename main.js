@@ -199,6 +199,8 @@ function registerIPCHandlers() {
         }
     });
 
+
+
     ipcMain.handle('continue-iteration', async () => {
         try {
             // Wait for store initialization if it's in progress
@@ -289,6 +291,129 @@ function registerIPCHandlers() {
         }
     });
 
+    // File dialog handler
+    ipcMain.handle('select-executable', async () => {
+        try {
+            const result = await dialog.showOpenDialog(mainWindow, {
+                properties: ['openFile'],
+                filters: [
+                    { name: 'Executable Files', extensions: ['exe'] }
+                ]
+            });
+            return result.canceled ? null : result.filePaths[0];
+        } catch (error) {
+            console.error('Error in select-executable handler:', error);
+            throw error;
+        }
+    });
+
+    // Executable metadata handler
+    ipcMain.handle('get-executable-metadata', async (_, filePath) => {
+        try {
+            return await getExecutableMetadata(filePath);
+        } catch (error) {
+            console.error('Error in get-executable-metadata handler:', error);
+            throw error;
+        }
+    });
+
+    // Apps handlers
+    ipcMain.handle('get-all-apps', async () => {
+        try {
+            return await db.getAllApps();
+        } catch (error) {
+            console.error('Error in get-all-apps handler:', error);
+            throw error;
+        }
+    });
+
+    ipcMain.handle('add-app', async (_, appData) => {
+        try {
+            return await db.addApp(appData);
+        } catch (error) {
+            console.error('Error in add-app handler:', error);
+            throw error;
+        }
+    });
+
+    // Categories handlers
+    ipcMain.handle('get-categories', async () => {
+        try {
+            return await db.getCategories();
+        } catch (error) {
+            console.error('Error in get-categories handler:', error);
+            throw error;
+        }
+    });
+
+    // Drive info handler
+    ipcMain.handle('get-drive-info', async () => {
+        try {
+            return await getDriveInfo();
+        } catch (error) {
+            console.error('Error in get-drive-info handler:', error);
+            throw error;
+        }
+    });
+
+    // Search bar style handlers
+    ipcMain.handle('get-searchbar-style', async () => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            return storeToUse ? storeToUse.get('searchbar-style', {
+                borderTop: false,
+                borderRight: false,
+                borderBottom: true,
+                borderLeft: false,
+                minimized: false,
+                compact: true,
+                paddingTop: '2px',
+                paddingBottom: '2px',
+                marginTop: '0px',
+                marginBottom: '0px'
+            }) : {
+                borderTop: false,
+                borderRight: false,
+                borderBottom: true,
+                borderLeft: false,
+                minimized: false,
+                compact: true,
+                paddingTop: '2px',
+                paddingBottom: '2px',
+                marginTop: '0px',
+                marginBottom: '0px'
+            };
+        } catch (error) {
+            console.error('Error in get-searchbar-style handler:', error);
+            return {
+                borderTop: false,
+                borderRight: false,
+                borderBottom: true,
+                borderLeft: false,
+                minimized: false,
+                compact: true,
+                paddingTop: '2px',
+                paddingBottom: '2px',
+                marginTop: '0px',
+                marginBottom: '0px'
+            };
+        }
+    });
+
+    ipcMain.handle('set-searchbar-style', async (_, style) => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            if (storeToUse) {
+                storeToUse.set('searchbar-style', style);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error in set-searchbar-style handler:', error);
+            return false;
+        }
+    });
+
     // Folder preferences handlers
     ipcMain.handle('get-folder-preferences', () => {
         try {
@@ -347,16 +472,6 @@ function registerIPCHandlers() {
         // If main window exists, update it with the new preferences
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('folder-preferences-changed', preferences);
-        }
-    });
-
-    // Handle icon conversion to base64
-    ipcMain.handle('convert-icon-to-base64', async (_, iconPath) => {
-        try {
-            return await convertIconToBase64(iconPath);
-        } catch (err) {
-            console.error('Error converting icon to base64:', err);
-            return null;
         }
     });
 
@@ -457,7 +572,7 @@ function registerIPCHandlers() {
 
     ipcMain.handle('add-app', async (_, app) => {
         try {
-            return await db.addApplication(app);
+            return await db.addApp(app);
         } catch (err) {
             console.error('Error adding app:', err);
             throw err;
@@ -868,8 +983,14 @@ module.exports = {
 
 async function getExecutableMetadata(filePath) {
     try {
+        console.log('Starting executable metadata extraction for:', filePath);
+        
         // Extract version info using PowerShell
         const { stdout, stderr } = await exec(`powershell -Command "(Get-Item '${filePath}').VersionInfo | Format-List *"`);
+        
+        console.log('Version info extraction completed');
+        console.log('Raw version info output:', stdout);
+        console.log('Version info errors:', stderr);
         
         // Parse the output to get metadata
         const metadata = {
@@ -878,17 +999,17 @@ async function getExecutableMetadata(filePath) {
             iconPath: ''
         };
         
-        console.log('Metadata extraction output:', stdout);
-        console.log('Metadata extraction error:', stderr);
-        
         // Extract FileDescription and ProductName
         if (stdout) {
             const lines = stdout.toString().split('\n');
+            console.log('Parsed version info lines:', lines);
             for (const line of lines) {
                 if (line.includes('FileDescription')) {
                     metadata.description = line.split(':')[1].trim();
+                    console.log('Found FileDescription:', metadata.description);
                 } else if (line.includes('ProductName')) {
                     metadata.name = line.split(':')[1].trim();
+                    console.log('Found ProductName:', metadata.name);
                 }
             }
         }
@@ -896,26 +1017,45 @@ async function getExecutableMetadata(filePath) {
         // If no ProductName, use filename without extension
         if (!metadata.name) {
             metadata.name = path.basename(filePath, '.exe');
+            console.log('Using filename as name:', metadata.name);
         }
         
-        // Extract icon using a more reliable approach
-        const pngPath = path.join(os.tmpdir(), `app-icon-${Date.now()}.png`);
+        // Extract icon using Node.js native modules
+        // Create icon in app's data directory instead of temp
+        const appDataPath = path.join(app.getPath('userData'), 'icons');
+        if (!fs.existsSync(appDataPath)) {
+            fs.mkdirSync(appDataPath, { recursive: true });
+        }
         
-        // Use a more reliable PowerShell command to extract the icon
-        const iconCmd = `powershell -Command "Add-Type -AssemblyName System.Drawing; $icon = [System.Drawing.Icon]::ExtractAssociatedIcon('${filePath}'); $bitmap = $icon.ToBitmap(); $bitmap.Save('${pngPath}', [System.Drawing.Imaging.ImageFormat]::Png); if (Test-Path '${pngPath}') { Write-Output 'Icon saved successfully' } else { Write-Output 'Icon save failed' }"`;
-        
+        // Generate a unique filename based on the app name
+        const appName = metadata.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        const pngPath = path.join(appDataPath, `${appName}_icon.png`);
+
         try {
-            const { stdout, stderr } = await exec(iconCmd);
-            
-            console.log('Icon extraction output:', stdout);
-            console.log('Icon extraction error:', stderr);
-            
+            // Use Node.js native modules to extract icon
+            const { spawn } = require('child_process');
+            const { promisify } = require('util');
+            const execFile = promisify(require('child_process').execFile);
+
+            // Use the Windows API directly
+            const result = await execFile('powershell', [
+                '-Command',
+                `Add-Type -AssemblyName System.Drawing; $icon = [System.Drawing.Icon]::ExtractAssociatedIcon('${filePath}'); $bitmap = $icon.ToBitmap(); $bitmap.Save('${pngPath}', [System.Drawing.Imaging.ImageFormat]::Png)`
+            ]);
+
+            console.log('Icon extraction completed');
+            console.log('Raw icon extraction output:', result.stdout);
+            console.log('Icon extraction errors:', result.stderr);
+
             // Wait a moment for the file to be fully written
+            console.log('Waiting for file to be written...');
             await new Promise(resolve => setTimeout(resolve, 100));
-            
+
             // Check if the file was created and has content
+            console.log('Checking if file exists...');
             if (fs.existsSync(pngPath)) {
                 const stats = fs.statSync(pngPath);
+                console.log('File exists, checking size:', stats.size);
                 if (stats.size > 0) {
                     metadata.iconPath = pngPath;
                     console.log('Icon extracted successfully');
@@ -926,8 +1066,8 @@ async function getExecutableMetadata(filePath) {
                 console.log('Icon file was not created');
             }
         } catch (error) {
-            console.error('Error extracting icon:', error);
-            throw error; // Re-throw the error to ensure it's not silently ignored
+            console.error('Error during icon extraction:', error);
+            throw error;
         }
         
         return metadata;
@@ -938,25 +1078,5 @@ async function getExecutableMetadata(filePath) {
             description: '',
             iconPath: ''
         };
-    }
-}
-
-// Function to convert PNG to base64 for database storage
-async function convertIconToBase64(iconPath) {
-    try {
-        if (!iconPath || !fs.existsSync(iconPath)) {
-            return null;
-        }
-        
-        const iconBuffer = fs.readFileSync(iconPath);
-        const base64 = `data:image/png;base64,${iconBuffer.toString('base64')}`;
-        
-        // Clean up the temporary file after conversion
-        fs.unlinkSync(iconPath);
-        
-        return base64;
-    } catch (error) {
-        console.error('Error converting icon to base64:', error);
-        return null;
     }
 }

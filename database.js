@@ -53,7 +53,7 @@ function createTables() {
                 executable_path TEXT NOT NULL,
                 is_portable INTEGER NOT NULL,
                 category_id INTEGER,
-                icon_data TEXT,
+                icon_path TEXT,
                 launch_arguments TEXT,
                 working_directory TEXT,
                 description TEXT,
@@ -74,11 +74,11 @@ function createTables() {
                     return;
                 }
                 
-                // Add icon_data column if it doesn't exist
-                db.run(`ALTER TABLE Applications ADD COLUMN icon_data TEXT`, (err) => {
+                // Add icon_path column if it doesn't exist
+                db.run(`ALTER TABLE Applications ADD COLUMN icon_path TEXT`, (err) => {
                     // Ignore error if column already exists
                     if (err && !err.message.includes('duplicate column name')) {
-                        console.error('Error adding icon_data column:', err);
+                        console.error('Error adding icon_path column:', err);
                     }
                 });
             });
@@ -294,12 +294,12 @@ function searchApplications(searchTerm) {
     });
 }
 
-function addApplication(application) {
+function addApp(application) {
     return new Promise((resolve, reject) => {
         db.run(`
             INSERT INTO Applications (
                 name, executable_path, is_portable, category_id, 
-                icon_data, launch_arguments, working_directory, description,
+                icon_path, launch_arguments, working_directory, description,
                 version, publisher, launch_mode, display_order, is_favorite
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
@@ -307,7 +307,7 @@ function addApplication(application) {
             application.executable_path,
             application.is_portable ? 1 : 0,
             application.category_id,
-            application.icon_data || null,
+            application.icon_path || null,
             application.launch_arguments || null,
             application.working_directory || null,
             application.description || null,
@@ -326,19 +326,6 @@ function addApplication(application) {
     });
 }
 
-// Get all categories from the database
-function getCategories() {
-    return new Promise((resolve, reject) => {
-        db.all('SELECT id, name, display_order FROM Categories ORDER BY display_order', (err, rows) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(rows);
-        });
-    });
-}
-
 function updateApplication(appId, application) {
     return new Promise((resolve, reject) => {
         db.run(`
@@ -347,7 +334,7 @@ function updateApplication(appId, application) {
                 executable_path = ?,
                 is_portable = ?,
                 category_id = ?,
-                icon_data = ?,
+                icon_path = ?,
                 launch_arguments = ?,
                 working_directory = ?,
                 description = ?,
@@ -362,7 +349,7 @@ function updateApplication(appId, application) {
             application.executable_path,
             application.is_portable ? 1 : 0,
             application.category_id,
-            application.icon_data || null,
+            application.icon_path || null,
             application.launch_arguments || null,
             application.working_directory || null,
             application.description || null,
@@ -425,6 +412,18 @@ function deleteApplication(appId) {
                     });
                 });
             });
+        });
+    });
+}
+
+function getCategories() {
+    return new Promise((resolve, reject) => {
+        db.all('SELECT id, name, display_order FROM Categories ORDER BY display_order', (err, rows) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve(rows);
         });
     });
 }
@@ -497,7 +496,7 @@ module.exports = {
     getRecentlyUsedApplications,
     getMostUsedApplications,
     searchApplications,
-    addApplication,
+    addApp,
     updateApplication,
     deleteApplication,
     updateApplicationUsage,
