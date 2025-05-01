@@ -1022,10 +1022,28 @@ body {
 .app-icon {
     width: 24px;
     height: 24px;
-    object-fit: contain;
-    border: 1px solid var(--border-color, #ccc);
+    margin-right: 10px;
     border-radius: 4px;
-    background-color: var(--input-bg, #fff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.app-icon-img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain; /* Maintain aspect ratio while fitting within bounds */
+}
+
+.app-icon-letter {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--icon-letter-color, #555);
+}
+
+.dark-theme .app-icon-letter {
+    color: var(--icon-letter-color-dark, #ddd);
 }
 
 .app-icon:not([src]) {

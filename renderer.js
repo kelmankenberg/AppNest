@@ -771,6 +771,15 @@ async function loadAllApps() {
     }
 }
 
+// Example usage of 'get-app' in the renderer process
+function fetchAppDetails(appId) {
+    window.electronAPI.getAppById(appId).then(app => {
+        console.log('Fetched app details:', app);
+    }).catch(err => {
+        console.error('Error fetching app details:', err);
+    });
+}
+
 // Function to clear the add app form
 function clearAddAppForm() {
     document.getElementById('appName').value = '';
