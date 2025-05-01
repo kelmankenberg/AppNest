@@ -1011,6 +1011,13 @@ body {
     width: 24px;
     height: 24px;
     object-fit: contain;
+    border: 1px solid var(--border-color, #ccc);
+    border-radius: 4px;
+    background-color: var(--input-bg, #fff);
+}
+
+.app-icon:not([src]) {
+    display: none;
 }
 
 .app-icon-fallback {
@@ -1028,4 +1035,36 @@ body {
 
 .app-name {
     flex: 1;
+}
+
+.name-icon-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Add New Application Modal Icon Styles */
+#addAppDialog .name-icon-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#addAppDialog .app-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    border: 1px solid var(--border-color, #ccc);
+    border-radius: 4px;
+    background-color: var(--input-bg, #fff);
+}
+
+#addAppDialog .app-icon[src] {
+    border: none;
+}
+
+#addAppDialog .app-icon:not([src]) {
+    display: block;
+    background-color: var(--input-bg, #fff);
+    border: 1px solid var(--border-color, #ccc);
 }
