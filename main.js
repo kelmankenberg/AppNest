@@ -386,12 +386,7 @@ function registerIPCHandlers() {
 
     // Database IPC handlers
     ipcMain.handle('get-all-apps', async () => {
-        try {
-            return await db.getAllApplications();
-        } catch (err) {
-            console.error('Error getting apps:', err);
-            return [];
-        }
+        return await db.getAllApps();
     });
 
     ipcMain.handle('get-apps-by-category', async () => {
@@ -459,7 +454,7 @@ function registerIPCHandlers() {
 
     ipcMain.handle('launch-app', async (_, appId) => {
         try {
-            const apps = await db.getAllApplications();
+            const apps = await db.getAllApps();
             const app = apps.find(a => a.id === appId);
 
             if (!app) {
@@ -628,6 +623,11 @@ function registerIPCHandlers() {
             };
         }
     });
+
+    // Add handler for show-add-app-dialog event
+    ipcMain.on('show-add-app-dialog', () => {
+        mainWindow.webContents.send('show-add-app-dialog');
+    });
 }
 
 // Add function to get drive information
@@ -777,6 +777,11 @@ function createWindow() {
             mainWindow.webContents.send('focus-search');
             mainWindow.focus(); // Make sure window is focused
         }
+    });
+
+    // Register Ctrl+Shift+A shortcut for adding new app
+    globalShortcut.register('CommandOrControl+Shift+A', () => {
+        mainWindow.webContents.send('show-add-app-dialog');
     });
 
     mainWindow.loadFile('index.html');

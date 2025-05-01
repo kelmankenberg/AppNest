@@ -799,9 +799,31 @@ document.getElementById('cancelAddApp').addEventListener('click', () => {
 });
 
 // Add New App button event listener
-document.getElementById('addAppButton').addEventListener('click', () => {
+document.getElementById('addAppMenuItem').addEventListener('click', () => {
     // Close apps menu
     appsMenu.style.display = 'none';
+    
+    // Clear the form before showing it
+    clearAddAppForm();
+    
+    // Show the add app dialog
+    document.getElementById('addAppDialog').style.display = 'block';
+});
+
+// Add Escape key handler for Add New App dialog
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && document.getElementById('addAppDialog').style.display === 'block') {
+        document.getElementById('addAppDialog').style.display = 'none';
+        clearAddAppForm();
+    }
+});
+
+// Listen for Ctrl+Shift+A shortcut from main process
+window.electronAPI.onShowAddAppDialog(() => {
+    // Close apps menu if open
+    if (appsMenu) {
+        appsMenu.style.display = 'none';
+    }
     
     // Clear the form before showing it
     clearAddAppForm();

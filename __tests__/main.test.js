@@ -61,8 +61,8 @@ jest.mock('fs', () => ({
 
 jest.mock('../database', () => ({
   initDatabase: jest.fn().mockResolvedValue(),
-  getAllApplications: jest.fn().mockResolvedValue([
-    { id: '1', name: 'Test App', executable_path: 'C:\\test\\app.exe' }
+  getAllApps: jest.fn().mockResolvedValue([
+    { id: 1, name: 'Test App', path: '/path/to/app' }
   ]),
   getApplicationById: jest.fn().mockResolvedValue({
     id: '1', 
@@ -194,8 +194,8 @@ describe('Main Process Tests', () => {
       const result = await getAllAppsHandler();
       
       // Check if database was called and handler returned the expected result
-      expect(db.getAllApplications).toHaveBeenCalled();
-      expect(result).toEqual([{ id: '1', name: 'Test App', executable_path: 'C:\\test\\app.exe' }]);
+      expect(db.getAllApps).toHaveBeenCalled();
+      expect(result).toEqual([{ id: 1, name: 'Test App', path: '/path/to/app' }]);
     });
     
     it('should register launch-app handler that launches the app and updates usage', async () => {

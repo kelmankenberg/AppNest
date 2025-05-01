@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onThemeChanged: (callback) => ipcRenderer.on('theme-changed', (_, theme) => callback(theme)),
     onFolderPreferencesChanged: (callback) => ipcRenderer.on('folder-preferences-changed', (_, preferences) => callback(preferences)),
     onFontSizeChanged: (callback) => ipcRenderer.on('font-size-changed', (_, size) => callback(size)),
+    onShowAddAppDialog: (callback) => ipcRenderer.on('show-add-app-dialog', () => callback()),
     
     // Database operations
     getAllApps: () => ipcRenderer.invoke('get-all-apps'),

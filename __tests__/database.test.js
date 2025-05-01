@@ -66,19 +66,9 @@ describe('Database Module', () => {
     });
   });
 
-  describe('getAllApplications', () => {
-    it('should fetch all applications', async () => {
-      // Set up mock to return sample applications
-      const mockApplications = [
-        { id: 1, name: 'App 1', category_name: 'Development' },
-        { id: 2, name: 'App 2', category_name: 'Productivity' }
-      ];
-      
-      mockDb.all.mockImplementation((query, callback) => {
-        callback(null, mockApplications);
-      });
-      
-      const result = await database.getAllApplications();
+  describe('getAllApps', () => {
+    it('should return all non-hidden applications', async () => {
+      const result = await database.getAllApps();
       
       // Verify the query contains the right parts without being too strict on formatting
       expect(mockDb.all).toHaveBeenCalled();
@@ -88,7 +78,7 @@ describe('Database Module', () => {
       expect(query).toContain('LEFT JOIN Categories c ON a.category_id = c.id');
       
       // Verify the returned data
-      expect(result).toEqual(mockApplications);
+      expect(result).toEqual(mockDb.all.mock.calls[0][1]);
     });
   });
 

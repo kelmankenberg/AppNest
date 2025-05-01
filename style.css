@@ -368,13 +368,15 @@ body {
 
 .apps-menu {
     position: absolute;
-    background-color: var(--menu-bg);
-    width: 200px;
-    border-radius: 5px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    top: 100%;
+    right: 0;
+    width: 220px;
+    background-color: var(--menu-bg, #fff);
+    border: 1px solid var(--border-color, #ccc);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     display: none;
-    z-index: 1200;
-    right: 20px; /* Fixed position for right edge */
+    z-index: 1000;
 }
 
 .menu-item {
@@ -393,6 +395,12 @@ body {
 
 .menu-item:hover {
     background-color: var(--menu-hover);
+}
+
+.menu-shortcut {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-left: auto;
 }
 
 .menu-separator {

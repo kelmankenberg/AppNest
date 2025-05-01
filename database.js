@@ -166,7 +166,7 @@ function createTables() {
 }
 
 // Database operations
-function getAllApplications() {
+function getAllApps() {
     return new Promise((resolve, reject) => {
         db.all(`
             SELECT a.*, c.name as category_name 
@@ -483,7 +483,7 @@ function closeDatabase() {
 
 module.exports = {
     initDatabase,
-    getAllApplications,
+    getAllApps,
     getApplicationsByCategory,
     getFavoriteApplications,
     getRecentlyUsedApplications,
