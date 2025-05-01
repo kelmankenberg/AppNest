@@ -982,3 +982,42 @@ body {
 .hidden {
     display: none !important;
 }
+
+/* App cell and icon styles */
+.app-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+}
+
+.app-icon-container {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.app-icon-fallback {
+    width: 24px;
+    height: 24px;
+    background-color: var(--accent-color, #0078d4);
+    color: white;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.app-name {
+    flex: 1;
+}

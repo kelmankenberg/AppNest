@@ -17,10 +17,18 @@
     border-bottom: 1px solid var(--border-color, #ddd);
     outline: none;
     font-size: 14px;
+    background-color: transparent;
+    transition: border-color 0.3s ease;
 }
 
 .search-input:focus {
     border-bottom-color: var(--primary-color, #3498db);
+}
+
+/* Class to apply when search is minimized */
+.search-input.minimized {
+    opacity: 0.8;
+    height: 30px;
 }
 
 /* Search status styling */
