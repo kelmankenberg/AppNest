@@ -24,9 +24,37 @@ function displayApplications(apps) {
         row.className = 'app-row';
         row.dataset.appId = app.id;
         
-        // Create app name cell
+        // Create app name cell with icon
         const nameCell = document.createElement('td');
-        nameCell.textContent = app.name;
+        nameCell.className = 'app-cell';
+        
+        // Create icon container
+        const iconContainer = document.createElement('div');
+        iconContainer.className = 'app-icon-container';
+        
+        // Create icon element
+        const icon = document.createElement('img');
+        icon.className = 'app-icon';
+        
+        if (app.icon_data) {
+            icon.src = app.icon_data;
+        } else {
+            // Create fallback icon with first letter
+            const fallbackIcon = document.createElement('div');
+            fallbackIcon.className = 'app-icon-fallback';
+            fallbackIcon.textContent = app.name.charAt(0).toUpperCase();
+            iconContainer.appendChild(fallbackIcon);
+        }
+        
+        iconContainer.appendChild(icon);
+        nameCell.appendChild(iconContainer);
+        
+        // Add app name
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'app-name';
+        nameSpan.textContent = app.name;
+        nameCell.appendChild(nameSpan);
+        
         row.appendChild(nameCell);
         
         // Add click event to launch the application
@@ -743,6 +771,177 @@ async function loadAllApps() {
     }
 }
 
+// Function to clear the add app form
+function clearAddAppForm() {
+    document.getElementById('appName').value = '';
+    document.getElementById('executablePath').value = '';
+    document.getElementById('appCategory').value = '';
+    document.getElementById('appDescription').value = '';
+    document.getElementById('isFavorite').checked = false;
+    document.querySelector('input[name="appType"][value="portable"]').checked = true;
+    const iconImg = document.getElementById('appIcon');
+    if (iconImg) {
+        iconImg.src = '';
+        iconImg.style.display = 'none';
+    }
+}
+
+// Add App Dialog close button handler
+document.getElementById('closeAddAppDialog').addEventListener('click', () => {
+    document.getElementById('addAppDialog').style.display = 'none';
+    clearAddAppForm();
+});
+
+// Add App Dialog cancel button handler
+document.getElementById('cancelAddApp').addEventListener('click', () => {
+    document.getElementById('addAppDialog').style.display = 'none';
+    clearAddAppForm();
+});
+
+// Add New App button event listener
+document.getElementById('addAppButton').addEventListener('click', () => {
+    // Close apps menu
+    appsMenu.style.display = 'none';
+    
+    // Clear the form before showing it
+    clearAddAppForm();
+    
+    // Show the add app dialog
+    document.getElementById('addAppDialog').style.display = 'block';
+});
+
+// Browse executable button handler
+document.getElementById('browseExecutable').addEventListener('click', () => {
+    window.electronAPI.openFileDialog().then(filePath => {
+        if (filePath) {
+            document.getElementById('executablePath').value = filePath;
+            
+            // Get and populate metadata
+            window.electronAPI.getExecutableMetadata(filePath).then(metadata => {
+                const nameInput = document.getElementById('appName');
+                const descriptionInput = document.getElementById('appDescription');
+                const iconImg = document.getElementById('appIcon');
+                
+                if (nameInput && !nameInput.value) {
+                    nameInput.value = metadata.name;
+                }
+                
+                if (descriptionInput && !descriptionInput.value) {
+                    descriptionInput.value = metadata.description;
+                }
+                
+                if (iconImg) {
+                    if (metadata.icon) {
+                        iconImg.src = metadata.icon;
+                        iconImg.style.display = 'block';
+                    } else {
+                        iconImg.style.display = 'none';
+                    }
+                }
+            }).catch(err => {
+                console.error('Error getting executable metadata:', err);
+            });
+        }
+    }).catch(err => {
+        console.error('Error opening file dialog:', err);
+    });
+});
+
+// Save new app button handler
+document.getElementById('saveApp').addEventListener('click', () => {
+    // Get values from the form
+    const name = document.getElementById('appName').value;
+    const executable_path = document.getElementById('executablePath').value;
+    const category = document.getElementById('appCategory').value;
+    const description = document.getElementById('appDescription').value;
+    const is_favorite = document.getElementById('isFavorite').checked;
+    const is_portable = document.querySelector('input[name="appType"]:checked').value === 'portable';
+    const icon_data = document.getElementById('appIcon').src;
+    
+    // Validate form
+    if (!name || !executable_path) {
+        // Show error message
+        alert('Application name and executable path are required.');
+        return;
+    }
+    
+    // Create app object
+    const newApp = {
+        name,
+        executable_path,
+        category,
+        description,
+        is_favorite,
+        is_portable,
+        icon_data: icon_data || null
+    };
+    
+    // Add the app
+    window.electronAPI.addApp(newApp).then(() => {
+        // Close the dialog
+        document.getElementById('addAppDialog').style.display = 'none';
+        
+        // Clear the form
+        clearAddAppForm();
+        
+        // Reload the application list
+        loadApplications();
+    }).catch(err => {
+        console.error('Error adding app:', err);
+        alert('Failed to add application. Please try again.');
+    });
+});
+
+// Load saved theme
+window.electronAPI.getTheme()
+    .then(theme => {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-theme');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i> Theme: Light';
+        }
+    })
+    .catch(err => {
+        console.error('Error loading theme:', err);
+    });
+
+// Listen for theme changes from the settings window
+window.electronAPI.onThemeChanged((theme) => {
+    // Update visual state in the main app
+    const isDarkTheme = theme === 'dark';
+    document.body.classList.toggle('dark-theme', isDarkTheme);
+    
+    // Update button to show what it would switch to (not the current theme)
+    const nextTheme = isDarkTheme ? 'Light' : 'Dark';
+    const nextIcon = isDarkTheme ? 'fa-sun' : 'fa-moon';
+    
+    themeToggle.innerHTML = `<i class="fas ${nextIcon}"></i> Theme: ${nextTheme}`;
+});
+
+// Listen for folder preferences changes from the settings window
+window.electronAPI.onFolderPreferencesChanged((folderSettings) => {
+    updateFolderButtonVisibility(folderSettings);
+});
+
+// Listen for font size changes from the settings window
+window.electronAPI.onFontSizeChanged((size) => {
+    // Update the app-table font size in real-time
+    const appTable = document.querySelector('.app-table');
+    if (appTable) {
+        appTable.style.fontSize = `${size}px`;
+    }
+});
+
+// Listen for style changes from settings window or other sources
+window.api.onSearchbarStyleChanged((style) => {
+    applySearchBarStyles();
+});
+
+// Set up interval to refresh drive info every minute
+setInterval(loadDriveInfo, 60000);
+
+// Load all apps
+loadAllApps();
+
 // Initial load
 document.addEventListener('DOMContentLoaded', () => {
     loadApplications();
@@ -765,131 +964,4 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => {
             console.error('Error loading font size:', err);
         });
-    
-    // Add New App button event listener
-    document.getElementById('addAppButton').addEventListener('click', () => {
-        // Close apps menu
-        appsMenu.style.display = 'none';
-        
-        // Show the add app dialog
-        document.getElementById('addAppDialog').style.display = 'block';
-    });
-    
-    // Add App Dialog close button handler
-    document.getElementById('closeAddAppDialog').addEventListener('click', () => {
-        document.getElementById('addAppDialog').style.display = 'none';
-    });
-    
-    // Add App Dialog cancel button handler
-    document.getElementById('cancelAddApp').addEventListener('click', () => {
-        document.getElementById('addAppDialog').style.display = 'none';
-    });
-    
-    // Browse executable button handler
-    document.getElementById('browseExecutable').addEventListener('click', () => {
-        window.electronAPI.openFileDialog().then(filePath => {
-            if (filePath) {
-                document.getElementById('executablePath').value = filePath;
-            }
-        }).catch(err => {
-            console.error('Error opening file dialog:', err);
-        });
-    });
-    
-    // Save new app button handler
-    document.getElementById('saveApp').addEventListener('click', () => {
-        // Get values from the form
-        const name = document.getElementById('appName').value;
-        const executable_path = document.getElementById('executablePath').value;
-        const category = document.getElementById('appCategory').value;
-        const description = document.getElementById('appDescription').value;
-        const is_favorite = document.getElementById('isFavorite').checked;
-        const is_portable = document.querySelector('input[name="appType"]:checked').value === 'portable';
-        
-        // Validate form
-        if (!name || !executable_path) {
-            // Show error message
-            alert('Application name and executable path are required.');
-            return;
-        }
-        
-        // Create app object
-        const newApp = {
-            name,
-            executable_path,
-            category,
-            description,
-            is_favorite,
-            is_portable
-        };
-        
-        // Add the app
-        window.electronAPI.addApp(newApp).then(() => {
-            // Close the dialog
-            document.getElementById('addAppDialog').style.display = 'none';
-            
-            // Clear the form
-            document.getElementById('appName').value = '';
-            document.getElementById('executablePath').value = '';
-            document.getElementById('appCategory').value = '';
-            document.getElementById('appDescription').value = '';
-            document.getElementById('isFavorite').checked = false;
-            
-            // Reload the application list
-            loadApplications();
-        }).catch(err => {
-            console.error('Error adding app:', err);
-            alert('Failed to add application. Please try again.');
-        });
-    });
-    
-    // Load saved theme
-    window.electronAPI.getTheme()
-        .then(theme => {
-            if (theme === 'dark') {
-                document.body.classList.add('dark-theme');
-                themeToggle.innerHTML = '<i class="fas fa-sun"></i> Theme: Light';
-            }
-        })
-        .catch(err => {
-            console.error('Error loading theme:', err);
-        });
-    
-    // Listen for theme changes from the settings window
-    window.electronAPI.onThemeChanged((theme) => {
-        // Update visual state in the main app
-        const isDarkTheme = theme === 'dark';
-        document.body.classList.toggle('dark-theme', isDarkTheme);
-        
-        // Update button to show what it would switch to (not the current theme)
-        const nextTheme = isDarkTheme ? 'Light' : 'Dark';
-        const nextIcon = isDarkTheme ? 'fa-sun' : 'fa-moon';
-        
-        themeToggle.innerHTML = `<i class="fas ${nextIcon}"></i> Theme: ${nextTheme}`;
-    });
-    
-    // Listen for folder preferences changes from the settings window
-    window.electronAPI.onFolderPreferencesChanged((folderSettings) => {
-        updateFolderButtonVisibility(folderSettings);
-    });
-    
-    // Listen for font size changes from the settings window
-    window.electronAPI.onFontSizeChanged((size) => {
-        // Update the app-table font size in real-time
-        const appTable = document.querySelector('.app-table');
-        if (appTable) {
-            appTable.style.fontSize = `${size}px`;
-        }
-    });
-    
-    // Listen for style changes from settings window or other sources
-    window.api.onSearchbarStyleChanged((style) => {
-        applySearchBarStyles();
-    });
-    
-    // Set up interval to refresh drive info every minute
-    setInterval(loadDriveInfo, 60000);
-    
-    // Load all apps
-    loadAllApps();
 });

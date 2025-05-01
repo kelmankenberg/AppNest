@@ -9,6 +9,84 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="styles/search-input.css">
+    <style>
+        .name-icon-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .app-icon {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            border: 1px solid var(--border-color, #ccc);
+            border-radius: 4px;
+            background-color: var(--input-bg, #fff);
+        }
+        
+        .app-icon:not([src]) {
+            display: none;
+        }
+        
+        .app-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+        }
+        
+        .app-icon-container {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .app-icon-fallback {
+            width: 24px;
+            height: 24px;
+            background-color: var(--accent-color, #0078d4);
+            color: white;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .app-name {
+            flex: 1;
+        }
+        
+        /* Add New Application Modal Icon Styles */
+        #addAppDialog .name-icon-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #addAppDialog .app-icon {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            border: 1px solid var(--border-color, #ccc);
+            border-radius: 4px;
+            background-color: var(--input-bg, #fff);
+        }
+        
+        #addAppDialog .app-icon[src] {
+            border: none;
+        }
+        
+        #addAppDialog .app-icon:not([src]) {
+            display: block;
+            background-color: var(--input-bg, #fff);
+            border: 1px solid var(--border-color, #ccc);
+        }
+    </style>
 </head>
 <body>
     <div class="content">
@@ -174,7 +252,10 @@
             <div class="dialog-body">
                 <div class="form-group">
                     <label for="appName">Application Name:</label>
-                    <input type="text" id="appName" required>
+                    <div class="name-icon-group">
+                        <input type="text" id="appName" required>
+                        <img id="appIcon" class="app-icon" src="" alt="App Icon">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="executablePath">Executable Path:</label>

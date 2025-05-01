@@ -614,6 +614,20 @@ function registerIPCHandlers() {
         }
         return false;
     });
+
+    // Add function to extract executable metadata
+    ipcMain.handle('get-executable-metadata', async (_, filePath) => {
+        try {
+            return await getExecutableMetadata(filePath);
+        } catch (err) {
+            console.error('Error getting executable metadata:', err);
+            return {
+                name: path.basename(filePath, '.exe'),
+                description: '',
+                icon: ''
+            };
+        }
+    });
 }
 
 // Add function to get drive information
@@ -828,3 +842,52 @@ module.exports = {
     startApp,
     getStore: () => store, // Expose store getter for tests
 };
+
+async function getExecutableMetadata(filePath) {
+    try {
+        // Extract version info using PowerShell
+        const { stdout } = await exec(`powershell -Command "(Get-Item '${filePath}').VersionInfo"`);
+        
+        // Parse the output to get metadata
+        const metadata = {
+            name: '',
+            description: '',
+            icon: ''
+        };
+        
+        // Extract FileDescription and ProductName
+        const lines = stdout.split('\n');
+        for (const line of lines) {
+            if (line.includes('FileDescription')) {
+                metadata.description = line.split(':')[1].trim();
+            } else if (line.includes('ProductName')) {
+                metadata.name = line.split(':')[1].trim();
+            }
+        }
+        
+        // If no ProductName, use filename without extension
+        if (!metadata.name) {
+            metadata.name = path.basename(filePath, '.exe');
+        }
+        
+        // Extract icon and convert to base64
+        const pngPath = path.join(os.tmpdir(), `app-icon-${Date.now()}.png`);
+        await exec(`powershell -Command "Add-Type -AssemblyName System.Drawing; $icon = [System.Drawing.Icon]::ExtractAssociatedIcon('${filePath}'); $icon.ToBitmap().Save('${pngPath}', [System.Drawing.Imaging.ImageFormat]::Png)"`);
+        
+        // Read the PNG file and convert to base64
+        const iconBuffer = fs.readFileSync(pngPath);
+        metadata.icon = `data:image/png;base64,${iconBuffer.toString('base64')}`;
+        
+        // Clean up the temporary file
+        fs.unlinkSync(pngPath);
+        
+        return metadata;
+    } catch (error) {
+        console.error('Error getting executable metadata:', error);
+        return {
+            name: path.basename(filePath, '.exe'),
+            description: '',
+            icon: ''
+        };
+    }
+}

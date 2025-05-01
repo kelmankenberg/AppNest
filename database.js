@@ -53,7 +53,7 @@ function createTables() {
                 executable_path TEXT NOT NULL,
                 is_portable INTEGER NOT NULL,
                 category_id INTEGER,
-                icon_path TEXT,
+                icon_data TEXT,
                 launch_arguments TEXT,
                 working_directory TEXT,
                 description TEXT,
@@ -291,7 +291,7 @@ function addApplication(application) {
         db.run(`
             INSERT INTO Applications (
                 name, executable_path, is_portable, category_id, 
-                icon_path, launch_arguments, working_directory, description,
+                icon_data, launch_arguments, working_directory, description,
                 version, publisher, launch_mode, display_order, is_favorite
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
@@ -299,7 +299,7 @@ function addApplication(application) {
             application.executable_path,
             application.is_portable ? 1 : 0,
             application.category_id,
-            application.icon_path || null,
+            application.icon_data || null,
             application.launch_arguments || null,
             application.working_directory || null,
             application.description || null,
@@ -339,7 +339,7 @@ function updateApplication(appId, application) {
                 executable_path = ?,
                 is_portable = ?,
                 category_id = ?,
-                icon_path = ?,
+                icon_data = ?,
                 launch_arguments = ?,
                 working_directory = ?,
                 description = ?,
@@ -354,7 +354,7 @@ function updateApplication(appId, application) {
             application.executable_path,
             application.is_portable ? 1 : 0,
             application.category_id,
-            application.icon_path || null,
+            application.icon_data || null,
             application.launch_arguments || null,
             application.working_directory || null,
             application.description || null,

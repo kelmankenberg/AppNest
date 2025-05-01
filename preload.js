@@ -49,6 +49,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     selectExecutable: () => ipcRenderer.invoke('select-executable'),
     openFileDialog: () => ipcRenderer.invoke('select-executable'), // Added alias to match the function name used in renderer.js
     openExplorer: () => ipcRenderer.invoke('open-explorer'),
+    getExecutableMetadata: (filePath) => ipcRenderer.invoke('get-executable-metadata', filePath),
     
     // Drive information
     getDriveInfo: () => ipcRenderer.invoke('get-drive-info')
