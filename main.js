@@ -1,6 +1,7 @@
-const { app, BrowserWindow, screen, ipcMain, globalShortcut, dialog } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, globalShortcut, dialog, protocol } = require('electron');
 const { powerDownApp } = require('./functions');
 const db = require('./database');
+const iconManager = require('./icon-manager');
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -33,6 +34,18 @@ async function initializeStore() {
                     'continue-iteration': true, // Set default value
                     'theme': 'light',
                     'font-size': 16, // Default font size for app table
+                    'searchbar-style': {
+                        'borderTop': false,
+                        'borderRight': false,
+                        'borderBottom': true,
+                        'borderLeft': false,
+                        'minimized': false,    // Not fully minimized
+                        'compact': true,       // Add compact mode setting
+                        'paddingTop': '2px',   // Minimal top padding
+                        'paddingBottom': '2px', // Minimal bottom padding
+                        'marginTop': '0px',    // No top margin
+                        'marginBottom': '0px'  // No bottom margin
+                    },
                     'folderPreferences': {
                         folderType: 'app',
                         appFolders: {
@@ -80,6 +93,18 @@ function initializeStoreSync() {
                 'continue-iteration': true, // Set default value
                 'theme': 'light',
                 'font-size': 16, // Default font size for app table
+                'searchbar-style': {
+                    'borderTop': false,
+                    'borderRight': false,
+                    'borderBottom': true,
+                    'borderLeft': false,
+                    'minimized': false,    // Not fully minimized
+                    'compact': true,       // Add compact mode setting
+                    'paddingTop': '2px',   // Minimal top padding
+                    'paddingBottom': '2px', // Minimal bottom padding
+                    'marginTop': '0px',    // No top margin
+                    'marginBottom': '0px'  // No bottom margin
+                },
                 'folderPreferences': {
                     folderType: 'app',
                     appFolders: {
@@ -360,14 +385,44 @@ function registerIPCHandlers() {
         }
     });
 
+    // Enhanced file dialog handler with icon extraction
+    ipcMain.handle('openFileDialog', async () => {
+        try {
+            const result = await dialog.showOpenDialog({
+                properties: ['openFile'],
+                filters: [
+                    { name: 'Executables', extensions: ['exe', 'bat', 'cmd'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ]
+            });
+
+            if (result.canceled || result.filePaths.length === 0) {
+                return null;
+            }
+
+            const filePath = result.filePaths[0];
+            
+            // Extract metadata using PowerShell
+            const metadata = await getExecutableMetadata(filePath);
+            
+            // Extract icon using our dedicated icon manager
+            const iconPath = await iconManager.getIconForApp(filePath);
+            
+            return {
+                path: filePath,
+                name: metadata.name || path.basename(filePath, path.extname(filePath)),
+                description: metadata.description || '',
+                icon_path: iconPath
+            };
+        } catch (err) {
+            console.error('Error in file dialog:', err);
+            return null;
+        }
+    });
+
     // Database IPC handlers
     ipcMain.handle('get-all-apps', async () => {
-        try {
-            return await db.getAllApplications();
-        } catch (err) {
-            console.error('Error getting apps:', err);
-            return [];
-        }
+        return await db.getAllApps();
     });
 
     ipcMain.handle('get-apps-by-category', async () => {
@@ -417,7 +472,7 @@ function registerIPCHandlers() {
 
     ipcMain.handle('add-app', async (_, app) => {
         try {
-            return await db.addApplication(app);
+            return await db.addApp(app);
         } catch (err) {
             console.error('Error adding app:', err);
             throw err;
@@ -435,7 +490,7 @@ function registerIPCHandlers() {
 
     ipcMain.handle('launch-app', async (_, appId) => {
         try {
-            const apps = await db.getAllApplications();
+            const apps = await db.getAllApps();
             const app = apps.find(a => a.id === appId);
 
             if (!app) {
@@ -519,6 +574,119 @@ function registerIPCHandlers() {
     ipcMain.handle('open-settings', () => {
         createSettingsWindow();
         return true;
+    });
+
+    // Add searchbar style handlers
+    ipcMain.handle('get-searchbar-style', async () => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            const defaultStyle = {
+                borderTop: false,
+                borderRight: false,
+                borderBottom: true,
+                borderLeft: false,
+                minimized: false,
+                compact: true,
+                paddingTop: '2px',
+                paddingBottom: '2px',
+                marginTop: '0px',
+                marginBottom: '0px'
+            };
+            return storeToUse ? storeToUse.get('searchbar-style', defaultStyle) : defaultStyle;
+        } catch (error) {
+            console.error('Error in get-searchbar-style handler:', error);
+            return {
+                borderTop: false,
+                borderRight: false,
+                borderBottom: true,
+                borderLeft: false,
+                minimized: false,
+                compact: true,
+                paddingTop: '2px',
+                paddingBottom: '2px',
+                marginTop: '0px',
+                marginBottom: '0px'
+            };
+        }
+    });
+
+    ipcMain.handle('set-searchbar-style', async (_, styleOptions) => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            if (storeToUse) {
+                storeToUse.set('searchbar-style', styleOptions);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error in set-searchbar-style handler:', error);
+            return false;
+        }
+    });
+
+    // Handle searchbar style synchronization between windows
+    ipcMain.on('sync-searchbar-style', (_, styleOptions) => {
+        // If main window exists, update it with the new searchbar style
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('searchbar-style-changed', styleOptions);
+        }
+        // If settings window exists, update it with the new searchbar style
+        if (settingsWindow && !settingsWindow.isDestroyed()) {
+            settingsWindow.webContents.send('searchbar-style-changed', styleOptions);
+        }
+    });
+
+    // Add a handler for focusing the search from menu
+    ipcMain.handle('focus-search', () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('focus-search');
+            mainWindow.focus();
+            return true;
+        }
+        return false;
+    });
+
+    // Add function to extract executable metadata
+    ipcMain.handle('get-executable-metadata', async (_, filePath) => {
+        try {
+            return await getExecutableMetadata(filePath);
+        } catch (err) {
+            console.error('Error getting executable metadata:', err);
+            return {
+                name: path.basename(filePath, '.exe'),
+                description: '',
+                icon: ''
+            };
+        }
+    });
+
+    // Add handler for extracting icons directly
+    ipcMain.handle('extract-icon', async (_, executablePath) => {
+        try {
+            if (!executablePath) {
+                console.error('No executable path provided for icon extraction');
+                return null;
+            }
+            
+            console.log(`Extracting icon from: ${executablePath}`);
+            const iconPath = await iconManager.extractIcon(executablePath);
+            
+            if (iconPath) {
+                console.log(`Icon extracted successfully to: ${iconPath}`);
+                return { icon_path: iconPath };
+            } else {
+                console.error('Icon extraction failed');
+                return null;
+            }
+        } catch (err) {
+            console.error('Error extracting icon:', err);
+            return null;
+        }
+    });
+
+    // Add handler for show-add-app-dialog event
+    ipcMain.on('show-add-app-dialog', () => {
+        mainWindow.webContents.send('show-add-app-dialog');
     });
 }
 
@@ -631,6 +799,18 @@ function createWindow() {
     // Account for taskbar offset (difference between window height and position offset)
     const taskbarOffset = 40; 
     
+    // Register protocol for loading app icons
+    protocol.registerFileProtocol('app-icons', (request, callback) => {
+        try {
+            // Strip the protocol prefix
+            const url = request.url.substr('app-icons://'.length);
+            console.log('Loading icon from:', url);
+            callback({ path: url });
+        } catch (error) {
+            console.error('Error handling app-icons protocol:', error);
+        }
+    });
+    
     // Fixed size window with specific dimensions
     mainWindow = new BrowserWindow({
         width: windowWidth,
@@ -661,6 +841,19 @@ function createWindow() {
         if (mainWindow) {
             mainWindow.webContents.toggleDevTools();
         }
+    });
+
+    // Register search shortcut (Ctrl+F)
+    globalShortcut.register('CommandOrControl+F', () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('focus-search');
+            mainWindow.focus(); // Make sure window is focused
+        }
+    });
+
+    // Register Ctrl+Shift+A shortcut for adding new app
+    globalShortcut.register('CommandOrControl+Shift+A', () => {
+        mainWindow.webContents.send('show-add-app-dialog');
     });
 
     mainWindow.loadFile('index.html');
@@ -726,3 +919,52 @@ module.exports = {
     startApp,
     getStore: () => store, // Expose store getter for tests
 };
+
+async function getExecutableMetadata(filePath) {
+    try {
+        // Extract version info using PowerShell
+        const { stdout } = await exec(`powershell -Command "(Get-Item '${filePath}').VersionInfo"`);
+        
+        // Parse the output to get metadata
+        const metadata = {
+            name: '',
+            description: '',
+            icon: ''
+        };
+        
+        // Extract FileDescription and ProductName
+        const lines = stdout.split('\n');
+        for (const line of lines) {
+            if (line.includes('FileDescription')) {
+                metadata.description = line.split(':')[1].trim();
+            } else if (line.includes('ProductName')) {
+                metadata.name = line.split(':')[1].trim();
+            }
+        }
+        
+        // If no ProductName, use filename without extension
+        if (!metadata.name) {
+            metadata.name = path.basename(filePath, '.exe');
+        }
+        
+        // Extract icon and convert to base64
+        const pngPath = path.join(os.tmpdir(), `app-icon-${Date.now()}.png`);
+        await exec(`powershell -Command "Add-Type -AssemblyName System.Drawing; $icon = [System.Drawing.Icon]::ExtractAssociatedIcon('${filePath}'); $icon.ToBitmap().Save('${pngPath}', [System.Drawing.Imaging.ImageFormat]::Png)"`);
+        
+        // Read the PNG file and convert to base64
+        const iconBuffer = fs.readFileSync(pngPath);
+        metadata.icon = `data:image/png;base64,${iconBuffer.toString('base64')}`;
+        
+        // Clean up the temporary file
+        fs.unlinkSync(pngPath);
+        
+        return metadata;
+    } catch (error) {
+        console.error('Error getting executable metadata:', error);
+        return {
+            name: path.basename(filePath, '.exe'),
+            description: '',
+            icon: ''
+        };
+    }
+}

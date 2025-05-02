@@ -1,0 +1,15 @@
+/* Style for the search menu item */
+.search-menu-item {
+    /* Highlight the search option to make it more visible */
+    font-weight: 500;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.search-menu-item .menu-icon {
+    color: var(--primary-color, #3498db);
+}
+
+.search-menu-item .menu-shortcut {
+    opacity: 0.7;
+    font-size: 0.85em;
+}

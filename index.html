@@ -7,15 +7,16 @@
     <title>AppNest</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles/search-input.css">
 </head>
 <body>
     <div class="content">
         <div class="left-column">
             <table class="app-table">
-                <thead>
+                <thead class="search-header hidden">
                     <tr class="search-row">
                         <th colspan="1">
-                            <input type="text" placeholder="Search for an app..." class="search-input">
+                            <input type="text" placeholder="Search applications..." class="search-input">
                         </th>
                     </tr>
                 </thead>
@@ -76,8 +77,16 @@
             </button>
             <!-- Apps Menu -->
             <div class="apps-menu" id="appsMenu">
-                <button class="menu-item" id="addAppButton">
-                    <i class="fas fa-plus-circle"></i> Add New App
+                <button class="menu-item" id="searchMenuItem">
+                    <i class="fas fa-search"></i>
+                    <span>Search</span>
+                    <span class="menu-shortcut">Ctrl+F</span>
+                </button>
+                <hr class="menu-separator">
+                <button class="menu-item" id="addAppMenuItem">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Add New App</span>
+                    <span class="menu-shortcut">Ctrl+Shift+A</span>
                 </button>
                 <hr class="menu-separator">
                 <button class="menu-item">
@@ -168,7 +177,15 @@
             <div class="dialog-body">
                 <div class="form-group">
                     <label for="appName">Application Name:</label>
-                    <input type="text" id="appName" required>
+                    <div class="name-icon-group">
+                        <input type="text" id="appName" required>
+                        <div id="appIconContainer" class="icon-container">
+                            <svg id="appIcon" class="icon-svg" viewBox="0 0 32 32">
+                                <rect width="32" height="32" fill="#a8a8a8"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <input type="hidden" id="appIconPath" name="appIconPath">
                 </div>
                 <div class="form-group">
                     <label for="executablePath">Executable Path:</label>
@@ -222,7 +239,18 @@
             <div class="dialog-body">
                 <div class="form-group">
                     <label for="editAppName">Application Name:</label>
-                    <input type="text" id="editAppName" required>
+                    <div class="name-icon-group">
+                        <input type="text" id="editAppName" required>
+                        <div id="editAppIconContainer" class="icon-container">
+                            <div class="refresh-icon-wrapper" id="editIconRefresh" title="Extract icon from executable">
+                                <i class="fas fa-sync-alt"></i>
+                            </div>
+                            <svg id="editAppIcon" class="icon-svg" viewBox="0 0 32 32">
+                                <rect width="32" height="32" fill="#a8a8a8"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <input type="hidden" id="editAppIconPath" name="editAppIconPath">
                 </div>
                 <div class="form-group">
                     <label for="editExecutablePath">Executable Path:</label>
@@ -394,5 +422,9 @@
 
     <!-- Load the external script -->
     <script src="renderer.js"></script>
+    <script src="renderer/search-styling.js"></script>
+    <script src="renderer/menu.js"></script>
+    <script src="renderer/search.js"></script>
+    <script src="renderer/apps-menu.js"></script>
 </body>
 </html>

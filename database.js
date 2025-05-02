@@ -73,6 +73,14 @@ function createTables() {
                     reject(err);
                     return;
                 }
+                
+                // Add icon_path column if it doesn't exist
+                db.run(`ALTER TABLE Applications ADD COLUMN icon_path TEXT`, (err) => {
+                    // Ignore error if column already exists
+                    if (err && !err.message.includes('duplicate column name')) {
+                        console.error('Error adding icon_path column:', err);
+                    }
+                });
             });
             
             // Create Tags table
@@ -166,7 +174,7 @@ function createTables() {
 }
 
 // Database operations
-function getAllApplications() {
+function getAllApps() {
     return new Promise((resolve, reject) => {
         db.all(`
             SELECT a.*, c.name as category_name 
@@ -286,7 +294,7 @@ function searchApplications(searchTerm) {
     });
 }
 
-function addApplication(application) {
+function addApp(application) {
     return new Promise((resolve, reject) => {
         db.run(`
             INSERT INTO Applications (
@@ -314,19 +322,6 @@ function addApplication(application) {
                 return;
             }
             resolve(this.lastID);
-        });
-    });
-}
-
-// Get all categories from the database
-function getCategories() {
-    return new Promise((resolve, reject) => {
-        db.all('SELECT id, name, display_order FROM Categories ORDER BY display_order', (err, rows) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(rows);
         });
     });
 }
@@ -421,6 +416,18 @@ function deleteApplication(appId) {
     });
 }
 
+function getCategories() {
+    return new Promise((resolve, reject) => {
+        db.all('SELECT id, name, display_order FROM Categories ORDER BY display_order', (err, rows) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve(rows);
+        });
+    });
+}
+
 function updateApplicationUsage(appId) {
     return new Promise((resolve, reject) => {
         const now = new Date().toISOString();
@@ -483,13 +490,13 @@ function closeDatabase() {
 
 module.exports = {
     initDatabase,
-    getAllApplications,
+    getAllApps,
     getApplicationsByCategory,
     getFavoriteApplications,
     getRecentlyUsedApplications,
     getMostUsedApplications,
     searchApplications,
-    addApplication,
+    addApp,
     updateApplication,
     deleteApplication,
     updateApplicationUsage,

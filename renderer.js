@@ -24,9 +24,64 @@ function displayApplications(apps) {
         row.className = 'app-row';
         row.dataset.appId = app.id;
         
-        // Create app name cell
+        // Create app name cell with icon
         const nameCell = document.createElement('td');
-        nameCell.textContent = app.name;
+        nameCell.className = 'app-cell';
+        
+        // Create icon container
+        const iconContainer = document.createElement('div');
+        iconContainer.className = 'app-icon-container';
+        
+        // Check for icon (either icon_data or icon_path)
+        let hasIcon = false;
+        
+        // Create icon element
+        const icon = document.createElement('img');
+        icon.className = 'app-icon';
+        
+        if (app.icon_data) {
+            // If we have base64 icon data, use it
+            icon.src = app.icon_data;
+            hasIcon = true;
+        } else if (app.icon_path) {
+            // If we have an icon path, use it with the file:// protocol
+            icon.src = `file://${app.icon_path}`;
+            hasIcon = true;
+            
+            // Add error handler in case the icon file can't be loaded
+            icon.onerror = () => {
+                console.warn(`Failed to load icon for ${app.name} from path: ${app.icon_path}`);
+                icon.style.display = 'none';
+                
+                // Create fallback icon with first letter if icon fails to load
+                if (!iconContainer.querySelector('.app-icon-fallback')) {
+                    const fallbackIcon = document.createElement('div');
+                    fallbackIcon.className = 'app-icon-fallback';
+                    fallbackIcon.textContent = app.name.charAt(0).toUpperCase();
+                    iconContainer.appendChild(fallbackIcon);
+                }
+            };
+        }
+        
+        // If we found an icon (path or data), add it
+        if (hasIcon) {
+            iconContainer.appendChild(icon);
+        } else {
+            // Create fallback icon with first letter
+            const fallbackIcon = document.createElement('div');
+            fallbackIcon.className = 'app-icon-fallback';
+            fallbackIcon.textContent = app.name.charAt(0).toUpperCase();
+            iconContainer.appendChild(fallbackIcon);
+        }
+        
+        nameCell.appendChild(iconContainer);
+        
+        // Add app name
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'app-name';
+        nameSpan.textContent = app.name;
+        nameCell.appendChild(nameSpan);
+        
         row.appendChild(nameCell);
         
         // Add click event to launch the application
@@ -172,43 +227,152 @@ document.getElementById('editAppButton').addEventListener('click', () => {
             }
             
             const editDescriptionElem = document.getElementById('editAppDescription');
-            console.log('editAppDescription element exists:', !!editDescriptionElem);
             if (editDescriptionElem) editDescriptionElem.value = app.description || '';
             
             const editFavoriteElem = document.getElementById('editIsFavorite');
-            console.log('editIsFavorite element exists:', !!editFavoriteElem);
             if (editFavoriteElem) editFavoriteElem.checked = app.is_favorite || false;
             
             // Set the app type radio button
             const appTypeRadios = document.getElementsByName('editAppType');
-            console.log('editAppType radio buttons found:', appTypeRadios.length);
             for (let radio of appTypeRadios) {
                 radio.checked = (radio.value === (app.is_portable ? 'portable' : 'installed'));
             }
             
             // Store the app ID in the hidden field
             const editAppIdElem = document.getElementById('editAppId');
-            console.log('editAppId element exists:', !!editAppIdElem);
             if (editAppIdElem) editAppIdElem.value = app.id;
+            
+            // Update icon preview
+            updateEditAppIcon(app);
             
             // Show the edit dialog
             const editDialog = document.getElementById('editAppDialog');
-            console.log('editAppDialog element exists:', !!editDialog);
             if (editDialog) {
                 // Force the dialog to be visible and on top
                 editDialog.style.display = 'block';
                 editDialog.style.zIndex = '2000';
-                console.log('Set editAppDialog display to block with z-index 2000');
-                console.log('Current style:', window.getComputedStyle(editDialog).display);
-                console.log('Current z-index:', window.getComputedStyle(editDialog).zIndex);
-            } else {
-                console.error('Edit dialog element not found');
             }
         } else {
             console.error('App data not found for ID:', appId);
         }
     }).catch(err => {
         console.error('Error getting app details:', err);
+    });
+});
+
+// Function to update icon preview in the edit dialog
+function updateEditAppIcon(app) {
+    const iconContainer = document.getElementById('editAppIconContainer');
+    const refreshIcon = document.getElementById('editIconRefresh');
+    
+    if (!iconContainer) return;
+    
+    // Clear previous content except the refresh button
+    while (iconContainer.firstChild) {
+        if (iconContainer.firstChild !== refreshIcon) {
+            iconContainer.removeChild(iconContainer.firstChild);
+        } else {
+            // Just move the refresh button to the side temporarily
+            iconContainer.removeChild(refreshIcon);
+            break;
+        }
+    }
+    
+    // Add the refresh button back
+    iconContainer.appendChild(refreshIcon);
+    
+    // Set the hidden icon path input
+    const iconPathInput = document.getElementById('editAppIconPath');
+    if (iconPathInput) {
+        iconPathInput.value = app.icon_path || '';
+    }
+    
+    let hasIcon = false;
+    
+    // Check if app has an icon (icon_data or icon_path)
+    if (app.icon_data || app.icon_path) {
+        // Create image element for the icon
+        const iconImg = document.createElement('img');
+        iconImg.className = 'app-icon-img';
+        iconImg.alt = '';
+        iconImg.style.width = '100%';
+        iconImg.style.height = '100%';
+        iconImg.style.objectFit = 'contain';
+        
+        // Set up error handling for image load
+        iconImg.onerror = () => {
+            console.error('Failed to load icon image');
+            hasIcon = false;
+            // Make the refresh button visible
+            refreshIcon.classList.add('active');
+            // Remove the failed image
+            if (iconContainer.contains(iconImg)) {
+                iconContainer.removeChild(iconImg);
+            }
+        };
+        
+        // Set the image source based on available data
+        if (app.icon_data) {
+            iconImg.src = app.icon_data;
+            hasIcon = true;
+        } else if (app.icon_path) {
+            iconImg.src = `file://${app.icon_path}`;
+            hasIcon = true;
+        }
+        
+        // If we have an icon, add it to the container
+        if (hasIcon) {
+            iconContainer.insertBefore(iconImg, refreshIcon);
+            refreshIcon.classList.remove('active'); // Hide refresh button when icon exists
+        } else {
+            refreshIcon.classList.add('active');  // Show refresh button when no icon
+        }
+    } else {
+        // No icon available, show the refresh button
+        refreshIcon.classList.add('active');
+    }
+}
+
+// Add event listener for the icon refresh button
+document.getElementById('editIconRefresh').addEventListener('click', () => {
+    const executablePath = document.getElementById('editExecutablePath').value;
+    
+    if (!executablePath) {
+        alert('Please enter an executable path to extract an icon from.');
+        return;
+    }
+    
+    // Show loading state
+    const refreshIcon = document.getElementById('editIconRefresh');
+    const originalHTML = refreshIcon.innerHTML;
+    refreshIcon.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    // Call the extractIcon API
+    window.electronAPI.extractIcon(executablePath).then(result => {
+        if (result && result.icon_path) {
+            // Update the hidden icon path field
+            const iconPathInput = document.getElementById('editAppIconPath');
+            if (iconPathInput) {
+                iconPathInput.value = result.icon_path;
+            }
+            
+            // Create a mock app object to update the icon
+            const mockApp = {
+                icon_path: result.icon_path,
+                name: document.getElementById('editAppName').value
+            };
+            
+            // Update the icon preview
+            updateEditAppIcon(mockApp);
+        } else {
+            alert('Could not extract icon from the specified executable.');
+        }
+    }).catch(err => {
+        console.error('Error extracting icon:', err);
+        alert('Error extracting icon. Please make sure the path is correct.');
+    }).finally(() => {
+        // Restore the refresh icon
+        refreshIcon.innerHTML = originalHTML;
     });
 });
 
@@ -267,9 +431,70 @@ document.getElementById('cancelEditApp').addEventListener('click', () => {
 });
 
 document.getElementById('editBrowseExecutable').addEventListener('click', () => {
-    window.electronAPI.openFileDialog().then(filePath => {
-        if (filePath) {
-            document.getElementById('editExecutablePath').value = filePath;
+    window.electronAPI.openFileDialog().then(result => {
+        if (result) {
+            // Set the executable path
+            document.getElementById('editExecutablePath').value = result.path;
+            
+            // If we got an application name and the name field is empty, set it
+            const appNameField = document.getElementById('editAppName');
+            if (result.name && (!appNameField.value || appNameField.value.trim() === '')) {
+                appNameField.value = result.name;
+            }
+            
+            // If we got a description and the description field is empty, set it
+            const descriptionField = document.getElementById('editAppDescription');
+            if (result.description && (!descriptionField.value || descriptionField.value.trim() === '')) {
+                descriptionField.value = result.description;
+            }
+            
+            // If we got an icon, display it in the icon container
+            if (result.icon_path) {
+                const iconContainer = document.getElementById('editAppIconContainer');
+                if (iconContainer) {
+                    // Clear previous content
+                    iconContainer.innerHTML = '';
+                    
+                    // Create image element for the icon
+                    const iconImg = document.createElement('img');
+                    iconImg.className = 'app-icon-img';
+                    iconImg.alt = '';
+                    iconImg.style.width = '100%';
+                    iconImg.style.height = '100%';
+                    iconImg.style.objectFit = 'contain';
+                    
+                    // Set up error handling for the image load
+                    iconImg.onerror = () => {
+                        console.error('Failed to load icon image');
+                        // Fallback to first letter of app name
+                        const appName = appNameField.value || result.name;
+                        const letter = appName ? appName.charAt(0).toUpperCase() : 'A';
+                        
+                        // Create SVG fallback
+                        iconContainer.innerHTML = `<svg class="icon-svg" viewBox="0 0 32 32">
+                            <rect width="32" height="32" fill="#a8a8a8"></rect>
+                            <text x="50%" y="50%" font-size="16" text-anchor="middle" 
+                                 dominant-baseline="middle" fill="white">${letter}</text>
+                        </svg>`;
+                    };
+                    
+                    // Set the image source to the extracted icon
+                    iconImg.src = `file://${result.icon_path}`;
+                    
+                    // Add the image to the container
+                    iconContainer.appendChild(iconImg);
+                    
+                    // Create a hidden input to store the icon path
+                    let iconPathInput = document.getElementById('editAppIconPath');
+                    if (!iconPathInput) {
+                        iconPathInput = document.createElement('input');
+                        iconPathInput.type = 'hidden';
+                        iconPathInput.id = 'editAppIconPath';
+                        document.getElementById('editAppForm').appendChild(iconPathInput);
+                    }
+                    iconPathInput.value = result.icon_path;
+                }
+            }
         }
     }).catch(err => {
         console.error('Error opening file dialog:', err);
@@ -281,10 +506,13 @@ document.getElementById('updateApp').addEventListener('click', () => {
     const appId = document.getElementById('editAppId').value;
     const name = document.getElementById('editAppName').value;
     const executable_path = document.getElementById('editExecutablePath').value;
-    const category_id = document.getElementById('editAppCategory').value;
+    const category_id_raw = document.getElementById('editAppCategory').value;
+    // Convert empty string to null, or parse selected category ID as integer
+    const category_id = category_id_raw === '' ? null : parseInt(category_id_raw);
     const description = document.getElementById('editAppDescription').value;
     const is_favorite = document.getElementById('editIsFavorite').checked;
     const is_portable = document.querySelector('input[name="editAppType"]:checked').value === 'portable';
+    const icon_path = document.getElementById('editAppIconPath')?.value || null;
     
     // Validate form
     if (!name || !executable_path) {
@@ -301,8 +529,11 @@ document.getElementById('updateApp').addEventListener('click', () => {
         category_id,
         description,
         is_favorite,
-        is_portable
+        is_portable,
+        icon_path: icon_path // Include the icon path when updating
     };
+    
+    console.log('Updating app with data:', updatedApp);
     
     // Update the app
     window.electronAPI.updateApp(updatedApp).then(() => {
@@ -673,12 +904,313 @@ function loadCategories() {
     });
 }
 
+// Apply search bar styles based on configuration
+async function applySearchBarStyles() {
+    try {
+        // Get the search input element
+        const searchInput = document.querySelector('.search-input');
+        if (!searchInput) {
+            console.warn('Search input element not found');
+            return;
+        }
+        
+        // Get style configuration from main process
+        const style = await window.api.getSearchbarStyle();
+        console.log('Applying search bar styles:', style);
+        
+        // Apply style using direct DOM manipulation to override any existing styles
+        // Remove all borders first
+        searchInput.style.border = 'none';
+        
+        // Conditionally apply borders based on configuration
+        if (style.borderTop) searchInput.style.borderTop = '1px solid var(--border-color, #ccc)';
+        if (style.borderRight) searchInput.style.borderRight = '1px solid var(--border-color, #ccc)';
+        if (style.borderBottom) searchInput.style.borderBottom = '1px solid var(--border-color, #ccc)';
+        if (style.borderLeft) searchInput.style.borderLeft = '1px solid var(--border-color, #ccc)';
+        
+        // Apply minimized state if configured
+        if (style.minimized) {
+            searchInput.classList.add('minimized');
+        } else {
+            searchInput.classList.remove('minimized');
+        }
+    } catch (error) {
+        console.error('Error applying search bar styles:', error);
+    }
+}
+
+// Global store for app data
+window.appData = {
+    apps: [],
+    categories: []
+};
+
+// Function to load all apps
+async function loadAllApps() {
+    try {
+        if (!window.api || !window.api.getAllApps) {
+            console.error('API not available for loading apps');
+            return;
+        }
+        
+        // Load apps from API
+        const apps = await window.api.getAllApps();
+        console.log(`Loaded ${apps.length} apps`);
+        
+        // Store apps in global data
+        window.appData.apps = apps;
+        
+        // Display apps in app table
+        updateAppTable(apps);
+        
+        // Dispatch event to notify other modules
+        const event = new CustomEvent('apps-loaded', { detail: apps });
+        window.dispatchEvent(event);
+        
+        return apps;
+    } catch (error) {
+        console.error('Error loading apps:', error);
+        return [];
+    }
+}
+
+// Function to clear the add app form
+function clearAddAppForm() {
+    document.getElementById('appName').value = '';
+    document.getElementById('executablePath').value = '';
+    document.getElementById('appCategory').value = '';
+    document.getElementById('appDescription').value = '';
+    document.getElementById('isFavorite').checked = false;
+    document.querySelector('input[name="appType"][value="portable"]').checked = true;
+    const iconImg = document.getElementById('appIcon');
+    if (iconImg) {
+        iconImg.src = '';
+        iconImg.style.display = 'none';
+    }
+}
+
+// Add App Dialog close button handler
+document.getElementById('closeAddAppDialog').addEventListener('click', () => {
+    document.getElementById('addAppDialog').style.display = 'none';
+    clearAddAppForm();
+});
+
+// Add App Dialog cancel button handler
+document.getElementById('cancelAddApp').addEventListener('click', () => {
+    document.getElementById('addAppDialog').style.display = 'none';
+    clearAddAppForm();
+});
+
+// Add New App button event listener
+document.getElementById('addAppMenuItem').addEventListener('click', () => {
+    // Close apps menu
+    appsMenu.style.display = 'none';
+    
+    // Clear the form before showing it
+    clearAddAppForm();
+    
+    // Show the add app dialog
+    document.getElementById('addAppDialog').style.display = 'block';
+});
+
+// Add Escape key handler for Add New App dialog
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && document.getElementById('addAppDialog').style.display === 'block') {
+        document.getElementById('addAppDialog').style.display = 'none';
+        clearAddAppForm();
+    }
+});
+
+// Listen for Ctrl+Shift+A shortcut from main process
+window.electronAPI.onShowAddAppDialog(() => {
+    // Close apps menu if open
+    if (appsMenu) {
+        appsMenu.style.display = 'none';
+    }
+    
+    // Clear the form before showing it
+    clearAddAppForm();
+    
+    // Show the add app dialog
+    document.getElementById('addAppDialog').style.display = 'block';
+});
+
+// Browse executable button handler
+document.getElementById('browseExecutable').addEventListener('click', () => {
+    window.electronAPI.openFileDialog().then(result => {
+        if (result) {
+            // Set the executable path
+            document.getElementById('executablePath').value = result.path;
+            
+            // If we got an application name and the name field is empty, set it
+            const appNameField = document.getElementById('appName');
+            if (result.name && (!appNameField.value || appNameField.value.trim() === '')) {
+                appNameField.value = result.name;
+            }
+            
+            // If we got a description and the description field is empty, set it
+            const descriptionField = document.getElementById('appDescription');
+            if (result.description && (!descriptionField.value || descriptionField.value.trim() === '')) {
+                descriptionField.value = result.description;
+            }
+            
+            // If we got an icon, display it in the icon container
+            if (result.icon_path) {
+                const iconContainer = document.getElementById('appIconContainer');
+                if (iconContainer) {
+                    // Clear previous content
+                    iconContainer.innerHTML = '';
+                    
+                    // Create image element for the icon
+                    const iconImg = document.createElement('img');
+                    iconImg.className = 'app-icon-img';
+                    iconImg.alt = '';
+                    iconImg.style.width = '100%';
+                    iconImg.style.height = '100%';
+                    iconImg.style.objectFit = 'contain';
+                    
+                    // Set up error handling for the image load
+                    iconImg.onerror = () => {
+                        console.error('Failed to load icon image');
+                        // Fallback to first letter of app name
+                        const appName = appNameField.value || result.name;
+                        const letter = appName ? appName.charAt(0).toUpperCase() : 'A';
+                        
+                        // Create SVG fallback
+                        iconContainer.innerHTML = `<svg class="icon-svg" viewBox="0 0 32 32">
+                            <rect width="32" height="32" fill="#a8a8a8"></rect>
+                            <text x="50%" y="50%" font-size="16" text-anchor="middle" 
+                                 dominant-baseline="middle" fill="white">${letter}</text>
+                        </svg>`;
+                    };
+                    
+                    // Set the image source to the extracted icon
+                    iconImg.src = `file://${result.icon_path}`;
+                    
+                    // Add the image to the container
+                    iconContainer.appendChild(iconImg);
+                    
+                    // Create a hidden input to store the icon path
+                    let iconPathInput = document.getElementById('appIconPath');
+                    if (!iconPathInput) {
+                        iconPathInput = document.createElement('input');
+                        iconPathInput.type = 'hidden';
+                        iconPathInput.id = 'appIconPath';
+                        document.getElementById('addAppForm').appendChild(iconPathInput);
+                    }
+                    iconPathInput.value = result.icon_path;
+                }
+            }
+        }
+    }).catch(err => {
+        console.error('Error opening file dialog:', err);
+    });
+});
+
+// Save new app button handler
+document.getElementById('saveApp').addEventListener('click', () => {
+    // Get values from the form
+    const name = document.getElementById('appName').value;
+    const executable_path = document.getElementById('executablePath').value;
+    const category = document.getElementById('appCategory').value;
+    const description = document.getElementById('appDescription').value;
+    const is_favorite = document.getElementById('isFavorite').checked;
+    const is_portable = document.querySelector('input[name="appType"]:checked').value === 'portable';
+    const icon_path = document.getElementById('appIconPath')?.value || null;
+    
+    // Validate form
+    if (!name || !executable_path) {
+        // Show error message
+        alert('Application name and executable path are required.');
+        return;
+    }
+    
+    // Create app object
+    const newApp = {
+        name,
+        executable_path,
+        category_id: category ? parseInt(category) : null,
+        description,
+        is_favorite,
+        is_portable,
+        icon_path: icon_path // Use the extracted icon path
+    };
+    
+    // Add the app
+    window.electronAPI.addApp(newApp).then(() => {
+        // Close the dialog
+        document.getElementById('addAppDialog').style.display = 'none';
+        
+        // Clear the form
+        clearAddAppForm();
+        
+        // Reload the application list
+        loadApplications();
+    }).catch(err => {
+        console.error('Error adding app:', err);
+        alert('Failed to add application. Please try again.');
+    });
+});
+
+// Load saved theme
+window.electronAPI.getTheme()
+    .then(theme => {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-theme');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i> Theme: Light';
+        }
+    })
+    .catch(err => {
+        console.error('Error loading theme:', err);
+    });
+
+// Listen for theme changes from the settings window
+window.electronAPI.onThemeChanged((theme) => {
+    // Update visual state in the main app
+    const isDarkTheme = theme === 'dark';
+    document.body.classList.toggle('dark-theme', isDarkTheme);
+    
+    // Update button to show what it would switch to (not the current theme)
+    const nextTheme = isDarkTheme ? 'Light' : 'Dark';
+    const nextIcon = isDarkTheme ? 'fa-sun' : 'fa-moon';
+    
+    themeToggle.innerHTML = `<i class="fas ${nextIcon}"></i> Theme: ${nextTheme}`;
+});
+
+// Listen for folder preferences changes from the settings window
+window.electronAPI.onFolderPreferencesChanged((folderSettings) => {
+    updateFolderButtonVisibility(folderSettings);
+});
+
+// Listen for font size changes from the settings window
+window.electronAPI.onFontSizeChanged((size) => {
+    // Update the app-table font size in real-time
+    const appTable = document.querySelector('.app-table');
+    if (appTable) {
+        appTable.style.fontSize = `${size}px`;
+    }
+});
+
+// Listen for style changes from settings window or other sources
+window.api.onSearchbarStyleChanged((style) => {
+    applySearchBarStyles();
+});
+
+// Set up interval to refresh drive info every minute
+setInterval(loadDriveInfo, 60000);
+
+// Load all apps
+loadAllApps();
+
 // Initial load
 document.addEventListener('DOMContentLoaded', () => {
     loadApplications();
     loadDriveInfo();
     loadFolderButtonPreferences();
     loadCategories(); // Add this call to load categories when the app starts
+    
+    // Apply search bar styles when page loads
+    applySearchBarStyles();
     
     // Load saved font size
     window.electronAPI.getFontSize()
@@ -692,123 +1224,4 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => {
             console.error('Error loading font size:', err);
         });
-    
-    // Add New App button event listener
-    document.getElementById('addAppButton').addEventListener('click', () => {
-        // Close apps menu
-        appsMenu.style.display = 'none';
-        
-        // Show the add app dialog
-        document.getElementById('addAppDialog').style.display = 'block';
-    });
-    
-    // Add App Dialog close button handler
-    document.getElementById('closeAddAppDialog').addEventListener('click', () => {
-        document.getElementById('addAppDialog').style.display = 'none';
-    });
-    
-    // Add App Dialog cancel button handler
-    document.getElementById('cancelAddApp').addEventListener('click', () => {
-        document.getElementById('addAppDialog').style.display = 'none';
-    });
-    
-    // Browse executable button handler
-    document.getElementById('browseExecutable').addEventListener('click', () => {
-        window.electronAPI.openFileDialog().then(filePath => {
-            if (filePath) {
-                document.getElementById('executablePath').value = filePath;
-            }
-        }).catch(err => {
-            console.error('Error opening file dialog:', err);
-        });
-    });
-    
-    // Save new app button handler
-    document.getElementById('saveApp').addEventListener('click', () => {
-        // Get values from the form
-        const name = document.getElementById('appName').value;
-        const executable_path = document.getElementById('executablePath').value;
-        const category = document.getElementById('appCategory').value;
-        const description = document.getElementById('appDescription').value;
-        const is_favorite = document.getElementById('isFavorite').checked;
-        const is_portable = document.querySelector('input[name="appType"]:checked').value === 'portable';
-        
-        // Validate form
-        if (!name || !executable_path) {
-            // Show error message
-            alert('Application name and executable path are required.');
-            return;
-        }
-        
-        // Create app object
-        const newApp = {
-            name,
-            executable_path,
-            category,
-            description,
-            is_favorite,
-            is_portable
-        };
-        
-        // Add the app
-        window.electronAPI.addApp(newApp).then(() => {
-            // Close the dialog
-            document.getElementById('addAppDialog').style.display = 'none';
-            
-            // Clear the form
-            document.getElementById('appName').value = '';
-            document.getElementById('executablePath').value = '';
-            document.getElementById('appCategory').value = '';
-            document.getElementById('appDescription').value = '';
-            document.getElementById('isFavorite').checked = false;
-            
-            // Reload the application list
-            loadApplications();
-        }).catch(err => {
-            console.error('Error adding app:', err);
-            alert('Failed to add application. Please try again.');
-        });
-    });
-    
-    // Load saved theme
-    window.electronAPI.getTheme()
-        .then(theme => {
-            if (theme === 'dark') {
-                document.body.classList.add('dark-theme');
-                themeToggle.innerHTML = '<i class="fas fa-sun"></i> Theme: Light';
-            }
-        })
-        .catch(err => {
-            console.error('Error loading theme:', err);
-        });
-    
-    // Listen for theme changes from the settings window
-    window.electronAPI.onThemeChanged((theme) => {
-        // Update visual state in the main app
-        const isDarkTheme = theme === 'dark';
-        document.body.classList.toggle('dark-theme', isDarkTheme);
-        
-        // Update button to show what it would switch to (not the current theme)
-        const nextTheme = isDarkTheme ? 'Light' : 'Dark';
-        const nextIcon = isDarkTheme ? 'fa-sun' : 'fa-moon';
-        
-        themeToggle.innerHTML = `<i class="fas ${nextIcon}"></i> Theme: ${nextTheme}`;
-    });
-    
-    // Listen for folder preferences changes from the settings window
-    window.electronAPI.onFolderPreferencesChanged((folderSettings) => {
-        updateFolderButtonVisibility(folderSettings);
-    });
-    
-    // Listen for font size changes from the settings window
-    window.electronAPI.onFontSizeChanged((size) => {
-        // Update the app-table font size in real-time
-        const appTable = document.querySelector('.app-table');
-        if (appTable) {
-            appTable.style.fontSize = `${size}px`;
-        }
-    });
-    
-    // Set up interval to refresh drive info every minute
-    setInterval(loadDriveInfo, 60000);
 });

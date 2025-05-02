@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onThemeChanged: (callback) => ipcRenderer.on('theme-changed', (_, theme) => callback(theme)),
     onFolderPreferencesChanged: (callback) => ipcRenderer.on('folder-preferences-changed', (_, preferences) => callback(preferences)),
     onFontSizeChanged: (callback) => ipcRenderer.on('font-size-changed', (_, size) => callback(size)),
+    onShowAddAppDialog: (callback) => ipcRenderer.on('show-add-app-dialog', () => callback()),
     
     // Database operations
     getAllApps: () => ipcRenderer.invoke('get-all-apps'),
@@ -47,9 +48,30 @@ contextBridge.exposeInMainWorld('electronAPI', {
     
     // File operations
     selectExecutable: () => ipcRenderer.invoke('select-executable'),
-    openFileDialog: () => ipcRenderer.invoke('select-executable'), // Added alias to match the function name used in renderer.js
+    openFileDialog: () => ipcRenderer.invoke('openFileDialog'), // Updated to use our enhanced openFileDialog that extracts icons
     openExplorer: () => ipcRenderer.invoke('open-explorer'),
+    getExecutableMetadata: (filePath) => ipcRenderer.invoke('get-executable-metadata', filePath),
+    extractIcon: (executablePath) => ipcRenderer.invoke('extract-icon', executablePath), // Added extractIcon function
     
     // Drive information
     getDriveInfo: () => ipcRenderer.invoke('get-drive-info')
+});
+
+contextBridge.exposeInMainWorld('api', {
+    getSearchbarStyle: () => ipcRenderer.invoke('get-searchbar-style'),
+    setSearchbarStyle: (style) => ipcRenderer.invoke('set-searchbar-style', style),
+    onSearchbarStyleChanged: (callback) => {
+        ipcRenderer.on('searchbar-style-changed', (_, style) => callback(style));
+        return () => {
+            ipcRenderer.removeAllListeners('searchbar-style-changed');
+        };
+    },
+    syncSearchbarStyle: (style) => ipcRenderer.send('sync-searchbar-style', style),
+    
+    // Search functionality
+    focusSearch: () => ipcRenderer.invoke('focus-search'),
+    onFocusSearch: (callback) => {
+        ipcRenderer.on('focus-search', () => callback());
+        return () => ipcRenderer.removeAllListeners('focus-search');
+    }
 });
