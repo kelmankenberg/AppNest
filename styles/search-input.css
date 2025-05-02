@@ -99,46 +99,7 @@
     margin: 5px 0;
 }
 
-/* App row styling */
-.app-row {
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.app-row:hover {
-    background-color: rgba(0,0,0,0.05);
-}
-
-.app-cell {
-    display: flex;
-    align-items: center;
-    padding: 8px 10px;
-}
-
-.app-item {
-    display: flex;
-    align-items: center;
-    padding: 8px 0;
-}
-
-.app-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 4px;
-    margin-right: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #f0f0f0;
-    flex-shrink: 0;
-}
-
-.app-icon-letter {
-    font-size: 16px;
-    font-weight: bold;
-    color: var(--icon-color, #555);
-}
-
+/* App details in search results */
 .app-info {
     flex-grow: 1;
 }
@@ -146,11 +107,6 @@
 .app-details {
     display: flex;
     flex-direction: column;
-}
-
-.app-name {
-    font-weight: 500;
-    font-size: 14px;
 }
 
 .app-path {
@@ -164,3 +120,5 @@
     width: 100%;
     border-collapse: collapse;
 }
+
+/* Note: App row, cell and icon styling have been removed to avoid conflicts with style.css */
