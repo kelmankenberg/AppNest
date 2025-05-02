@@ -227,43 +227,152 @@ document.getElementById('editAppButton').addEventListener('click', () => {
             }
             
             const editDescriptionElem = document.getElementById('editAppDescription');
-            console.log('editAppDescription element exists:', !!editDescriptionElem);
             if (editDescriptionElem) editDescriptionElem.value = app.description || '';
             
             const editFavoriteElem = document.getElementById('editIsFavorite');
-            console.log('editIsFavorite element exists:', !!editFavoriteElem);
             if (editFavoriteElem) editFavoriteElem.checked = app.is_favorite || false;
             
             // Set the app type radio button
             const appTypeRadios = document.getElementsByName('editAppType');
-            console.log('editAppType radio buttons found:', appTypeRadios.length);
             for (let radio of appTypeRadios) {
                 radio.checked = (radio.value === (app.is_portable ? 'portable' : 'installed'));
             }
             
             // Store the app ID in the hidden field
             const editAppIdElem = document.getElementById('editAppId');
-            console.log('editAppId element exists:', !!editAppIdElem);
             if (editAppIdElem) editAppIdElem.value = app.id;
+            
+            // Update icon preview
+            updateEditAppIcon(app);
             
             // Show the edit dialog
             const editDialog = document.getElementById('editAppDialog');
-            console.log('editAppDialog element exists:', !!editDialog);
             if (editDialog) {
                 // Force the dialog to be visible and on top
                 editDialog.style.display = 'block';
                 editDialog.style.zIndex = '2000';
-                console.log('Set editAppDialog display to block with z-index 2000');
-                console.log('Current style:', window.getComputedStyle(editDialog).display);
-                console.log('Current z-index:', window.getComputedStyle(editDialog).zIndex);
-            } else {
-                console.error('Edit dialog element not found');
             }
         } else {
             console.error('App data not found for ID:', appId);
         }
     }).catch(err => {
         console.error('Error getting app details:', err);
+    });
+});
+
+// Function to update icon preview in the edit dialog
+function updateEditAppIcon(app) {
+    const iconContainer = document.getElementById('editAppIconContainer');
+    const refreshIcon = document.getElementById('editIconRefresh');
+    
+    if (!iconContainer) return;
+    
+    // Clear previous content except the refresh button
+    while (iconContainer.firstChild) {
+        if (iconContainer.firstChild !== refreshIcon) {
+            iconContainer.removeChild(iconContainer.firstChild);
+        } else {
+            // Just move the refresh button to the side temporarily
+            iconContainer.removeChild(refreshIcon);
+            break;
+        }
+    }
+    
+    // Add the refresh button back
+    iconContainer.appendChild(refreshIcon);
+    
+    // Set the hidden icon path input
+    const iconPathInput = document.getElementById('editAppIconPath');
+    if (iconPathInput) {
+        iconPathInput.value = app.icon_path || '';
+    }
+    
+    let hasIcon = false;
+    
+    // Check if app has an icon (icon_data or icon_path)
+    if (app.icon_data || app.icon_path) {
+        // Create image element for the icon
+        const iconImg = document.createElement('img');
+        iconImg.className = 'app-icon-img';
+        iconImg.alt = '';
+        iconImg.style.width = '100%';
+        iconImg.style.height = '100%';
+        iconImg.style.objectFit = 'contain';
+        
+        // Set up error handling for image load
+        iconImg.onerror = () => {
+            console.error('Failed to load icon image');
+            hasIcon = false;
+            // Make the refresh button visible
+            refreshIcon.classList.add('active');
+            // Remove the failed image
+            if (iconContainer.contains(iconImg)) {
+                iconContainer.removeChild(iconImg);
+            }
+        };
+        
+        // Set the image source based on available data
+        if (app.icon_data) {
+            iconImg.src = app.icon_data;
+            hasIcon = true;
+        } else if (app.icon_path) {
+            iconImg.src = `file://${app.icon_path}`;
+            hasIcon = true;
+        }
+        
+        // If we have an icon, add it to the container
+        if (hasIcon) {
+            iconContainer.insertBefore(iconImg, refreshIcon);
+            refreshIcon.classList.remove('active'); // Hide refresh button when icon exists
+        } else {
+            refreshIcon.classList.add('active');  // Show refresh button when no icon
+        }
+    } else {
+        // No icon available, show the refresh button
+        refreshIcon.classList.add('active');
+    }
+}
+
+// Add event listener for the icon refresh button
+document.getElementById('editIconRefresh').addEventListener('click', () => {
+    const executablePath = document.getElementById('editExecutablePath').value;
+    
+    if (!executablePath) {
+        alert('Please enter an executable path to extract an icon from.');
+        return;
+    }
+    
+    // Show loading state
+    const refreshIcon = document.getElementById('editIconRefresh');
+    const originalHTML = refreshIcon.innerHTML;
+    refreshIcon.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    // Call the extractIcon API
+    window.electronAPI.extractIcon(executablePath).then(result => {
+        if (result && result.icon_path) {
+            // Update the hidden icon path field
+            const iconPathInput = document.getElementById('editAppIconPath');
+            if (iconPathInput) {
+                iconPathInput.value = result.icon_path;
+            }
+            
+            // Create a mock app object to update the icon
+            const mockApp = {
+                icon_path: result.icon_path,
+                name: document.getElementById('editAppName').value
+            };
+            
+            // Update the icon preview
+            updateEditAppIcon(mockApp);
+        } else {
+            alert('Could not extract icon from the specified executable.');
+        }
+    }).catch(err => {
+        console.error('Error extracting icon:', err);
+        alert('Error extracting icon. Please make sure the path is correct.');
+    }).finally(() => {
+        // Restore the refresh icon
+        refreshIcon.innerHTML = originalHTML;
     });
 });
 
@@ -397,7 +506,9 @@ document.getElementById('updateApp').addEventListener('click', () => {
     const appId = document.getElementById('editAppId').value;
     const name = document.getElementById('editAppName').value;
     const executable_path = document.getElementById('editExecutablePath').value;
-    const category_id = document.getElementById('editAppCategory').value;
+    const category_id_raw = document.getElementById('editAppCategory').value;
+    // Convert empty string to null, or parse selected category ID as integer
+    const category_id = category_id_raw === '' ? null : parseInt(category_id_raw);
     const description = document.getElementById('editAppDescription').value;
     const is_favorite = document.getElementById('editIsFavorite').checked;
     const is_portable = document.querySelector('input[name="editAppType"]:checked').value === 'portable';
@@ -421,6 +532,8 @@ document.getElementById('updateApp').addEventListener('click', () => {
         is_portable,
         icon_path: icon_path // Include the icon path when updating
     };
+    
+    console.log('Updating app with data:', updatedApp);
     
     // Update the app
     window.electronAPI.updateApp(updatedApp).then(() => {

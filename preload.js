@@ -51,6 +51,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openFileDialog: () => ipcRenderer.invoke('openFileDialog'), // Updated to use our enhanced openFileDialog that extracts icons
     openExplorer: () => ipcRenderer.invoke('open-explorer'),
     getExecutableMetadata: (filePath) => ipcRenderer.invoke('get-executable-metadata', filePath),
+    extractIcon: (executablePath) => ipcRenderer.invoke('extract-icon', executablePath), // Added extractIcon function
     
     // Drive information
     getDriveInfo: () => ipcRenderer.invoke('get-drive-info')

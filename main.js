@@ -660,6 +660,30 @@ function registerIPCHandlers() {
         }
     });
 
+    // Add handler for extracting icons directly
+    ipcMain.handle('extract-icon', async (_, executablePath) => {
+        try {
+            if (!executablePath) {
+                console.error('No executable path provided for icon extraction');
+                return null;
+            }
+            
+            console.log(`Extracting icon from: ${executablePath}`);
+            const iconPath = await iconManager.extractIcon(executablePath);
+            
+            if (iconPath) {
+                console.log(`Icon extracted successfully to: ${iconPath}`);
+                return { icon_path: iconPath };
+            } else {
+                console.error('Icon extraction failed');
+                return null;
+            }
+        } catch (err) {
+            console.error('Error extracting icon:', err);
+            return null;
+        }
+    });
+
     // Add handler for show-add-app-dialog event
     ipcMain.on('show-add-app-dialog', () => {
         mainWindow.webContents.send('show-add-app-dialog');

@@ -239,7 +239,18 @@
             <div class="dialog-body">
                 <div class="form-group">
                     <label for="editAppName">Application Name:</label>
-                    <input type="text" id="editAppName" required>
+                    <div class="name-icon-group">
+                        <input type="text" id="editAppName" required>
+                        <div id="editAppIconContainer" class="icon-container">
+                            <div class="refresh-icon-wrapper" id="editIconRefresh" title="Extract icon from executable">
+                                <i class="fas fa-sync-alt"></i>
+                            </div>
+                            <svg id="editAppIcon" class="icon-svg" viewBox="0 0 32 32">
+                                <rect width="32" height="32" fill="#a8a8a8"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <input type="hidden" id="editAppIconPath" name="editAppIconPath">
                 </div>
                 <div class="form-group">
                     <label for="editExecutablePath">Executable Path:</label>
