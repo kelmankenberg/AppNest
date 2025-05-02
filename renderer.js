@@ -32,12 +32,40 @@ function displayApplications(apps) {
         const iconContainer = document.createElement('div');
         iconContainer.className = 'app-icon-container';
         
+        // Check for icon (either icon_data or icon_path)
+        let hasIcon = false;
+        
         // Create icon element
         const icon = document.createElement('img');
         icon.className = 'app-icon';
         
         if (app.icon_data) {
+            // If we have base64 icon data, use it
             icon.src = app.icon_data;
+            hasIcon = true;
+        } else if (app.icon_path) {
+            // If we have an icon path, use it with the file:// protocol
+            icon.src = `file://${app.icon_path}`;
+            hasIcon = true;
+            
+            // Add error handler in case the icon file can't be loaded
+            icon.onerror = () => {
+                console.warn(`Failed to load icon for ${app.name} from path: ${app.icon_path}`);
+                icon.style.display = 'none';
+                
+                // Create fallback icon with first letter if icon fails to load
+                if (!iconContainer.querySelector('.app-icon-fallback')) {
+                    const fallbackIcon = document.createElement('div');
+                    fallbackIcon.className = 'app-icon-fallback';
+                    fallbackIcon.textContent = app.name.charAt(0).toUpperCase();
+                    iconContainer.appendChild(fallbackIcon);
+                }
+            };
+        }
+        
+        // If we found an icon (path or data), add it
+        if (hasIcon) {
+            iconContainer.appendChild(icon);
         } else {
             // Create fallback icon with first letter
             const fallbackIcon = document.createElement('div');
@@ -46,7 +74,6 @@ function displayApplications(apps) {
             iconContainer.appendChild(fallbackIcon);
         }
         
-        iconContainer.appendChild(icon);
         nameCell.appendChild(iconContainer);
         
         // Add app name
