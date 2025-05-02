@@ -1,6 +1,7 @@
-const { app, BrowserWindow, screen, ipcMain, globalShortcut, dialog } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, globalShortcut, dialog, protocol } = require('electron');
 const { powerDownApp } = require('./functions');
 const db = require('./database');
+const iconManager = require('./icon-manager');
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -384,6 +385,41 @@ function registerIPCHandlers() {
         }
     });
 
+    // Enhanced file dialog handler with icon extraction
+    ipcMain.handle('openFileDialog', async () => {
+        try {
+            const result = await dialog.showOpenDialog({
+                properties: ['openFile'],
+                filters: [
+                    { name: 'Executables', extensions: ['exe', 'bat', 'cmd'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ]
+            });
+
+            if (result.canceled || result.filePaths.length === 0) {
+                return null;
+            }
+
+            const filePath = result.filePaths[0];
+            
+            // Extract metadata using PowerShell
+            const metadata = await getExecutableMetadata(filePath);
+            
+            // Extract icon using our dedicated icon manager
+            const iconPath = await iconManager.getIconForApp(filePath);
+            
+            return {
+                path: filePath,
+                name: metadata.name || path.basename(filePath, path.extname(filePath)),
+                description: metadata.description || '',
+                icon_path: iconPath
+            };
+        } catch (err) {
+            console.error('Error in file dialog:', err);
+            return null;
+        }
+    });
+
     // Database IPC handlers
     ipcMain.handle('get-all-apps', async () => {
         return await db.getAllApps();
@@ -436,7 +472,7 @@ function registerIPCHandlers() {
 
     ipcMain.handle('add-app', async (_, app) => {
         try {
-            return await db.addApplication(app);
+            return await db.addApp(app);
         } catch (err) {
             console.error('Error adding app:', err);
             throw err;
@@ -738,6 +774,18 @@ function createWindow() {
     const windowHeight = 600;
     // Account for taskbar offset (difference between window height and position offset)
     const taskbarOffset = 40; 
+    
+    // Register protocol for loading app icons
+    protocol.registerFileProtocol('app-icons', (request, callback) => {
+        try {
+            // Strip the protocol prefix
+            const url = request.url.substr('app-icons://'.length);
+            console.log('Loading icon from:', url);
+            callback({ path: url });
+        } catch (error) {
+            console.error('Error handling app-icons protocol:', error);
+        }
+    });
     
     // Fixed size window with specific dimensions
     mainWindow = new BrowserWindow({

@@ -48,7 +48,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     
     // File operations
     selectExecutable: () => ipcRenderer.invoke('select-executable'),
-    openFileDialog: () => ipcRenderer.invoke('select-executable'), // Added alias to match the function name used in renderer.js
+    openFileDialog: () => ipcRenderer.invoke('openFileDialog'), // Updated to use our enhanced openFileDialog that extracts icons
     openExplorer: () => ipcRenderer.invoke('open-explorer'),
     getExecutableMetadata: (filePath) => ipcRenderer.invoke('get-executable-metadata', filePath),
     

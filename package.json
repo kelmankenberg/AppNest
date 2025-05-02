@@ -17,17 +17,19 @@
   "devDependencies": {
     "@babel/preset-env": "^7.26.9",
     "@testing-library/dom": "^10.4.0",
-    "electron": "^25.9.6",
-    "electron-builder": "^26.0.12",
+    "electron": "^29.3.1",
+    "electron-builder": "^24.10.1",
     "electron-mocha": "^13.1.0",
+    "electron-rebuild": "^3.2.9",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "mock-require": "^3.0.3",
     "spectron": "^19.0.0"
   },
   "dependencies": {
-    "electron-store": "^10.0.1",
-    "sqlite3": "^5.1.7"
+    "electron-store": "^8.1.0",
+    "iconvatar": "^1.0.0",
+    "sqlite3": "^5.1.6"
   },
   "build": {
     "appId": "com.kelmankenberg.appnest",
