@@ -986,6 +986,72 @@ body {
     display: flex;
 }
 
+/* Folder Headers */
+.folder-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--secondary-text-color);
+    text-align: center;
+    padding: 4px 0;
+    margin-bottom: 5px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Hide the folder header that isn't active */
+.folder-header {
+    display: none;
+}
+
+/* Show the folder header associated with the active folder set */
+.folder-buttons.app-folders.active ~ #winFolderHeader,
+.folder-buttons.windows-folders.active ~ #appFolderHeader {
+    display: none;
+}
+
+.folder-buttons.app-folders.active + #appFolderHeader,
+.folder-buttons.windows-folders.active + #winFolderHeader {
+    display: block;
+}
+
+/* Folder Set Headers */
+.folder-set-header {
+    font-size: 14px;
+    color: var(--text-primary);
+    margin: 5px 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: center;
+    display: block; /* Changed from none to block to always show the header */
+}
+
+/* Show the active header */
+.folder-set-header.active {
+    display: block;
+}
+
+/* Hide the non-active header */
+.folder-buttons.app-folders.active ~ #winFolderHeader {
+    display: none;
+}
+
+.folder-buttons.windows-folders.active ~ #appFolderHeader {
+    display: none;
+}
+
+/* Show the header for the active folder set */
+#appFolderHeader {
+    display: block;
+}
+
+.folder-buttons.windows-folders.active ~ #winFolderHeader {
+    display: block;
+}
+
+.folder-buttons.app-folders:not(.active) ~ #appFolderHeader {
+    display: none;
+}
+
 /* Hidden element class */
 .hidden {
     display: none !important;

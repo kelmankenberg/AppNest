@@ -21,6 +21,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getFolderPreferences: () => ipcRenderer.invoke('get-folder-preferences'),
     setFolderPreferences: (preferences) => ipcRenderer.invoke('set-folder-preferences', preferences),
     syncFolderPreferences: (preferences) => ipcRenderer.send('sync-folder-preferences', preferences),
+    openFolder: (folderType, folderName) => ipcRenderer.invoke('open-folder', folderType, folderName),
+    getAppFoldersRootPath: () => ipcRenderer.invoke('get-app-folders-root-path'),
+    setAppFoldersRootPath: (path) => ipcRenderer.invoke('set-app-folders-root-path', path),
     
     // Event listeners
     onThemeChanged: (callback) => ipcRenderer.on('theme-changed', (_, theme) => callback(theme)),

@@ -840,13 +840,16 @@ function updateFolderButtonVisibility(prefs) {
     // Show the correct folder set
     const appFoldersContainer = document.querySelector('.folder-buttons.app-folders');
     const windowsFoldersContainer = document.querySelector('.folder-buttons.windows-folders');
+    const folderHeader = document.getElementById('folderHeader');
     
     if (prefs.folderType === 'app') {
-        appFoldersContainer.style.display = 'flex';
-        windowsFoldersContainer.style.display = 'none';
+        appFoldersContainer.classList.add('active');
+        windowsFoldersContainer.classList.remove('active');
+        folderHeader.textContent = 'App Folders';
     } else {
-        appFoldersContainer.style.display = 'none';
-        windowsFoldersContainer.style.display = 'flex';
+        appFoldersContainer.classList.remove('active');
+        windowsFoldersContainer.classList.add('active');
+        folderHeader.textContent = 'User Folders';
     }
     
     // Set individual button visibility for app folders
@@ -1196,6 +1199,48 @@ window.api.onSearchbarStyleChanged((style) => {
     applySearchBarStyles();
 });
 
+// Handle folder button clicks - App Folders
+document.getElementById('appDocuments').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'documents');
+});
+
+document.getElementById('appMusic').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'music');
+});
+
+document.getElementById('appPictures').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'pictures');
+});
+
+document.getElementById('appVideos').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'videos');
+});
+
+document.getElementById('appDownloads').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'downloads');
+});
+
+// Handle folder button clicks - Windows Folders
+document.getElementById('winDocuments').addEventListener('click', () => {
+    window.electronAPI.openFolder('windows', 'documents');
+});
+
+document.getElementById('winMusic').addEventListener('click', () => {
+    window.electronAPI.openFolder('windows', 'music');
+});
+
+document.getElementById('winPictures').addEventListener('click', () => {
+    window.electronAPI.openFolder('windows', 'pictures');
+});
+
+document.getElementById('winVideos').addEventListener('click', () => {
+    window.electronAPI.openFolder('windows', 'videos');
+});
+
+document.getElementById('winDownloads').addEventListener('click', () => {
+    window.electronAPI.openFolder('windows', 'downloads');
+});
+
 // Set up interval to refresh drive info every minute
 setInterval(loadDriveInfo, 60000);
 
@@ -1204,10 +1249,16 @@ loadAllApps();
 
 // Initial load
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize folder header with default text in case preferences take time to load
+    const folderHeader = document.getElementById('folderHeader');
+    if (folderHeader) {
+        folderHeader.textContent = 'App Folders'; // Default value
+    }
+    
     loadApplications();
     loadDriveInfo();
     loadFolderButtonPreferences();
-    loadCategories(); // Add this call to load categories when the app starts
+    loadCategories();
     
     // Apply search bar styles when page loads
     applySearchBarStyles();
