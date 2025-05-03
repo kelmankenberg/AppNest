@@ -165,11 +165,53 @@ function initializeInputs() {
     // Start with Windows toggle
     const startWithWindows = document.getElementById('startWithWindows');
     if (startWithWindows) {
+        // Initialize the checkbox state from stored settings
+        window.electronAPI.getAutoStart()
+            .then(enabled => {
+                startWithWindows.checked = enabled;
+                console.log(`Auto-start is currently ${enabled ? 'enabled' : 'disabled'}`);
+            })
+            .catch(err => {
+                console.error('Error getting auto-start setting:', err);
+                startWithWindows.checked = false; // Default to off if there's an error
+            });
+        
+        // Set up listener for changes
         startWithWindows.addEventListener('change', () => {
             const enabled = startWithWindows.checked;
-            // Implement auto-start setting when API is available
-            // window.electronAPI.setAutoStart(enabled)
-            //    .catch(err => console.error('Error saving auto-start setting:', err));
+            
+            // Show feedback indicator
+            const settingGroup = startWithWindows.closest('.setting-group');
+            const statusIndicator = document.createElement('span');
+            statusIndicator.className = 'setting-status';
+            statusIndicator.textContent = 'Saving...';
+            settingGroup.appendChild(statusIndicator);
+            
+            window.electronAPI.setAutoStart(enabled)
+                .then(success => {
+                    console.log(`Auto-start ${enabled ? 'enabled' : 'disabled'}: ${success}`);
+                    statusIndicator.textContent = success ? 'Saved ✓' : 'Failed ✗';
+                    statusIndicator.className = `setting-status ${success ? 'success' : 'error'}`;
+                    
+                    // Remove the status indicator after a delay
+                    setTimeout(() => {
+                        if (statusIndicator.parentNode) {
+                            statusIndicator.parentNode.removeChild(statusIndicator);
+                        }
+                    }, 3000);
+                })
+                .catch(err => {
+                    console.error('Error saving auto-start setting:', err);
+                    statusIndicator.textContent = 'Error ✗';
+                    statusIndicator.className = 'setting-status error';
+                    
+                    // Remove the status indicator after a delay
+                    setTimeout(() => {
+                        if (statusIndicator.parentNode) {
+                            statusIndicator.parentNode.removeChild(statusIndicator);
+                        }
+                    }, 3000);
+                });
         });
     }
     

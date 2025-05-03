@@ -34,6 +34,7 @@ async function initializeStore() {
                     'continue-iteration': true, // Set default value
                     'theme': 'light',
                     'font-size': 16, // Default font size for app table
+                    'start-with-windows': false, // Default auto-start setting
                     'searchbar-style': {
                         'borderTop': false,
                         'borderRight': false,
@@ -705,6 +706,125 @@ function registerIPCHandlers() {
         // If settings window exists, update it with the new searchbar style
         if (settingsWindow && !settingsWindow.isDestroyed()) {
             settingsWindow.webContents.send('searchbar-style-changed', styleOptions);
+        }
+    });
+
+    // Auto-start with Windows handlers
+    ipcMain.handle('set-auto-start', async (_, enable) => {
+        try {
+            if (process.platform !== 'win32') {
+                console.warn('Auto-start is only supported on Windows');
+                return false;
+            }
+            
+            // Using child_process to interact with the registry directly
+            const { execFile } = require('child_process');
+            const util = require('util');
+            const execFileAsync = util.promisify(execFile);
+            
+            const appName = 'AppNest';
+            let success = false;
+            
+            // Create command line with proper quoting
+            let execPath = process.execPath; // node.exe in dev, app.exe in prod
+            let args = '';
+            
+            const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+            if (isDev) {
+                // In development, point to our main.js file
+                args = ` "${path.join(app.getAppPath(), 'main.js')}"`;
+            }
+            
+            const command = `"${execPath}"${args}`;
+            console.log(`Setting auto-start with command: ${command}`);
+            
+            if (enable) {
+                // Add to registry - using reg.exe, a built-in Windows command
+                try {
+                    const regKey = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run';
+                    await execFileAsync('reg', ['add', regKey, '/v', appName, '/t', 'REG_SZ', '/d', command, '/f']);
+                    console.log(`Registry key set for ${appName}`);
+                    success = true;
+                } catch (err) {
+                    console.error('Failed to set registry key:', err);
+                    return false;
+                }
+            } else {
+                // Remove from registry
+                try {
+                    const regKey = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run';
+                    await execFileAsync('reg', ['delete', regKey, '/v', appName, '/f']);
+                    console.log(`Registry key removed for ${appName}`);
+                    success = true;
+                } catch (err) {
+                    // An error code of 1 typically means the key was not found, which is fine when disabling
+                    if (err.code !== 1) {
+                        console.error('Failed to remove registry key:', err);
+                        return false;
+                    }
+                    success = true;
+                }
+            }
+            
+            // Store the setting
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            if (storeToUse) {
+                storeToUse.set('start-with-windows', enable);
+            }
+            
+            return success;
+        } catch (error) {
+            console.error('Error setting auto-start:', error);
+            return false;
+        }
+    });
+
+    ipcMain.handle('get-auto-start', async () => {
+        try {
+            // Using child_process to interact with the registry directly
+            const { execFile } = require('child_process');
+            const util = require('util');
+            const execFileAsync = util.promisify(execFile);
+            
+            const appName = 'AppNest';
+            let registryExists = false;
+            
+            // Check if registry key exists
+            try {
+                const regKey = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run';
+                const { stdout } = await execFileAsync('reg', ['query', regKey, '/v', appName]);
+                
+                // If we got output without error, the key exists
+                if (stdout && stdout.includes(appName)) {
+                    console.log(`Found registry key for ${appName}`);
+                    registryExists = true;
+                }
+            } catch (err) {
+                // An error code of 1 typically means the key was not found
+                if (err.code === 1) {
+                    console.log('Registry key not found, auto-start is disabled');
+                } else {
+                    console.error('Error querying registry:', err);
+                }
+            }
+            
+            // Get the stored preference
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            let storedPreference = false;
+            
+            if (storeToUse) {
+                storedPreference = storeToUse.get('start-with-windows', false);
+                
+                // If actual setting and stored preference are inconsistent, update the stored preference
+                if (storedPreference !== registryExists) {
+                    storeToUse.set('start-with-windows', registryExists);
+                }
+            }
+            
+            return registryExists;
+        } catch (error) {
+            console.error('Error getting auto-start status:', error);
+            return false;
         }
     });
 

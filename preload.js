@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setFontSize: (size, iconSize) => ipcRenderer.invoke('set-font-size', size, iconSize),
     syncFontSize: (size, iconSize) => ipcRenderer.send('sync-font-size', size, iconSize),
     openSettings: () => ipcRenderer.invoke('open-settings'),
+    getAutoStart: () => ipcRenderer.invoke('get-auto-start'),
+    setAutoStart: (enable) => ipcRenderer.invoke('set-auto-start', enable),
     
     // Continue iteration functionality
     getContinueIteration: () => ipcRenderer.invoke('continue-iteration'),

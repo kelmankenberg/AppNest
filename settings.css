@@ -411,6 +411,42 @@
     margin-bottom: 15px;
 }
 
+/* Settings status indicators */
+.setting-status {
+    display: inline-block;
+    margin-left: 10px;
+    padding: 2px 8px;
+    font-size: 0.8rem;
+    border-radius: 4px;
+    animation: fadeIn 0.3s ease;
+}
+
+.setting-status.success {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+}
+
+.setting-status.error {
+    background-color: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Dark theme versions */
+.dark-theme .setting-status.success {
+    background-color: rgba(76, 175, 80, 0.3);
+    color: #81c784;
+}
+
+.dark-theme .setting-status.error {
+    background-color: rgba(244, 67, 54, 0.3);
+    color: #e57373;
+}
+
 /* Windows Built-in Apps Styles */
 .windows-apps-section {
     margin-top: 25px;
