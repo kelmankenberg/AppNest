@@ -108,18 +108,45 @@ function initializeSliders() {
             const value = fontSizeSlider.value;
             fontSizeValue.textContent = `${value}px`;
             
-            // Dynamically update app-table font size in real-time
-            window.electronAPI.syncFontSize(value);
+            // Calculate icon size: 14px when font is 9px, 20px when font is 14px
+            const iconSize = calculateIconSize(parseInt(value));
+            
+            // Dynamically update app-table font size and icon size in real-time
+            window.electronAPI.syncFontSize(value, iconSize);
         });
         
         fontSizeSlider.addEventListener('change', () => {
             // Save the value when slider stops (mouseup)
             const value = fontSizeSlider.value;
-            // Save font size to settings
-            window.electronAPI.setFontSize(value)
+            const iconSize = calculateIconSize(parseInt(value));
+            
+            // Save font size and icon size to settings
+            window.electronAPI.setFontSize(value, iconSize)
                 .catch(err => console.error('Error saving font size:', err));
         });
     }
+}
+
+// Helper function to calculate proportional icon size based on font size
+function calculateIconSize(fontSize) {
+    // For font size 9px → icon size 14px
+    // For font size 14px → icon size 20px
+    // Linear scaling between those points
+    const minFontSize = 9;
+    const maxFontSize = 14;
+    const minIconSize = 14;
+    const maxIconSize = 20;
+    
+    // Ensure fontSize is within bounds
+    const boundedFontSize = Math.max(minFontSize, Math.min(maxFontSize, fontSize));
+    
+    // Calculate the proportion of the way from min to max font size
+    const proportion = (boundedFontSize - minFontSize) / (maxFontSize - minFontSize);
+    
+    // Calculate the icon size based on that proportion
+    const iconSize = Math.round(minIconSize + proportion * (maxIconSize - minIconSize));
+    
+    return iconSize;
 }
 
 // Initialize input controls with immediate saving

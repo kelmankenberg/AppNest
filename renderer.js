@@ -19,82 +19,184 @@ function displayApplications(apps) {
         return;
     }
     
-    apps.forEach(app => {
-        const row = document.createElement('tr');
-        row.className = 'app-row';
-        row.dataset.appId = app.id;
+    // Get the icon size from the settings, or use default 20px
+    window.electronAPI.getIconSize().then(iconSize => {
+        // Convert to number if it's a string
+        const iconSizeNum = parseInt(iconSize);
         
-        // Create app name cell with icon
-        const nameCell = document.createElement('td');
-        nameCell.className = 'app-cell';
-        
-        // Create icon container
-        const iconContainer = document.createElement('div');
-        iconContainer.className = 'app-icon-container';
-        
-        // Check for icon (either icon_data or icon_path)
-        let hasIcon = false;
-        
-        // Create icon element
-        const icon = document.createElement('img');
-        icon.className = 'app-icon';
-        
-        if (app.icon_data) {
-            // If we have base64 icon data, use it
-            icon.src = app.icon_data;
-            hasIcon = true;
-        } else if (app.icon_path) {
-            // If we have an icon path, use it with the file:// protocol
-            icon.src = `file://${app.icon_path}`;
-            hasIcon = true;
+        apps.forEach(app => {
+            const row = document.createElement('tr');
+            row.className = 'app-row';
+            row.dataset.appId = app.id;
             
-            // Add error handler in case the icon file can't be loaded
-            icon.onerror = () => {
-                console.warn(`Failed to load icon for ${app.name} from path: ${app.icon_path}`);
-                icon.style.display = 'none';
+            // Create app name cell with icon
+            const nameCell = document.createElement('td');
+            nameCell.className = 'app-cell';
+            
+            // Create icon container
+            const iconContainer = document.createElement('div');
+            iconContainer.className = 'app-icon-container';
+            iconContainer.style.width = `${iconSizeNum}px`;
+            iconContainer.style.height = `${iconSizeNum}px`;
+            
+            // Check for icon (either icon_data or icon_path)
+            let hasIcon = false;
+            
+            // Create icon element
+            const icon = document.createElement('img');
+            icon.className = 'app-icon';
+            icon.style.width = `${iconSizeNum}px`;
+            icon.style.height = `${iconSizeNum}px`;
+            
+            if (app.icon_data) {
+                // If we have base64 icon data, use it
+                icon.src = app.icon_data;
+                hasIcon = true;
+            } else if (app.icon_path) {
+                // If we have an icon path, use it with the file:// protocol
+                icon.src = `file://${app.icon_path}`;
+                hasIcon = true;
                 
-                // Create fallback icon with first letter if icon fails to load
-                if (!iconContainer.querySelector('.app-icon-fallback')) {
-                    const fallbackIcon = document.createElement('div');
-                    fallbackIcon.className = 'app-icon-fallback';
-                    fallbackIcon.textContent = app.name.charAt(0).toUpperCase();
-                    iconContainer.appendChild(fallbackIcon);
-                }
-            };
-        }
-        
-        // If we found an icon (path or data), add it
-        if (hasIcon) {
-            iconContainer.appendChild(icon);
-        } else {
-            // Create fallback icon with first letter
-            const fallbackIcon = document.createElement('div');
-            fallbackIcon.className = 'app-icon-fallback';
-            fallbackIcon.textContent = app.name.charAt(0).toUpperCase();
-            iconContainer.appendChild(fallbackIcon);
-        }
-        
-        nameCell.appendChild(iconContainer);
-        
-        // Add app name
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'app-name';
-        nameSpan.textContent = app.name;
-        nameCell.appendChild(nameSpan);
-        
-        row.appendChild(nameCell);
-        
-        // Add click event to launch the application
-        row.addEventListener('click', () => {
-            launchApplication(app.id);
-        });
+                // Add error handler in case the icon file can't be loaded
+                icon.onerror = () => {
+                    console.warn(`Failed to load icon for ${app.name} from path: ${app.icon_path}`);
+                    icon.style.display = 'none';
+                    
+                    // Create fallback icon with first letter if icon fails to load
+                    if (!iconContainer.querySelector('.app-icon-fallback')) {
+                        const fallbackIcon = document.createElement('div');
+                        fallbackIcon.className = 'app-icon-fallback';
+                        fallbackIcon.textContent = app.name.charAt(0).toUpperCase();
+                        fallbackIcon.style.width = `${iconSizeNum}px`;
+                        fallbackIcon.style.height = `${iconSizeNum}px`;
+                        fallbackIcon.style.fontSize = `${Math.round(iconSizeNum * 0.6)}px`;
+                        fallbackIcon.style.lineHeight = `${iconSizeNum}px`;
+                        iconContainer.appendChild(fallbackIcon);
+                    }
+                };
+            }
+            
+            // If we found an icon (path or data), add it
+            if (hasIcon) {
+                iconContainer.appendChild(icon);
+            } else {
+                // Create fallback icon with first letter
+                const fallbackIcon = document.createElement('div');
+                fallbackIcon.className = 'app-icon-fallback';
+                fallbackIcon.textContent = app.name.charAt(0).toUpperCase();
+                fallbackIcon.style.width = `${iconSizeNum}px`;
+                fallbackIcon.style.height = `${iconSizeNum}px`;
+                fallbackIcon.style.fontSize = `${Math.round(iconSizeNum * 0.6)}px`;
+                fallbackIcon.style.lineHeight = `${iconSizeNum}px`;
+                iconContainer.appendChild(fallbackIcon);
+            }
+            
+            nameCell.appendChild(iconContainer);
+            
+            // Add app name
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'app-name';
+            nameSpan.textContent = app.name;
+            nameCell.appendChild(nameSpan);
+            
+            row.appendChild(nameCell);
+            
+            // Add click event to launch the application
+            row.addEventListener('click', () => {
+                launchApplication(app.id);
+            });
 
-        // Add right-click event for context menu
-        row.addEventListener('contextmenu', (e) => {
-            showContextMenu(e, app.id);
+            // Add right-click event for context menu
+            row.addEventListener('contextmenu', (e) => {
+                showContextMenu(e, app.id);
+            });
+            
+            tableBody.appendChild(row);
         });
         
-        tableBody.appendChild(row);
+        console.log(`Applied icon size of ${iconSizeNum}px to ${apps.length} application icons`);
+    }).catch(error => {
+        console.error("Error getting icon size:", error);
+        // If there's an error, continue without styling the icons
+        // Default styles from CSS will apply
+        
+        apps.forEach(app => {
+            const row = document.createElement('tr');
+            row.className = 'app-row';
+            row.dataset.appId = app.id;
+            
+            // Create app name cell with icon
+            const nameCell = document.createElement('td');
+            nameCell.className = 'app-cell';
+            
+            // Create icon container
+            const iconContainer = document.createElement('div');
+            iconContainer.className = 'app-icon-container';
+            
+            // Check for icon (either icon_data or icon_path)
+            let hasIcon = false;
+            
+            // Create icon element
+            const icon = document.createElement('img');
+            icon.className = 'app-icon';
+            
+            if (app.icon_data) {
+                // If we have base64 icon data, use it
+                icon.src = app.icon_data;
+                hasIcon = true;
+            } else if (app.icon_path) {
+                // If we have an icon path, use it with the file:// protocol
+                icon.src = `file://${app.icon_path}`;
+                hasIcon = true;
+                
+                // Add error handler in case the icon file can't be loaded
+                icon.onerror = () => {
+                    console.warn(`Failed to load icon for ${app.name} from path: ${app.icon_path}`);
+                    icon.style.display = 'none';
+                    
+                    // Create fallback icon with first letter if icon fails to load
+                    if (!iconContainer.querySelector('.app-icon-fallback')) {
+                        const fallbackIcon = document.createElement('div');
+                        fallbackIcon.className = 'app-icon-fallback';
+                        fallbackIcon.textContent = app.name.charAt(0).toUpperCase();
+                        iconContainer.appendChild(fallbackIcon);
+                    }
+                };
+            }
+            
+            // If we found an icon (path or data), add it
+            if (hasIcon) {
+                iconContainer.appendChild(icon);
+            } else {
+                // Create fallback icon with first letter
+                const fallbackIcon = document.createElement('div');
+                fallbackIcon.className = 'app-icon-fallback';
+                fallbackIcon.textContent = app.name.charAt(0).toUpperCase();
+                iconContainer.appendChild(fallbackIcon);
+            }
+            
+            nameCell.appendChild(iconContainer);
+            
+            // Add app name
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'app-name';
+            nameSpan.textContent = app.name;
+            nameCell.appendChild(nameSpan);
+            
+            row.appendChild(nameCell);
+            
+            // Add click event to launch the application
+            row.addEventListener('click', () => {
+                launchApplication(app.id);
+            });
+
+            // Add right-click event for context menu
+            row.addEventListener('contextmenu', (e) => {
+                showContextMenu(e, app.id);
+            });
+            
+            tableBody.appendChild(row);
+        });
     });
 }
 
@@ -1186,12 +1288,42 @@ window.electronAPI.onFolderPreferencesChanged((folderSettings) => {
 });
 
 // Listen for font size changes from the settings window
-window.electronAPI.onFontSizeChanged((size) => {
+window.electronAPI.onFontSizeChanged((size, iconSize) => {
     // Update the app-table font size in real-time
     const appTable = document.querySelector('.app-table');
     if (appTable) {
         appTable.style.fontSize = `${size}px`;
     }
+    
+    // If iconSize is not provided, calculate it based on font size
+    if (!iconSize) {
+        iconSize = calculateIconSize(parseInt(size));
+    }
+    
+    // Update icon size for all app icons
+    const appIcons = document.querySelectorAll('.app-icon');
+    appIcons.forEach(icon => {
+        icon.style.width = `${iconSize}px`;
+        icon.style.height = `${iconSize}px`;
+    });
+    
+    // Also update fallback icons
+    const fallbackIcons = document.querySelectorAll('.app-icon-fallback');
+    fallbackIcons.forEach(icon => {
+        icon.style.width = `${iconSize}px`;
+        icon.style.height = `${iconSize}px`;
+        icon.style.fontSize = `${Math.round(iconSize * 0.6)}px`; // Adjust font size proportionally
+        icon.style.lineHeight = `${iconSize}px`;
+    });
+    
+    // Also update the icon containers
+    const iconContainers = document.querySelectorAll('.app-icon-container');
+    iconContainers.forEach(container => {
+        container.style.width = `${iconSize}px`;
+        container.style.height = `${iconSize}px`;
+    });
+    
+    console.log(`Font size changed to ${size}px, icon size to ${iconSize}px`);
 });
 
 // Listen for style changes from settings window or other sources
@@ -1263,16 +1395,70 @@ document.addEventListener('DOMContentLoaded', () => {
     // Apply search bar styles when page loads
     applySearchBarStyles();
     
-    // Load saved font size
-    window.electronAPI.getFontSize()
-        .then(fontSize => {
-            // Apply font size to app table
-            const appTable = document.querySelector('.app-table');
-            if (appTable && fontSize) {
-                appTable.style.fontSize = `${fontSize}px`;
-            }
-        })
-        .catch(err => {
-            console.error('Error loading font size:', err);
-        });
+    // Load saved font size and icon size
+    Promise.all([
+        window.electronAPI.getFontSize(),
+        window.electronAPI.getIconSize()
+    ])
+    .then(([fontSize, iconSize]) => {
+        console.log(`Loaded settings - Font size: ${fontSize}px, Icon size: ${iconSize}px`);
+        
+        // Apply font size to app table
+        const appTable = document.querySelector('.app-table');
+        if (appTable && fontSize) {
+            appTable.style.fontSize = `${fontSize}px`;
+        }
+        
+        // Apply icon size to all app icons
+        if (iconSize) {
+            // Convert to number if it's a string
+            const iconSizeNum = parseInt(iconSize);
+            
+            // Update all app icons
+            const appIcons = document.querySelectorAll('.app-icon');
+            appIcons.forEach(icon => {
+                icon.style.width = `${iconSizeNum}px`;
+                icon.style.height = `${iconSizeNum}px`;
+            });
+            
+            // Also update fallback icons
+            const fallbackIcons = document.querySelectorAll('.app-icon-fallback');
+            fallbackIcons.forEach(icon => {
+                icon.style.width = `${iconSizeNum}px`;
+                icon.style.height = `${iconSizeNum}px`;
+                icon.style.fontSize = `${Math.round(iconSizeNum * 0.6)}px`; // Adjust font size proportionally
+                icon.style.lineHeight = `${iconSizeNum}px`;
+            });
+            
+            // Also update the icon containers
+            const iconContainers = document.querySelectorAll('.app-icon-container');
+            iconContainers.forEach(container => {
+                container.style.width = `${iconSizeNum}px`;
+                container.style.height = `${iconSizeNum}px`;
+            });
+        }
+    })
+    .catch(err => {
+        console.error('Error loading font/icon size settings:', err);
+    });
 });
+
+// Helper function to calculate proportional icon size based on font size
+function calculateIconSize(fontSize) {
+    // For font size 9px → icon size 14px
+    // For font size 14px → icon size 20px
+    // Linear scaling between those points
+    const minFontSize = 9;
+    const maxFontSize = 14;
+    const minIconSize = 14;
+    const maxIconSize = 20;
+    
+    // Ensure fontSize is within bounds
+    const boundedFontSize = Math.max(minFontSize, Math.min(maxFontSize, fontSize));
+    
+    // Calculate the proportion of the way from min to max font size
+    const proportion = (boundedFontSize - minFontSize) / (maxFontSize - minFontSize);
+    
+    // Calculate the icon size based on that proportion
+    return Math.round(minIconSize + proportion * (maxIconSize - minIconSize));
+}

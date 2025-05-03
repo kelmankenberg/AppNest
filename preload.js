@@ -9,8 +9,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setTheme: (theme) => ipcRenderer.invoke('set-theme', theme),
     syncTheme: (theme) => ipcRenderer.send('sync-theme', theme),
     getFontSize: () => ipcRenderer.invoke('get-font-size'),
-    setFontSize: (size) => ipcRenderer.invoke('set-font-size', size),
-    syncFontSize: (size) => ipcRenderer.send('sync-font-size', size),
+    getIconSize: () => ipcRenderer.invoke('get-icon-size'),
+    setFontSize: (size, iconSize) => ipcRenderer.invoke('set-font-size', size, iconSize),
+    syncFontSize: (size, iconSize) => ipcRenderer.send('sync-font-size', size, iconSize),
     openSettings: () => ipcRenderer.invoke('open-settings'),
     
     // Continue iteration functionality
