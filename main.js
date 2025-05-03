@@ -343,6 +343,44 @@ function registerIPCHandlers() {
         }
     });
 
+    // Register folder preferences handlers
+    ipcMain.handle('getFolderPreferences', async () => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            return storeToUse.get('folderPreferences', {
+                folderType: 'app', // Default to app folders
+                appFolders: {
+                    documents: true,
+                    music: true,
+                    pictures: true,
+                    videos: true,
+                    downloads: true
+                },
+                windowsFolders: {
+                    documents: true,
+                    music: true,
+                    pictures: true,
+                    videos: true,
+                    downloads: true
+                }
+            });
+        } catch (err) {
+            console.error('Error getting folder preferences:', err);
+            return null;
+        }
+    });
+
+    ipcMain.handle('setFolderPreferences', async (_, preferences) => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            storeToUse.set('folderPreferences', preferences);
+            return true;
+        } catch (err) {
+            console.error('Error saving folder preferences:', err);
+            return false;
+        }
+    });
+
     // Handle folder preferences synchronization between windows
     ipcMain.on('sync-folder-preferences', (_, preferences) => {
         // If main window exists, update it with the new preferences
@@ -687,6 +725,79 @@ function registerIPCHandlers() {
     // Add handler for show-add-app-dialog event
     ipcMain.on('show-add-app-dialog', () => {
         mainWindow.webContents.send('show-add-app-dialog');
+    });
+
+    // Register folder-related IPC handlers
+    ipcMain.handle('open-folder', async (_, folderType, folderName) => {
+        try {
+            console.log(`Opening folder: ${folderType}/${folderName}`);
+            
+            if (folderType === 'windows') {
+                // Open Windows standard user folders
+                const userFolders = {
+                    'documents': os.homedir() + '\\Documents',
+                    'music': os.homedir() + '\\Music',
+                    'pictures': os.homedir() + '\\Pictures',
+                    'videos': os.homedir() + '\\Videos',
+                    'downloads': os.homedir() + '\\Downloads'
+                };
+                
+                if (userFolders[folderName]) {
+                    exec(`explorer "${userFolders[folderName]}"`);
+                    return true;
+                }
+                return false;
+            } else if (folderType === 'app') {
+                // Open app-specific folders
+                const storeToUse = storeInitialized ? store : await initializeStore();
+                const rootPath = storeToUse.get('appFoldersRootPath', app.getPath('userData'));
+                
+                // Create the folder path
+                const folderPath = path.join(rootPath, folderName.charAt(0).toUpperCase() + folderName.slice(1));
+                
+                // Ensure folder exists
+                if (!fs.existsSync(folderPath)) {
+                    fs.mkdirSync(folderPath, { recursive: true });
+                }
+                
+                // Open the folder
+                exec(`explorer "${folderPath}"`);
+                return true;
+            }
+            
+            return false;
+        } catch (err) {
+            console.error(`Error opening folder ${folderName}:`, err);
+            return false;
+        }
+    });
+
+    // Add handlers for app folders root path
+    ipcMain.handle('get-app-folders-root-path', async () => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            return storeToUse.get('appFoldersRootPath', app.getPath('userData'));
+        } catch (err) {
+            console.error('Error getting app folders root path:', err);
+            return app.getPath('userData');
+        }
+    });
+
+    ipcMain.handle('set-app-folders-root-path', async (_, folderPath) => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            storeToUse.set('appFoldersRootPath', folderPath);
+            
+            // Ensure the path exists
+            if (!fs.existsSync(folderPath)) {
+                fs.mkdirSync(folderPath, { recursive: true });
+            }
+            
+            return true;
+        } catch (err) {
+            console.error('Error setting app folders root path:', err);
+            return false;
+        }
     });
 }
 

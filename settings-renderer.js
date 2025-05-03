@@ -421,33 +421,44 @@ function loadFolderVisibility(prefix, folderType) {
     }
 }
 
-// Load the active folder type (app or windows)
+// Load the active folder type preference from store
 function loadActiveFolderType() {
-    // Default to app folders if no preference is saved
-    let activeFolderType = 'app';
-    
-    // Uncomment when API is available:
-    // window.electronAPI.getActiveFolderType()
-    //    .then(type => {
-    //        // If the setting exists, use it, otherwise default to app
-    //        activeFolderType = type || 'app';
-    //        activateFolderType(activeFolderType);
-    //    })
-    //    .catch(err => {
-    //        console.error('Error loading active folder type:', err);
-    //        activateFolderType('app'); // Default to app folders on error
-    //    });
-    
-    // For now, without the API, just use the default
-    activateFolderType(activeFolderType);
+    // Get folder preferences from store
+    window.electronAPI.getFolderPreferences()
+        .then(prefs => {
+            if (prefs && prefs.folderType) {
+                // Activate the appropriate folder type segment
+                activateFolderType(prefs.folderType);
+            } else {
+                // Default to app folders if no preference is saved
+                activateFolderType('app');
+            }
+        })
+        .catch(err => {
+            console.error('Error loading folder preferences:', err);
+            // Default to app folders on error
+            activateFolderType('app');
+        });
 }
 
 // Activate the given folder type segment
 function activateFolderType(folderType) {
     const segmentOption = document.querySelector(`.segment-option[data-folder-type="${folderType}"]`);
     if (segmentOption) {
-        // Programmatically click the segment to activate it
-        segmentOption.click();
+        // Remove active class from all segment options
+        document.querySelectorAll('.segment-option').forEach(option => {
+            option.classList.remove('active');
+        });
+
+        // Add active class to the selected segment
+        segmentOption.classList.add('active');
+
+        // Show the corresponding folder content
+        document.querySelectorAll('.folder-type-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        document.getElementById(`${folderType === 'windows' ? 'windowsFolders' : 'appFolders'}`).classList.add('active');
     }
 }
 
