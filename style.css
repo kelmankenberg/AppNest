@@ -1203,3 +1203,93 @@ body {
     overflow: hidden;
     background-color: #f0f0f0;
 }
+
+/* Sort menu and submenu styles */
+.sort-menu-item {
+    position: relative;
+}
+
+.sort-menu-item .submenu-icon {
+    position: absolute;
+    right: 10px;
+    font-size: 0.8em;
+}
+
+.submenu {
+    position: fixed;
+    z-index: 1000;
+    background-color: var(--bg-secondary, #ffffff);
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: none;
+    overflow: hidden;
+    min-width: 180px;
+}
+
+.submenu.show {
+    display: block;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.submenu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 8px 15px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text-primary);
+    transition: background-color 0.2s ease;
+}
+
+.submenu-item:hover {
+    background-color: var(--menu-hover, rgba(0, 0, 0, 0.05));
+}
+
+.submenu-item.active {
+    background-color: var(--menu-active, rgba(0, 0, 0, 0.08));
+    font-weight: bold;
+}
+
+.submenu-item .submenu-icon {
+    margin-right: 10px;
+    width: 16px;
+    text-align: center;
+}
+
+/* Sort notification */
+.sort-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    background-color: var(--bg-notification, rgba(0, 0, 0, 0.7));
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    z-index: 1000;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.sort-notification.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* Dark theme adjustments */
+body.dark-theme .submenu {
+    background-color: var(--bg-secondary, #2d2d2d);
+    border-color: var(--border-dark, #444);
+}
+
+body.dark-theme .submenu-item:hover {
+    background-color: var(--menu-hover-dark, rgba(255, 255, 255, 0.05));
+}
+
+body.dark-theme .submenu-item.active {
+    background-color: var(--menu-active-dark, rgba(255, 255, 255, 0.08));
+}

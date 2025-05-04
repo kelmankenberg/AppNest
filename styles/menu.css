@@ -13,3 +13,65 @@
     opacity: 0.7;
     font-size: 0.85em;
 }
+
+/* Style for the sort menu item and submenu */
+.sort-menu-item {
+    position: relative;
+}
+
+.sort-menu-item .menu-icon {
+    color: var(--primary-color, #3498db);
+}
+
+.sort-menu-item .submenu-icon {
+    position: absolute;
+    right: 10px;
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+
+/* Submenu styles */
+.submenu {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    min-width: 180px;
+    background-color: var(--bg-secondary, white);
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 4px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 10;
+}
+
+.submenu.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.submenu-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 15px;
+    cursor: pointer;
+}
+
+.submenu-item:hover {
+    background-color: var(--menu-hover, #f5f5f5);
+}
+
+.submenu-item.active {
+    background-color: var(--menu-active, #edf2f7);
+}
+
+.submenu-icon {
+    width: 20px;
+    margin-right: 10px;
+    text-align: center;
+}
+
+.submenu-text {
+    flex-grow: 1;
+}
