@@ -215,17 +215,6 @@ function initializeInputs() {
         });
     }
     
-    // Default view selector
-    const defaultView = document.getElementById('defaultView');
-    if (defaultView) {
-        defaultView.addEventListener('change', () => {
-            const value = defaultView.value;
-            // Implement default view saving when API is available
-            // window.electronAPI.setDefaultView(value)
-            //    .catch(err => console.error('Error saving default view:', err));
-        });
-    }
-    
     // Search mode selector
     const searchMode = document.getElementById('searchMode');
     if (searchMode) {
@@ -572,12 +561,6 @@ function resetToDefaults() {
         resetFolderToggles('app', ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads']);
         resetFolderToggles('win', ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads']);
         
-        // Reset to App folders by default
-        const appFolderSegment = document.querySelector('.segment-option[data-folder-type="app"]');
-        if (appFolderSegment) {
-            appFolderSegment.click(); // This will trigger the click handler to display app folders
-        }
-        
         // Reset app folder path to default
         const pathValueElement = document.querySelector('.path-value');
         if (pathValueElement) {
@@ -599,13 +582,6 @@ function resetToDefaults() {
         const startWithWindows = document.getElementById('startWithWindows');
         if (startWithWindows) {
             startWithWindows.checked = false;
-            // Save when API is available
-        }
-        
-        // Default view
-        const defaultView = document.getElementById('defaultView');
-        if (defaultView) {
-            defaultView.value = 'all';
             // Save when API is available
         }
         

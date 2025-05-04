@@ -1,11 +1,91 @@
 // Load applications from the database
 function loadApplications() {
     window.electronAPI.getAllApps().then(apps => {
-        displayApplications(apps);
+        // Apply sorting before displaying applications
+        const sortPreference = localStorage.getItem('appnest-sort-preference') || 'alphabetical';
+        const sortedApps = sortApplications(apps, sortPreference);
+        displayApplications(sortedApps);
     }).catch(err => {
         console.error('Error loading applications:', err);
     });
 }
+
+// Expose the loadApplications function to the window object
+window.loadApplications = loadApplications;
+
+// Function to sort applications based on the selected sort option
+function sortApplications(apps, sortType) {
+    // Make a copy of the apps array to avoid modifying the original
+    const appsCopy = [...apps];
+    
+    switch (sortType) {
+        case 'alphabetical':
+            // Sort alphabetically by name
+            return appsCopy.sort((a, b) => a.name.localeCompare(b.name));
+            
+        case 'favorites':
+            // Sort by favorites first, then alphabetically within each group
+            return appsCopy.sort((a, b) => {
+                // If both apps have the same favorite status, sort alphabetically
+                if ((a.is_favorite && b.is_favorite) || (!a.is_favorite && !b.is_favorite)) {
+                    return a.name.localeCompare(b.name);
+                }
+                // Otherwise, favorites come first
+                return a.is_favorite ? -1 : 1;
+            });
+            
+        case 'categories':
+            // Sort by category name, then by app name within each category
+            return appsCopy.sort((a, b) => {
+                // Get category names (or empty string if null)
+                const catA = a.category_name || '';
+                const catB = b.category_name || '';
+                
+                // First sort by category
+                const catCompare = catA.localeCompare(catB);
+                
+                // If categories are the same, sort by app name
+                if (catCompare === 0) {
+                    return a.name.localeCompare(b.name);
+                }
+                
+                return catCompare;
+            });
+            
+        case 'most-used':
+            // Sort by launch count (descending), then alphabetically
+            return appsCopy.sort((a, b) => {
+                const launchA = a.launch_count || 0;
+                const launchB = b.launch_count || 0;
+                
+                // Sort by launch count descending
+                if (launchA !== launchB) {
+                    return launchB - launchA;
+                }
+                
+                // If launch counts are equal, sort alphabetically
+                return a.name.localeCompare(b.name);
+            });
+            
+        case 'installation-type':
+            // Sort portable apps first, then installed apps (both alphabetically)
+            return appsCopy.sort((a, b) => {
+                // If both apps are of the same type, sort alphabetically
+                if ((a.is_portable && b.is_portable) || (!a.is_portable && !b.is_portable)) {
+                    return a.name.localeCompare(b.name);
+                }
+                // Otherwise, portable apps come first
+                return a.is_portable ? -1 : 1;
+            });
+            
+        default:
+            // Default to alphabetical sort
+            return appsCopy.sort((a, b) => a.name.localeCompare(b.name));
+    }
+}
+
+// Expose the sortApplications function to the window object
+window.sortApplications = sortApplications;
 
 // Function to display applications in the table
 function displayApplications(apps) {
@@ -93,12 +173,25 @@ function displayApplications(apps) {
             
             nameCell.appendChild(iconContainer);
             
+            // Create the app name container to allow space for the favorite star
+            const nameContainer = document.createElement('div');
+            nameContainer.className = 'app-name-container';
+            
             // Add app name
             const nameSpan = document.createElement('span');
             nameSpan.className = 'app-name';
             nameSpan.textContent = app.name;
-            nameCell.appendChild(nameSpan);
+            nameContainer.appendChild(nameSpan);
             
+            // Add favorite indicator if app is marked as favorite
+            if (app.is_favorite) {
+                const favoriteIcon = document.createElement('div');
+                favoriteIcon.className = 'favorite-indicator';
+                favoriteIcon.innerHTML = '<i class="fas fa-star"></i>';
+                nameContainer.appendChild(favoriteIcon);
+            }
+            
+            nameCell.appendChild(nameContainer);
             row.appendChild(nameCell);
             
             // Add click event to launch the application
@@ -117,87 +210,72 @@ function displayApplications(apps) {
         console.log(`Applied icon size of ${iconSizeNum}px to ${apps.length} application icons`);
     }).catch(error => {
         console.error("Error getting icon size:", error);
-        // If there's an error, continue without styling the icons
-        // Default styles from CSS will apply
-        
-        apps.forEach(app => {
-            const row = document.createElement('tr');
-            row.className = 'app-row';
-            row.dataset.appId = app.id;
-            
-            // Create app name cell with icon
-            const nameCell = document.createElement('td');
-            nameCell.className = 'app-cell';
-            
-            // Create icon container
-            const iconContainer = document.createElement('div');
-            iconContainer.className = 'app-icon-container';
-            
-            // Check for icon (either icon_data or icon_path)
-            let hasIcon = false;
-            
-            // Create icon element
-            const icon = document.createElement('img');
-            icon.className = 'app-icon';
-            
-            if (app.icon_data) {
-                // If we have base64 icon data, use it
-                icon.src = app.icon_data;
-                hasIcon = true;
-            } else if (app.icon_path) {
-                // If we have an icon path, use it with the file:// protocol
-                icon.src = `file://${app.icon_path}`;
-                hasIcon = true;
-                
-                // Add error handler in case the icon file can't be loaded
-                icon.onerror = () => {
-                    console.warn(`Failed to load icon for ${app.name} from path: ${app.icon_path}`);
-                    icon.style.display = 'none';
-                    
-                    // Create fallback icon with first letter if icon fails to load
-                    if (!iconContainer.querySelector('.app-icon-fallback')) {
-                        const fallbackIcon = document.createElement('div');
-                        fallbackIcon.className = 'app-icon-fallback';
-                        fallbackIcon.textContent = app.name.charAt(0).toUpperCase();
-                        iconContainer.appendChild(fallbackIcon);
-                    }
-                };
-            }
-            
-            // If we found an icon (path or data), add it
-            if (hasIcon) {
-                iconContainer.appendChild(icon);
-            } else {
-                // Create fallback icon with first letter
-                const fallbackIcon = document.createElement('div');
-                fallbackIcon.className = 'app-icon-fallback';
-                fallbackIcon.textContent = app.name.charAt(0).toUpperCase();
-                iconContainer.appendChild(fallbackIcon);
-            }
-            
-            nameCell.appendChild(iconContainer);
-            
-            // Add app name
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'app-name';
-            nameSpan.textContent = app.name;
-            nameCell.appendChild(nameSpan);
-            
-            row.appendChild(nameCell);
-            
-            // Add click event to launch the application
-            row.addEventListener('click', () => {
-                launchApplication(app.id);
-            });
-
-            // Add right-click event for context menu
-            row.addEventListener('contextmenu', (e) => {
-                showContextMenu(e, app.id);
-            });
-            
-            tableBody.appendChild(row);
-        });
+        // If there's an error, just use default styling from CSS
+        console.log("Using default icon styling due to error");
     });
+}
+
+// Expose the displayApplications function to the window object
+window.displayApplications = displayApplications;
+
+// Apply the selected sort option - exposed for menu.js
+window.applySortOption = function(sortValue) {
+    console.log(`Applying sort option from window function: ${sortValue}`);
+    
+    // Save the user's preference to localStorage for persistence in the current window
+    localStorage.setItem('appnest-sort-preference', sortValue);
+    
+    // Also save to electron-store so it persists between app restarts and syncs with settings
+    window.electronAPI.setDefaultView(sortValue)
+        .then(() => {
+            console.log(`Default view preference saved: ${sortValue}`);
+            // Sync with settings window if it's open
+            window.electronAPI.syncDefaultView(sortValue);
+        })
+        .catch(err => console.error('Error saving default view preference:', err));
+    
+    // Apply the sorting immediately to the current app list
+    const apps = window.appData?.apps || [];
+    if (apps.length > 0) {
+        const sortedApps = sortApplications(apps, sortValue);
+        displayApplications(sortedApps);
+    } else {
+        // If apps aren't loaded yet, just reload applications using the sort preference
+        loadApplications();
+    }
+    
+    // Show a visual indicator that sorting has been applied
+    showSortingNotification(sortValue);
+};
+
+// Show a brief notification when sorting is applied
+function showSortingNotification(sortValue) {
+    // Map sort values to user-friendly names
+    const sortNames = {
+        'alphabetical': 'Alphabetical',
+        'categories': 'Categories', 
+        'favorites': 'Favorites',
+        'most-used': 'Most Used',
+        'installation-type': 'Portable/Installed'
+    };
+    
+    // Create notification element if it doesn't exist
+    let notification = document.getElementById('sort-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'sort-notification';
+        notification.className = 'sort-notification';
+        document.body.appendChild(notification);
+    }
+    
+    // Set notification text and show it
+    notification.textContent = `Sorted by: ${sortNames[sortValue] || sortValue}`;
+    notification.classList.add('show');
+    
+    // Hide notification after a delay
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 2000);
 }
 
 // Show context menu for app items
@@ -1425,9 +1503,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const fallbackIcons = document.querySelectorAll('.app-icon-fallback');
             fallbackIcons.forEach(icon => {
                 icon.style.width = `${iconSizeNum}px`;
-                icon.style.height = `${iconSizeNum}px`;
-                icon.style.fontSize = `${Math.round(iconSizeNum * 0.6)}px`; // Adjust font size proportionally
-                icon.style.lineHeight = `${iconSizeNum}px`;
+                fallbackIcons.style.height = `${iconSizeNum}px`;
+                fallbackIcons.style.fontSize = `${Math.round(iconSizeNum * 0.6)}px`; // Adjust font size proportionally
+                fallbackIcons.style.lineHeight = `${iconSizeNum}px`;
             });
             
             // Also update the icon containers
@@ -1461,4 +1539,63 @@ function calculateIconSize(fontSize) {
     
     // Calculate the icon size based on that proportion
     return Math.round(minIconSize + proportion * (maxIconSize - minIconSize));
+}
+
+// Listen for default view changes from settings window
+if (window.electronAPI && window.electronAPI.onDefaultViewChanged) {
+    window.electronAPI.onDefaultViewChanged((value) => {
+        console.log(`Default view changed from settings: ${value}`);
+        
+        // Update the sort selection in the Sort menu
+        const sortSubmenu = document.getElementById('sortSubmenu');
+        if (sortSubmenu) {
+            // Remove active class from all sort options
+            sortSubmenu.querySelectorAll('.submenu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to the matching sort option
+            const matchingOption = sortSubmenu.querySelector(`.submenu-item[data-sort-value="${value}"]`);
+            if (matchingOption) {
+                matchingOption.classList.add('active');
+            }
+        }
+        
+        // Save to localStorage for persistence in the current window
+        localStorage.setItem('appnest-sort-preference', value);
+        
+        // Show a visual indicator that sorting has been applied
+        const sortNames = {
+            'alphabetical': 'Alphabetical',
+            'categories': 'Categories',
+            'favorites': 'Favorites',
+            'most-used': 'Most Used',
+            'installation-type': 'Portable/Installed'
+        };
+        
+        // Create notification element if it doesn't exist
+        let notification = document.getElementById('sort-notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'sort-notification';
+            notification.className = 'sort-notification';
+            document.body.appendChild(notification);
+        }
+        
+        // Set notification text and show it
+        notification.textContent = `Sorted by: ${sortNames[value] || value}`;
+        notification.classList.add('show');
+        
+        // Hide notification after a delay
+        setTimeout(() => {
+            notification.classList.remove('show');
+        }, 2000);
+        
+        // Instead of calling loadApplications() again, which would cause duplication,
+        // get the current apps from the table and re-sort them
+        window.electronAPI.getAllApps().then(apps => {
+            const sortedApps = sortApplications(apps, value);
+            displayApplications(sortedApps);
+        });
+    });
 }

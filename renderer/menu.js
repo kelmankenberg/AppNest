@@ -49,14 +49,24 @@ function initializeAppsMenu() {
         { name: 'Portable/Installed', value: 'installation-type', icon: 'fas fa-box' }
     ];
     
+    // Get the current sort preference from localStorage or use default
+    const currentSortPreference = localStorage.getItem('appnest-sort-preference') || 'alphabetical';
+    
     sortOptions.forEach(option => {
         const sortOption = document.createElement('button');
         sortOption.className = 'submenu-item';
         sortOption.setAttribute('data-sort-value', option.value);
+        
+        // No check mark, just icon and text
         sortOption.innerHTML = `
             <i class="${option.icon} submenu-icon"></i>
             <span class="submenu-text">${option.name}</span>
         `;
+        
+        // Add the 'active' class to the selected option
+        if (option.value === currentSortPreference) {
+            sortOption.classList.add('active');
+        }
         
         // Add click event to set the sort option
         sortOption.addEventListener('click', () => {
@@ -68,8 +78,12 @@ function initializeAppsMenu() {
             // Add active class to selected option
             sortOption.classList.add('active');
             
-            // Apply the sorting option
-            applySortOption(option.value);
+            // Apply the sorting option - use the global window function instead
+            if (typeof window.applySortOption === 'function') {
+                window.applySortOption(option.value);
+            } else {
+                console.error('applySortOption function not available on window object');
+            }
             
             // Hide submenu after selection
             sortSubmenu.classList.remove('show');
@@ -121,9 +135,9 @@ function initializeAppsMenu() {
 // Position the submenu next to its parent menu item
 function positionSubmenu(menuItem, submenu) {
     const menuRect = menuItem.getBoundingClientRect();
-    const submenuWidth = submenu.offsetWidth || 180; // Default width if not rendered yet
+    const submenuWidth = submenu.offsetWidth || 170; // Use our updated width
     
-    // Position to the right of the menu item
+    // Position to the right of the menu item by default
     submenu.style.top = `${menuRect.top}px`;
     submenu.style.left = `${menuRect.right}px`;
     
@@ -132,17 +146,31 @@ function positionSubmenu(menuItem, submenu) {
     if (menuRect.right + submenuWidth > viewportWidth) {
         // Position to the left of the menu item instead
         submenu.style.left = `${menuRect.left - submenuWidth}px`;
+        
+        // Now check if it would go off-screen to the left
+        if (parseInt(submenu.style.left) < 0) {
+            // If it would go off the left edge, position it at the left edge with a small margin
+            submenu.style.left = '5px';
+        }
     }
 }
 
 // Apply the selected sort option
 function applySortOption(sortValue) {
     console.log(`Applying sort option: ${sortValue}`);
-    // Save the user's preference
+    
+    // Save the user's preference to localStorage for persistence in the current window
     localStorage.setItem('appnest-sort-preference', sortValue);
     
-    // Apply the sorting to the app list
-    // This will need to be implemented based on how your app data is structured
+    // Apply the sorting immediately to the current app list
+    const apps = window.appData?.apps || [];
+    if (apps.length > 0) {
+        const sortedApps = window.sortApplications(apps, sortValue);
+        window.displayApplications(sortedApps);
+    } else {
+        // If apps aren't loaded yet, just reload applications using the sort preference
+        window.loadApplications();
+    }
     
     // Show a visual indicator that sorting has been applied
     showSortingNotification(sortValue);

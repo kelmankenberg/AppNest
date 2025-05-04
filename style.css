@@ -1119,6 +1119,41 @@ body {
     min-width: 0;
 }
 
+/* App name container with favorite indicator */
+.app-name-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    overflow: hidden; /* Prevent overflow */
+}
+
+/* App name should allow truncation */
+.app-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+/* Favorite indicator styles - now positioned within the app name container */
+.favorite-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px; /* Small gap between name and star */
+    color: gold;
+    font-size: 14px;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.favorite-indicator i {
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));
+}
+
+body.dark-theme .favorite-indicator i {
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.3));
+}
+
 /* Icon container for dialogs */
 #addAppDialog .icon-container,
 #editAppDialog .icon-container {
@@ -1292,4 +1327,23 @@ body.dark-theme .submenu-item:hover {
 
 body.dark-theme .submenu-item.active {
     background-color: var(--menu-active-dark, rgba(255, 255, 255, 0.08));
+}
+
+/* Favorite indicator styles */
+.favorite-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px; /* Small gap between name and star */
+    color: gold;
+    font-size: 14px;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.favorite-indicator i {
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));
+}
+
+body.dark-theme .favorite-indicator i {
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.3));
 }
