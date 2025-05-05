@@ -6,16 +6,28 @@
 - Added new Help menu with access to documentation and release notes
 - Implemented dark/light theme toggle for better customization
 - Added support for categorizing applications
+- Added comprehensive Help documentation system with navigation and search
+- Implemented Release Notes viewer with version highlighting
+- Restructured Settings & Customization help section to mirror Settings file organization (General, Appearance, App Config, Folders)
 
 ### Improvements
 - Enhanced search functionality with better filtering options
 - Improved application icons extraction for better visual display
 - Optimized startup performance for faster load times
+- Improved user experience with auto-closing menus when clicking elsewhere
+- Better theme synchronization across Help window and main application
 
 ### Bug Fixes
 - Fixed issue with folder paths containing special characters
 - Resolved display problems on high-DPI monitors
 - Fixed memory leak when refreshing application list repeatedly
+- Fixed Help menu positioning issues on smaller screens
+
+### Developer Improvements
+- Added comprehensive test suite for Help menu functionality
+- Implemented tests for Help documentation window
+- Added tests for Release Notes modal
+- Improved code structure with better separation of concerns
 
 ## Version 0.2.0 (May 5, 2025)
 
