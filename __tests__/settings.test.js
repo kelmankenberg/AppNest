@@ -184,4 +184,239 @@ describe('Settings Module', () => {
       expect(calculateTestIconSize(16)).toBe(20);
     });
   });
+  
+  describe('resetToDefaults', () => {
+    // Mock confirm function to return true (user clicked OK)
+    const originalConfirm = global.confirm;
+    
+    // Mock the resetToDefaults function
+    let resetToDefaults;
+    
+    beforeEach(() => {
+      // Set up window.confirm mock
+      global.confirm = jest.fn(() => true);
+      
+      // Set up document body
+      document.body = document.createElement('body');
+      
+      // Create and add theme options
+      const themeLight = document.createElement('div');
+      themeLight.setAttribute('data-theme', 'light');
+      themeLight.className = 'theme-option';
+      document.body.appendChild(themeLight);
+      
+      const themeDark = document.createElement('div');
+      themeDark.setAttribute('data-theme', 'dark');
+      themeDark.className = 'theme-option active';
+      document.body.appendChild(themeDark);
+      
+      // Create font size slider and value display
+      const fontSizeSlider = document.createElement('input');
+      fontSizeSlider.id = 'fontSize';
+      fontSizeSlider.type = 'range';
+      fontSizeSlider.value = '16';
+      document.body.appendChild(fontSizeSlider);
+      
+      const fontSizeValue = document.createElement('span');
+      fontSizeValue.id = 'fontSizeValue';
+      fontSizeValue.textContent = '16px';
+      document.body.appendChild(fontSizeValue);
+      
+      // Create folder toggles for app folders
+      const folderTypes = ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads'];
+      folderTypes.forEach(type => {
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.id = 'app' + type;
+        toggle.checked = false; // Set them to unchecked initially to test they get reset to checked
+        document.body.appendChild(toggle);
+      });
+      
+      // Create folder toggles for Windows folders
+      folderTypes.forEach(type => {
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.id = 'win' + type;
+        toggle.checked = false; // Set them to unchecked initially to test they get reset to checked
+        document.body.appendChild(toggle);
+      });
+      
+      // Create Start with Windows toggle
+      const startWithWindows = document.createElement('input');
+      startWithWindows.type = 'checkbox';
+      startWithWindows.id = 'startWithWindows';
+      startWithWindows.checked = true; // Set to checked initially to test it gets reset to unchecked
+      document.body.appendChild(startWithWindows);
+      
+      // Create Search Mode selector
+      const searchMode = document.createElement('select');
+      searchMode.id = 'searchMode';
+      const nameOption = document.createElement('option');
+      nameOption.value = 'name';
+      searchMode.appendChild(nameOption);
+      const descriptionOption = document.createElement('option');
+      descriptionOption.value = 'description';
+      searchMode.appendChild(descriptionOption);
+      searchMode.value = 'description'; // Set to description initially to test it gets reset to name
+      document.body.appendChild(searchMode);
+      
+      // Create folder type segment options
+      const appSegment = document.createElement('div');
+      appSegment.className = 'segment-option';
+      appSegment.setAttribute('data-folder-type', 'app');
+      document.body.appendChild(appSegment);
+      
+      const windowsSegment = document.createElement('div');
+      windowsSegment.className = 'segment-option active';
+      windowsSegment.setAttribute('data-folder-type', 'windows');
+      document.body.appendChild(windowsSegment);
+      
+      // Create folder contents
+      const appFolders = document.createElement('div');
+      appFolders.id = 'appFolders';
+      appFolders.className = 'folder-type-content';
+      document.body.appendChild(appFolders);
+      
+      const windowsFolders = document.createElement('div');
+      windowsFolders.id = 'windowsFolders';
+      windowsFolders.className = 'folder-type-content active';
+      document.body.appendChild(windowsFolders);
+      
+      // Create app folders path display
+      const pathValue = document.createElement('span');
+      pathValue.className = 'path-value';
+      pathValue.textContent = '/custom/path';
+      document.body.appendChild(pathValue);
+      
+      // Import the resetToDefaults function AFTER setting up all the mocks
+      jest.resetModules(); // Clear module cache
+      const settingsRenderer = require('../settings-renderer');
+      resetToDefaults = settingsRenderer.resetToDefaults;
+    });
+    
+    afterEach(() => {
+      // Restore original confirm function
+      global.confirm = originalConfirm;
+      
+      // Clean up the DOM
+      document.body.innerHTML = '';
+    });
+    
+    it('should reset all settings to default values when confirmed', async () => {
+      // Create mock APIs for testing
+      const mockAPIs = {
+        setTheme: jest.fn().mockResolvedValue(),
+        syncTheme: jest.fn(),
+        setFontSize: jest.fn().mockResolvedValue(),
+        syncFontSize: jest.fn(),
+        setAutoStart: jest.fn().mockResolvedValue(),
+        setFolderPreferences: jest.fn().mockResolvedValue(),
+        syncFolderPreferences: jest.fn(),
+        setAppFoldersRootPath: jest.fn().mockResolvedValue(),
+        setSearchMode: jest.fn().mockResolvedValue()
+      };
+      
+      // Call the function with injected APIs
+      resetToDefaults(mockAPIs);
+      
+      // Wait for all promises to resolve
+      await new Promise(process.nextTick);
+      
+      // Verify confirm was called
+      expect(global.confirm).toHaveBeenCalled();
+      
+      // Verify theme was reset to light
+      expect(mockAPIs.setTheme).toHaveBeenCalledWith('light');
+      expect(mockAPIs.syncTheme).toHaveBeenCalledWith('light');
+      
+      // Verify theme UI was updated
+      const lightTheme = document.querySelector('.theme-option[data-theme="light"]');
+      const darkTheme = document.querySelector('.theme-option[data-theme="dark"]');
+      expect(lightTheme.classList.contains('active')).toBe(true);
+      expect(darkTheme.classList.contains('active')).toBe(false);
+      
+      // Verify font size was reset to 14
+      expect(mockAPIs.setFontSize).toHaveBeenCalledWith(14, expect.any(Number));
+      expect(document.getElementById('fontSize').value).toBe('14');
+      expect(document.getElementById('fontSizeValue').textContent).toBe('14px');
+      
+      // Verify app folder toggles were reset to checked (visible)
+      ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads'].forEach(type => {
+        expect(document.getElementById('app' + type).checked).toBe(true);
+      });
+      
+      // Verify windows folder toggles were reset to checked (visible)
+      ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads'].forEach(type => {
+        expect(document.getElementById('win' + type).checked).toBe(true);
+      });
+      
+      // Verify folder type was reset to app
+      expect(document.querySelector('.segment-option[data-folder-type="app"]').classList.contains('active')).toBe(true);
+      expect(document.querySelector('.segment-option[data-folder-type="windows"]').classList.contains('active')).toBe(false);
+      
+      // Verify app folders path was reset to ./AppData
+      expect(document.querySelector('.path-value').textContent).toBe('./AppData');
+      if (mockAPIs.setAppFoldersRootPath) {
+        expect(mockAPIs.setAppFoldersRootPath).toHaveBeenCalledWith('./AppData');
+      }
+      
+      // Verify Start with Windows was set to off
+      expect(document.getElementById('startWithWindows').checked).toBe(false);
+      expect(mockAPIs.setAutoStart).toHaveBeenCalledWith(false);
+      
+      // Verify Search Mode was set to name only
+      expect(document.getElementById('searchMode').value).toBe('name');
+      if (mockAPIs.setSearchMode) {
+        expect(mockAPIs.setSearchMode).toHaveBeenCalledWith('name');
+      }
+      
+      // Verify folder preferences were saved with the correct default values
+      expect(mockAPIs.setFolderPreferences).toHaveBeenCalledWith({
+        folderType: 'app',
+        appFolders: {
+          documents: true,
+          music: true,
+          pictures: true,
+          videos: true,
+          downloads: true
+        },
+        windowsFolders: {
+          documents: true,
+          music: true,
+          pictures: true,
+          videos: true,
+          downloads: true
+        }
+      });
+      
+      // Verify folder preferences were synced with the main window
+      expect(mockAPIs.syncFolderPreferences).toHaveBeenCalled();
+    });
+    
+    it('should not reset settings when user cancels confirmation', () => {
+      // Override confirm to return false (user clicked Cancel)
+      global.confirm = jest.fn(() => false);
+      
+      // Create mock APIs for testing
+      const mockAPIs = {
+        setTheme: jest.fn().mockResolvedValue(),
+        syncTheme: jest.fn(),
+        setFontSize: jest.fn().mockResolvedValue(),
+        setAutoStart: jest.fn().mockResolvedValue(),
+        setFolderPreferences: jest.fn().mockResolvedValue()
+      };
+      
+      // Call the function with injected APIs
+      resetToDefaults(mockAPIs);
+      
+      // Verify confirm was called
+      expect(global.confirm).toHaveBeenCalled();
+      
+      // Verify no settings were changed
+      expect(mockAPIs.setTheme).not.toHaveBeenCalled();
+      expect(mockAPIs.setFontSize).not.toHaveBeenCalled();
+      expect(mockAPIs.setAutoStart).not.toHaveBeenCalled();
+      expect(mockAPIs.setFolderPreferences).not.toHaveBeenCalled();
+    });
+  });
 });
