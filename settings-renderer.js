@@ -215,6 +215,62 @@ function initializeInputs() {
         });
     }
     
+    // Minimize on Power Button click toggle
+    const minimizeOnPowerButton = document.getElementById('minimizeOnPowerButton');
+    if (minimizeOnPowerButton) {
+        // Initialize the checkbox state from stored settings
+        window.electronAPI.getMinimizeOnPowerButton()
+            .then(enabled => {
+                minimizeOnPowerButton.checked = enabled;
+                console.log(`Minimize on power button is currently ${enabled ? 'enabled' : 'disabled'}`);
+            })
+            .catch(err => {
+                console.error('Error getting minimize-on-power-button setting:', err);
+                minimizeOnPowerButton.checked = false; // Default to off if there's an error
+            });
+        
+        // Set up listener for changes
+        minimizeOnPowerButton.addEventListener('change', () => {
+            const enabled = minimizeOnPowerButton.checked;
+            
+            // Show feedback indicator
+            const settingGroup = minimizeOnPowerButton.closest('.setting-group');
+            const statusIndicator = document.createElement('span');
+            statusIndicator.className = 'setting-status';
+            statusIndicator.textContent = 'Saving...';
+            settingGroup.appendChild(statusIndicator);
+            
+            window.electronAPI.setMinimizeOnPowerButton(enabled)
+                .then(success => {
+                    console.log(`Minimize on power button ${enabled ? 'enabled' : 'disabled'}: ${success}`);
+                    statusIndicator.textContent = success ? 'Saved ✓' : 'Failed ✗';
+                    statusIndicator.className = `setting-status ${success ? 'success' : 'error'}`;
+                    
+                    // Sync the change to the main window immediately
+                    window.electronAPI.syncMinimizeOnPowerButton(enabled);
+                    
+                    // Remove the status indicator after a delay
+                    setTimeout(() => {
+                        if (statusIndicator.parentNode) {
+                            statusIndicator.parentNode.removeChild(statusIndicator);
+                        }
+                    }, 3000);
+                })
+                .catch(err => {
+                    console.error('Error saving minimize-on-power-button setting:', err);
+                    statusIndicator.textContent = 'Error ✗';
+                    statusIndicator.className = 'setting-status error';
+                    
+                    // Remove the status indicator after a delay
+                    setTimeout(() => {
+                        if (statusIndicator.parentNode) {
+                            statusIndicator.parentNode.removeChild(statusIndicator);
+                        }
+                    }, 3000);
+                });
+        });
+    }
+    
     // Search mode selector
     const searchMode = document.getElementById('searchMode');
     if (searchMode) {
@@ -589,6 +645,18 @@ function resetToDefaults(testAPIs) {
             // Save the auto-start setting
             apis.setAutoStart(false)
                 .catch(err => console.error('Error saving auto-start setting:', err));
+        }
+        
+        // Reset Minimize on Power Button toggle to OFF
+        const minimizeOnPowerButton = document.getElementById('minimizeOnPowerButton');
+        if (minimizeOnPowerButton) {
+            minimizeOnPowerButton.checked = false;
+            // Save the minimize-on-power-button setting
+            apis.setMinimizeOnPowerButton(false)
+                .catch(err => console.error('Error saving minimize-on-power-button setting:', err));
+            
+            // Sync the minimize-on-power-button change to the main window immediately
+            apis.syncMinimizeOnPowerButton(false);
         }
         
         // Reset Search Mode to 'name' (Name Only)

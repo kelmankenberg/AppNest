@@ -1,0 +1,353 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    pointer-events: none;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-container {
+    background-color: var(--background-color, #fff);
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    width: 80%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    color: var(--text-color, #333);
+    transform: translateY(20px);
+    transition: transform 0.3s ease-in-out;
+}
+
+.modal-overlay.show .modal-container {
+    transform: translateY(0);
+}
+
+.modal-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color, #eaeaea);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-header h2 i {
+    color: var(--primary-color, #5c7cfa);
+}
+
+.modal-close-button {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--text-secondary, #888);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.modal-close-button:hover {
+    background-color: var(--hover-color, #f0f0f0);
+    color: var(--text-color, #333);
+}
+
+.modal-body {
+    padding: 16px;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Custom scrollbar for the modal body */
+.modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: var(--background-secondary, #f1f1f1);
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb, #c1c1c1);
+    border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-hover, #a8a8a8);
+}
+
+.modal-footer {
+    padding: 16px;
+    border-top: 1px solid var(--border-color, #eaeaea);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.modal-footer button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-footer .secondary-button {
+    background-color: var(--button-secondary-bg, #e0e0e0);
+    color: var(--button-secondary-text, #333);
+}
+
+.modal-footer .secondary-button:hover {
+    background-color: var(--button-secondary-hover, #d4d4d4);
+}
+
+.modal-footer .primary-button {
+    background-color: var(--primary-color, #5c7cfa);
+    color: var(--button-primary-text, #fff);
+}
+
+.modal-footer .primary-button:hover {
+    background-color: var(--primary-hover, #4263eb);
+}
+
+/* Markdown Content Styling */
+.markdown-content {
+    line-height: 1.6;
+    font-size: 16px;
+    color: var(--text-color, #333);
+}
+
+.markdown-content h1, 
+.markdown-content h2, 
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.markdown-content h1:first-child,
+.markdown-content h2:first-child {
+    margin-top: 0;
+}
+
+.markdown-content h1 {
+    font-size: 1.8em;
+    border-bottom: 1px solid var(--border-color, #eaeaea);
+    padding-bottom: 0.3em;
+}
+
+.markdown-content h2 {
+    font-size: 1.5em;
+    border-bottom: 1px solid var(--border-color, #eaeaea);
+    padding-bottom: 0.3em;
+}
+
+.markdown-content h3 {
+    font-size: 1.3em;
+}
+
+.markdown-content h4 {
+    font-size: 1.1em;
+}
+
+.markdown-content p {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.markdown-content strong {
+    font-weight: 600;
+}
+
+.markdown-content ul, 
+.markdown-content ol {
+    padding-left: 2em;
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.markdown-content li {
+    margin-bottom: 0.25em;
+}
+
+.markdown-content li+li {
+    margin-top: 0.25em;
+}
+
+.markdown-content code {
+    padding: 0.2em 0.4em;
+    margin: 0;
+    font-size: 85%;
+    background-color: var(--code-bg, rgba(175, 184, 193, 0.2));
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.markdown-content pre {
+    padding: 16px;
+    overflow: auto;
+    font-size: 85%;
+    line-height: 1.45;
+    background-color: var(--code-block-bg, #f6f8fa);
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.markdown-content pre code {
+    padding: 0;
+    background-color: transparent;
+    font-family: monospace;
+    display: block;
+    white-space: pre;
+}
+
+.markdown-content hr {
+    height: 0.25em;
+    padding: 0;
+    margin: 24px 0;
+    background-color: var(--border-color, #e1e4e8);
+    border: 0;
+}
+
+.markdown-content blockquote {
+    padding: 0 1em;
+    color: var(--blockquote-text, #6a737d);
+    border-left: 0.25em solid var(--blockquote-border, #dfe2e5);
+    margin: 0 0 16px 0;
+}
+
+.markdown-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+.markdown-content table {
+    display: block;
+    width: 100%;
+    overflow: auto;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+}
+
+.markdown-content table th,
+.markdown-content table td {
+    padding: 6px 13px;
+    border: 1px solid var(--table-border, #dfe2e5);
+}
+
+.markdown-content table tr {
+    background-color: var(--background-color, #fff);
+    border-top: 1px solid var(--table-border, #dfe2e5);
+}
+
+.markdown-content table tr:nth-child(2n) {
+    background-color: var(--table-alt-row, #f6f8fa);
+}
+
+/* Version section styling */
+.version-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color, #eaeaea);
+}
+
+.version-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.version-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.version-number {
+    color: var(--primary-color, #5c7cfa);
+    font-weight: 600;
+    font-size: 1.4em;
+}
+
+.version-date {
+    color: var(--text-secondary, #666);
+    font-size: 0.9em;
+}
+
+/* Change category styling */
+.change-category {
+    margin-top: 15px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 1.1em;
+    color: var(--text-color, #333);
+}
+
+.feature-list, .bugfix-list, .improvement-list {
+    margin-top: 5px;
+    margin-bottom: 15px;
+}
+
+/* Dark mode adjustments */
+body.dark-theme .markdown-content {
+    color: var(--text-color, #e1e1e1);
+}
+
+body.dark-theme .markdown-content code {
+    background-color: var(--code-bg, rgba(70, 70, 70, 0.5));
+}
+
+body.dark-theme .markdown-content pre {
+    background-color: var(--code-block-bg, #2d2d2d);
+}
+
+body.dark-theme .markdown-content blockquote {
+    color: var(--blockquote-text, #a0a0a0);
+    border-left-color: var(--blockquote-border, #555);
+}
+
+body.dark-theme .markdown-content table tr:nth-child(2n) {
+    background-color: var(--table-alt-row, #2c2c2c);
+}
+
+body.dark-theme .markdown-content h1,
+body.dark-theme .markdown-content h2 {
+    border-bottom-color: var(--border-color, #444);
+}
+
+body.dark-theme .markdown-content hr {
+    background-color: var(--border-color, #555);
+}

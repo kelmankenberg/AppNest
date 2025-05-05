@@ -1,0 +1,176 @@
+/* Release notes specific styling */
+
+/* Override base font size for release notes modal */
+#releaseNotesModal .markdown-content {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Header size adjustments */
+#releaseNotesModal .markdown-content h1 {
+    font-size: 1.6em;
+    margin-bottom: 0.8em;
+}
+
+#releaseNotesModal .markdown-content h2 {
+    font-size: 1.4em;
+    margin-bottom: 0.7em;
+}
+
+#releaseNotesModal .markdown-content h3 {
+    font-size: 1.2em;
+    margin-bottom: 0.6em;
+}
+
+#releaseNotesModal .markdown-content h4 {
+    font-size: 1.1em;
+    margin-bottom: 0.5em;
+}
+
+/* Version header adjustments */
+#releaseNotesModal .version-section {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+}
+
+#releaseNotesModal .version-header {
+    margin-bottom: 8px;
+}
+
+#releaseNotesModal .version-number {
+    font-size: 1.3em;
+}
+
+#releaseNotesModal .version-date {
+    font-size: 0.85em;
+}
+
+/* Change category styling */
+#releaseNotesModal .change-category {
+    font-size: 1em;
+    margin-top: 12px;
+    margin-bottom: 6px;
+}
+
+/* Change subcategory styling */
+#releaseNotesModal .change-subcategory {
+    margin-top: 10px;
+    margin-bottom: 6px;
+    margin-left: 12px;
+    font-weight: 500;
+    font-size: 0.95em;
+    color: var(--text-color, #444);
+}
+
+/* Lists styling */
+#releaseNotesModal .markdown-content ul,
+#releaseNotesModal .markdown-content ol {
+    padding-left: 1.8em;
+    margin-bottom: 12px;
+}
+
+#releaseNotesModal .markdown-content li {
+    margin-bottom: 0.2em;
+}
+
+#releaseNotesModal .markdown-content li+li {
+    margin-top: 0.2em;
+}
+
+/* Subcategory lists styling */
+#releaseNotesModal .settings-reset-functionality-list li,
+#releaseNotesModal .improvements-list li,
+#releaseNotesModal .developer-improvements-list li {
+    margin-left: 12px;
+}
+
+/* Add a subtle left border to subcategories for visual hierarchy */
+#releaseNotesModal .change-subcategory + ul {
+    border-left: 2px solid var(--border-subtle, #eaeaea);
+    padding-left: 12px;
+    margin-left: 12px;
+}
+
+/* Code block adjustments */
+#releaseNotesModal .markdown-content code {
+    font-size: 0.9em;
+}
+
+#releaseNotesModal .markdown-content pre {
+    font-size: 0.9em;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+/* Feature-specific list color coding */
+#releaseNotesModal .feature-list li::marker {
+    color: var(--feature-color, #4caf50);
+}
+
+#releaseNotesModal .improvement-list li::marker {
+    color: var(--improvement-color, #2196f3);
+}
+
+#releaseNotesModal .bugfix-list li::marker {
+    color: var(--bugfix-color, #ff9800);
+}
+
+#releaseNotesModal .notes-list li::marker {
+    color: var(--notes-color, #9e9e9e);
+}
+
+/* Current version highlighting */
+#releaseNotesModal .version-section.current-version {
+    background-color: var(--current-version-bg, rgba(92, 124, 250, 0.08));
+    border-radius: 6px;
+    padding: 12px;
+    margin-left: -12px;
+    margin-right: -12px;
+}
+
+#releaseNotesModal .version-section.current-version .version-number {
+    color: var(--current-version-color, #4263eb);
+}
+
+/* Loading and error states */
+#releaseNotesModal .loading-indicator {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-secondary, #666);
+}
+
+#releaseNotesModal .error-message {
+    text-align: center;
+    padding: 20px;
+    color: var(--error-color, #f44336);
+}
+
+#releaseNotesModal .error-message i {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+/* Dark theme specific adjustments */
+body.dark-theme #releaseNotesModal .version-section.current-version {
+    background-color: var(--current-version-bg-dark, rgba(92, 124, 250, 0.15));
+}
+
+body.dark-theme #releaseNotesModal .feature-list li::marker {
+    color: var(--feature-color-dark, #81c784);
+}
+
+body.dark-theme #releaseNotesModal .improvement-list li::marker {
+    color: var(--improvement-color-dark, #64b5f6);
+}
+
+body.dark-theme #releaseNotesModal .bugfix-list li::marker {
+    color: var(--bugfix-color-dark, #ffb74d);
+}
+
+body.dark-theme #releaseNotesModal .notes-list li::marker {
+    color: var(--notes-color-dark, #bdbdbd);
+}
+
+body.dark-theme #releaseNotesModal .change-subcategory + ul {
+    border-left-color: var(--border-subtle-dark, #444);
+}

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; font-src https://cdnjs.cloudflare.com; script-src 'self'">
+    <title>AppNest Help</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles/help.css">
+</head>
+<body>
+    <div class="help-container">
+        <!-- Help Header -->
+        <header class="help-header">
+            <div class="help-title">
+                <img src="resources/images/nest-with-eggs.244x256.png" alt="AppNest Logo" class="help-logo">
+                <h1>AppNest Help</h1>
+            </div>
+            <div class="help-search">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="helpSearchInput" placeholder="Search help topics...">
+                </div>
+            </div>
+            <div class="window-controls">
+                <button id="closeHelpWindow" class="window-control-button" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="help-content">
+            <!-- Help Sidebar Navigation -->
+            <nav class="help-sidebar">
+                <ul class="help-nav-menu">
+                    <li class="help-nav-item active" data-section="getting-started">
+                        <i class="fas fa-rocket"></i> Getting Started
+                        <ul class="help-subnav">
+                            <li data-topic="welcome" class="active">Welcome to AppNest</li>
+                            <li data-topic="system-requirements">System Requirements</li>
+                            <li data-topic="installation">Installation Guide</li>
+                        </ul>
+                    </li>
+                    <li class="help-nav-item" data-section="adding-applications">
+                        <i class="fas fa-plus-circle"></i> Adding Applications
+                        <ul class="help-subnav">
+                            <li data-topic="add-app">Adding a New Application</li>
+                            <li data-topic="portable-apps">Working with Portable Apps</li>
+                            <li data-topic="installed-apps">Working with Installed Apps</li>
+                            <li data-topic="categories">Using Categories</li>
+                        </ul>
+                    </li>
+                    <li class="help-nav-item" data-section="managing-applications">
+                        <i class="fas fa-tasks"></i> Managing Applications
+                        <ul class="help-subnav">
+                            <li data-topic="launch-apps">Launching Applications</li>
+                            <li data-topic="edit-apps">Editing Application Details</li>
+                            <li data-topic="remove-apps">Removing Applications</li>
+                            <li data-topic="favorites">Using Favorites</li>
+                            <li data-topic="sorting">Sorting Applications</li>
+                        </ul>
+                    </li>
+                    <li class="help-nav-item" data-section="settings-customization">
+                        <i class="fas fa-sliders-h"></i> Settings & Customization
+                        <ul class="help-subnav">
+                            <li data-topic="settings-general">General Settings</li>
+                            <li data-topic="settings-appearance">Appearance</li>
+                            <li data-topic="settings-app-config">App Configuration</li>
+                            <li data-topic="settings-folders">Folders Management</li>
+                            <li data-topic="settings-reset">Resetting Settings</li>
+                        </ul>
+                    </li>
+                    <li class="help-nav-item" data-section="troubleshooting">
+                        <i class="fas fa-wrench"></i> Troubleshooting
+                        <ul class="help-subnav">
+                            <li data-topic="common-issues">Common Issues</li>
+                            <li data-topic="missing-icons">Missing Icons</li>
+                            <li data-topic="app-launch-failures">Application Launch Failures</li>
+                        </ul>
+                    </li>
+                    <li class="help-nav-item" data-section="about">
+                        <i class="fas fa-info-circle"></i> About AppNest
+                        <ul class="help-subnav">
+                            <li data-topic="version-info">Version Information</li>
+                            <li data-topic="credits">Credits</li>
+                            <li data-topic="license">License</li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Help Main Content Area -->
+            <main class="help-main-content">
+                <div id="help-content-container">
+                    <!-- Content will be loaded dynamically here -->
+                    <div class="help-topic active" id="welcome">
+                        <h1>Welcome to AppNest</h1>
+                        <p class="introduction">
+                            AppNest is an application launcher designed to work in harmony with the Windows Start menu or as a standalone launcher. Its goal is to provide a seamless, efficient way to launch both installed and portable applications, enhancing workflow and organization for all types of users.
+                        </p>
+                        
+                        <div class="help-section">
+                            <h2>Key Features</h2>
+                            <ul>
+                                <li><strong>Unified Launcher:</strong> Access both portable and installed applications from one interface</li>
+                                <li><strong>Organization Tools:</strong> Sort apps by favorites, categories, usage, and more</li> 
+                                <li><strong>Quick Search:</strong> Find your applications instantly with the search feature</li>
+                                <li><strong>Folder Access:</strong> Quick access to important folders for seamless workflow</li>
+                                <li><strong>Drive Space Monitoring:</strong> Visual indicators of available disk space</li>
+                                <li><strong>Dark & Light Themes:</strong> Work comfortably in any lighting conditions</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="help-section">
+                            <h2>Getting Started</h2>
+                            <p>To get the most out of AppNest, we recommend starting with these steps:</p>
+                            
+                            <ol>
+                                <li>Add your most frequently used applications using the <i class="fas fa-plus-circle"></i> button in the Apps menu</li>
+                                <li>Create categories to organize your applications</li>
+                                <li>Mark your essential apps as favorites for quick access</li>
+                                <li>Experiment with different sort options to find your preferred view</li>
+                                <li>Customize AppNest's appearance in the Settings</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="help-section">
+                            <h2>Need More Help?</h2>
+                            <p>Navigate through the topics on the left sidebar to find detailed guidance on specific features and functionalities. If you encounter any issues or have questions not covered in this documentation, please refer to the Troubleshooting section.</p>
+                        </div>
+                    </div>
+
+                    <!-- Adding Settings & Customization Help Topics -->
+                    <div class="help-topic" id="settings-general">
+                        <h1>General Settings</h1>
+                        <p class="introduction">
+                            General settings control the basic behavior and functionality of AppNest.
+                        </p>
+                        
+                        <div class="help-section">
+                            <h2>Startup Options</h2>
+                            <p>Configure how AppNest behaves when your computer starts.</p>
+                            
+                            <h3>Start with Windows</h3>
+                            <p>When enabled, AppNest will automatically launch when you start your computer.</p>
+                            <ul>
+                                <li><strong>ON:</strong> AppNest starts automatically with Windows</li>
+                                <li><strong>OFF:</strong> AppNest must be started manually</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="help-section">
+                            <h2>Search Options</h2>
+                            <p>Control how the search functionality operates.</p>
+                            
+                            <h3>Search Mode</h3>
+                            <p>Choose which properties of your applications are included when searching.</p>
+                            <ul>
+                                <li><strong>Name Only:</strong> Search only matches application names</li>
+                                <li><strong>Name & Description:</strong> Search includes both names and descriptions</li>
+                                <li><strong>All Properties:</strong> Search includes all application properties (name, description, path, etc.)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="help-topic" id="settings-appearance">
+                        <h1>Appearance Settings</h1>
+                        <p class="introduction">
+                            Customize the visual aspects of AppNest to match your preferences and improve usability.
+                        </p>
+                        
+                        <div class="help-section">
+                            <h2>Theme</h2>
+                            <p>AppNest offers light and dark themes to match your preference and reduce eye strain.</p>
+                            
+                            <h3>Theme Selection</h3>
+                            <ul>
+                                <li><strong>Light Theme:</strong> Brighter interface ideal for well-lit environments</li>
+                                <li><strong>Dark Theme:</strong> Darker interface that reduces eye strain in low-light conditions</li>
+                            </ul>
+                            
+                            <p><i class="fas fa-lightbulb"></i> <em>Tip: The theme switcher is also available in the main window's footer for quick access.</em></p>
+                        </div>
+                        
+                        <div class="help-section">
+                            <h2>Font Size</h2>
+                            <p>Adjust the text size in the application menu for better readability.</p>
+                            
+                            <h3>App Menu Font Size</h3>
+                            <p>Select the font size (in pixels) that works best for your display and preferences. The default is 14px.</p>
+                            <ul>
+                                <li><strong>Smaller sizes (12px):</strong> Fit more content on screen</li>
+                                <li><strong>Larger sizes (16-18px):</strong> Improve readability</li>
+                            </ul>
+                            
+                            <p><i class="fas fa-info-circle"></i> <em>Note: Font size changes apply to the application list only, not to the entire interface.</em></p>
+                        </div>
+                    </div>
+
+                    <div class="help-topic" id="settings-app-config">
+                        <h1>App Configuration</h1>
+                        <p class="introduction">
+                            Configure how applications are displayed and organized in AppNest.
+                        </p>
+                        
+                        <div class="help-section">
+                            <h2>Application Display</h2>
+                            <p>Control how applications are presented in the AppNest interface.</p>
+                            
+                            <h3>Default Sort Method</h3>
+                            <p>Choose the default order for displaying your applications:</p>
+                            <ul>
+                                <li><strong>Alphabetical:</strong> Sort by application name (A-Z)</li>
+                                <li><strong>Most Used:</strong> Sort by frequency of use</li>
+                                <li><strong>Recently Added:</strong> Show newest additions first</li>
+                                <li><strong>Recently Used:</strong> Show recently launched applications first</li>
+                                <li><strong>Category:</strong> Group applications by their assigned categories</li>
+                            </ul>
+                            
+                            <h3>Show Icon Labels</h3>
+                            <p>Toggle whether application names are displayed beneath their icons.</p>
+                            <ul>
+                                <li><strong>ON:</strong> Display application names</li>
+                                <li><strong>OFF:</strong> Show icons only</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="help-section">
+                            <h2>Categories</h2>
+                            <p>Customize how application categories are managed and displayed.</p>
+                            
+                            <h3>Default Category</h3>
+                            <p>Set the default category assigned to newly added applications when no category is specified.</p>
+                            
+                            <h3>Show Empty Categories</h3>
+                            <ul>
+                                <li><strong>ON:</strong> Display all categories, even those with no applications</li>
+                                <li><strong>OFF:</strong> Hide categories with no assigned applications</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="help-topic" id="settings-folders">
+                        <h1>Folders Management</h1>
+                        <p class="introduction">
+                            Configure how folders are displayed and managed in AppNest.
+                        </p>
+                        
+                        <div class="help-section">
+                            <h2>Folder Button Visibility</h2>
+                            <p>Control which folder types are shown in the folder navigation panel.</p>
+                            
+                            <h3>App Folders</h3>
+                            <p>These are folders defined specifically for AppNest, typically containing your portable applications.</p>
+                            <ul>
+                                <li><strong>ON:</strong> Show app folders in the navigation panel</li>
+                                <li><strong>OFF:</strong> Hide app folders</li>
+                            </ul>
+                            
+                            <h3>User Folders</h3>
+                            <p>Standard Windows user folders like Documents, Pictures, Downloads, etc.</p>
+                            <ul>
+                                <li><strong>ON:</strong> Show user folders in the navigation panel</li>
+                                <li><strong>OFF:</strong> Hide user folders</li>
+                            </ul>
+                            
+                            <h3>Individual Folder Visibility</h3>
+                            <p>For each app folder and user folder, you can toggle its visibility independently.</p>
+                        </div>
+                        
+                        <div class="help-section">
+                            <h2>App Folders Configuration</h2>
+                            
+                            <h3>App Folders Path</h3>
+                            <p>Set the base directory where AppNest looks for application folders. This is particularly useful for portable app organization.</p>
+                            <p>Default: <code>./AppData</code> (relative to the AppNest installation folder)</p>
+                            
+                            <h3>Changing the App Folders Path</h3>
+                            <ol>
+                                <li>Click the "Browse" button next to the path field</li>
+                                <li>Navigate to your desired folder location</li>
+                                <li>Click "Select Folder" to confirm</li>
+                                <li>Click "Save" to apply the change</li>
+                            </ol>
+                            
+                            <p><i class="fas fa-exclamation-triangle"></i> <em>Warning: Changing the app folders path may require you to update your application paths if they were previously relative to the old location.</em></p>
+                        </div>
+                    </div>
+
+                    <div class="help-topic" id="settings-reset">
+                        <h1>Resetting Settings</h1>
+                        <p class="introduction">
+                            If you need to restore AppNest to its default configuration, you can reset all settings at once.
+                        </p>
+                        
+                        <div class="help-section">
+                            <h2>Reset to Default Settings</h2>
+                            <p>This function will restore all settings to their factory defaults. This can be helpful if:</p>
+                            <ul>
+                                <li>You've made configuration changes that are causing issues</li>
+                                <li>You want to start fresh with the original settings</li>
+                                <li>You're troubleshooting problems with the application</li>
+                            </ul>
+                            
+                            <h3>Default Values</h3>
+                            <p>When reset, the following default values will be applied:</p>
+                            <ul>
+                                <li>Theme: Light</li>
+                                <li>App Menu Font Size: 14px</li>
+                                <li>Folder Button Visibility: App Folders</li>
+                                <li>All folder visibility toggles: ON (for both App Folders and User Folders)</li>
+                                <li>App Folders Path: './AppData'</li>
+                                <li>Start with Windows: OFF</li>
+                                <li>Search Mode: Name Only</li>
+                            </ul>
+                            
+                            <h3>How to Reset Settings</h3>
+                            <ol>
+                                <li>Open the Settings window</li>
+                                <li>Scroll to the bottom of any settings tab</li>
+                                <li>Click "Reset to Default Settings"</li>
+                                <li>Confirm your choice in the dialog that appears</li>
+                            </ol>
+                            
+                            <p><i class="fas fa-exclamation-triangle"></i> <em>Caution: This action cannot be undone. All your current settings will be permanently lost.</em></p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="renderer/help-renderer.js"></script>
+</body>
+</html>
