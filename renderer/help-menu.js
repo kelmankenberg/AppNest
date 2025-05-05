@@ -63,6 +63,13 @@ function initializeHelpMenu() {
         e.stopPropagation();
     });
 
+    // Add document click handler to close menu when clicking outside
+    document.addEventListener('click', () => {
+        if (helpMenu.style.display === 'block') {
+            helpMenu.style.display = 'none';
+        }
+    });
+
     // Handle Help button click
     if (helpMenuItem) {
         helpMenuItem.addEventListener('click', () => {
