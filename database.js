@@ -497,6 +497,7 @@ module.exports = {
     getMostUsedApplications,
     searchApplications,
     addApp,
+    addApplication: addApp, // Alias for test compatibility
     updateApplication,
     deleteApplication,
     updateApplicationUsage,

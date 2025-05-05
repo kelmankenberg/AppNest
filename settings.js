@@ -78,7 +78,8 @@ module.exports = {
     },
     getFontSize: async () => {
         if (!store) await initStore();
-        return store.get('font-size');
+        const fontSize = store.get('font-size');
+        return fontSize !== undefined ? fontSize : '16';
     },
     setFontSize: async (fontSize, iconSize) => {
         if (!store) await initStore();

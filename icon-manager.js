@@ -9,10 +9,21 @@ const path = require('path');
 const crypto = require('crypto');
 const { execFile } = require('child_process');
 const util = require('util');
-const execFileAsync = util.promisify(execFile);
+
+// Guard against execFile being undefined in test environments
+const execFileAsync = execFile ? util.promisify(execFile) : null;
 
 // Directory for storing icon files
-const ICON_DIR = path.join(app.getPath('userData'), 'app-icons');
+// Handle the case where app.getPath is not available in test environment
+let ICON_DIR;
+try {
+  ICON_DIR = app && typeof app.getPath === 'function' 
+    ? path.join(app.getPath('userData'), 'app-icons') 
+    : path.join(process.cwd(), 'test-app-icons');
+} catch (error) {
+  console.warn('Could not get user data path, using fallback for tests', error);
+  ICON_DIR = path.join(process.cwd(), 'test-app-icons');
+}
 
 /**
  * Ensures the icon directory exists
@@ -82,10 +93,20 @@ async function extractIcon(executablePath) {
         }
       `;
 
-      const { stdout, stderr } = await execFileAsync('powershell', ['-Command', psScript]);
+      if (!execFileAsync) {
+        console.error('execFileAsync is not available, cannot extract icon');
+        return null;
+      }
 
-      if (stderr) {
-        console.error('PowerShell error:', stderr);
+      try {
+        const { stdout, stderr } = await execFileAsync('powershell', ['-Command', psScript]);
+
+        if (stderr) {
+          console.error('PowerShell error:', stderr);
+          return null;
+        }
+      } catch (error) {
+        console.error('Error executing PowerShell command:', error);
         return null;
       }
 

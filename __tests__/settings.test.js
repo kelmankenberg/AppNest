@@ -96,7 +96,7 @@ describe('Settings Module', () => {
       mockGet.mockImplementationOnce(() => undefined);
       
       const fontSize = await settings.getFontSize();
-      expect(fontSize).toBeDefined();
+      expect(fontSize).toBe('16'); // Default font size should be 16
       expect(mockGet).toHaveBeenCalledWith('font-size');
     });
   });
@@ -138,8 +138,12 @@ describe('Settings Module', () => {
     });
     
     it('should return default icon size when neither font nor icon size are set', async () => {
+      // Mock has('icon-size') to return false and get('font-size') to return undefined
       mockHas.mockImplementationOnce(() => false);
-      mockGet.mockImplementationOnce(() => undefined);
+      mockGet.mockImplementationOnce((key, defaultVal) => {
+        if (key === 'font-size') return defaultVal; // Use the default value provided
+        return undefined;
+      });
       
       const iconSize = await settings.getIconSize();
       expect(iconSize).toBe('20'); // Default to 20px
