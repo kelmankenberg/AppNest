@@ -1052,6 +1052,51 @@ body {
     display: none;
 }
 
+/* Folder header container and toggle button */
+.folder-header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.folder-set-header {
+    margin: 0;
+    flex-grow: 1;
+}
+
+.folder-toggle-button {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.folder-toggle-button:hover {
+    background-color: var(--hover-background);
+}
+
+.folder-toggle-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+/* Add a subtle rotation animation for the icon when clicked */
+.folder-toggle-button i {
+    transition: transform 0.3s ease;
+}
+
+.folder-toggle-button.active i {
+    transform: rotate(180deg);
+}
+
 /* Hidden element class */
 .hidden {
     display: none !important;

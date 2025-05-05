@@ -1049,6 +1049,40 @@ function updateFolderButtonVisibility(prefs) {
     }
 }
 
+// Folder toggle button functionality
+document.getElementById('folderToggleBtn').addEventListener('click', () => {
+    const folderHeader = document.getElementById('folderHeader');
+    const appFolders = document.querySelector('.folder-buttons.app-folders');
+    const windowsFolders = document.querySelector('.folder-buttons.windows-folders');
+    const toggleButton = document.getElementById('folderToggleBtn');
+    
+    // Toggle the active class on the button for rotation animation
+    toggleButton.classList.toggle('active');
+    
+    // Check which folders are currently active and switch
+    if (appFolders.classList.contains('active')) {
+        // Switch to Windows User Folders
+        appFolders.classList.remove('active');
+        windowsFolders.classList.add('active');
+        folderHeader.textContent = 'User Folders';
+        
+        // Save the preference
+        window.electronAPI.setFolderPreferences({
+            folderType: 'windows',
+        }).catch(err => console.error('Error saving folder preference:', err));
+    } else {
+        // Switch to App Folders
+        windowsFolders.classList.remove('active');
+        appFolders.classList.add('active');
+        folderHeader.textContent = 'App Folders';
+        
+        // Save the preference
+        window.electronAPI.setFolderPreferences({
+            folderType: 'app',
+        }).catch(err => console.error('Error saving folder preference:', err));
+    }
+});
+
 // Function to load categories into the select elements
 function loadCategories() {
     console.log('Loading categories...');
