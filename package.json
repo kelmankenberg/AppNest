@@ -58,6 +58,13 @@
     "portable": {
       "artifactName": "AppNest-Portable-${version}.exe"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "KelMankenberg",
+        "repo": "AppNest"
+      }
+    ],
     "forceCodeSigning": false,
     "asar": true,
     "asarUnpack": [
