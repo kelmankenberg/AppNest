@@ -1007,6 +1007,23 @@ function loadFolderButtonPreferences() {
                 };
             }
             
+            // Make sure both folder types have all required properties
+            prefs.appFolders = prefs.appFolders || {};
+            prefs.windowsFolders = prefs.windowsFolders || {};
+            
+            // Ensure all properties exist (in case of partial preferences)
+            const folderTypes = ['documents', 'music', 'pictures', 'videos', 'downloads'];
+            folderTypes.forEach(type => {
+                if (typeof prefs.appFolders[type] === 'undefined') {
+                    prefs.appFolders[type] = true; // Default to visible
+                }
+                if (typeof prefs.windowsFolders[type] === 'undefined') {
+                    prefs.windowsFolders[type] = true; // Default to visible
+                }
+            });
+            
+            console.log('Loaded folder preferences:', prefs);
+            
             // Apply folder button visibility
             updateFolderButtonVisibility(prefs);
         })
@@ -1059,28 +1076,59 @@ document.getElementById('folderToggleBtn').addEventListener('click', () => {
     // Toggle the active class on the button for rotation animation
     toggleButton.classList.toggle('active');
     
-    // Check which folders are currently active and switch
-    if (appFolders.classList.contains('active')) {
-        // Switch to Windows User Folders
-        appFolders.classList.remove('active');
-        windowsFolders.classList.add('active');
-        folderHeader.textContent = 'User Folders';
-        
-        // Save the preference
-        window.electronAPI.setFolderPreferences({
-            folderType: 'windows',
-        }).catch(err => console.error('Error saving folder preference:', err));
-    } else {
-        // Switch to App Folders
-        windowsFolders.classList.remove('active');
-        appFolders.classList.add('active');
-        folderHeader.textContent = 'App Folders';
-        
-        // Save the preference
-        window.electronAPI.setFolderPreferences({
-            folderType: 'app',
-        }).catch(err => console.error('Error saving folder preference:', err));
-    }
+    // First, get the current preferences to preserve folder visibility settings
+    window.electronAPI.getFolderPreferences()
+        .then(currentPrefs => {
+            // If we don't have current preferences, create defaults
+            if (!currentPrefs) {
+                currentPrefs = {
+                    folderType: 'app',
+                    appFolders: {
+                        documents: true,
+                        music: true,
+                        pictures: true,
+                        videos: true,
+                        downloads: true
+                    },
+                    windowsFolders: {
+                        documents: true,
+                        music: true,
+                        pictures: true,
+                        videos: true,
+                        downloads: true
+                    }
+                };
+            }
+            
+            // Check which folders are currently active and switch
+            if (appFolders.classList.contains('active')) {
+                // Switch to Windows User Folders
+                appFolders.classList.remove('active');
+                windowsFolders.classList.add('active');
+                folderHeader.textContent = 'User Folders';
+                
+                // Update folder type but preserve folder visibility settings
+                currentPrefs.folderType = 'windows';
+            } else {
+                // Switch to App Folders
+                windowsFolders.classList.remove('active');
+                appFolders.classList.add('active');
+                folderHeader.textContent = 'App Folders';
+                
+                // Update folder type but preserve folder visibility settings
+                currentPrefs.folderType = 'app';
+            }
+            
+            // Save the complete preferences object
+            window.electronAPI.setFolderPreferences(currentPrefs)
+                .then(() => {
+                    console.log('Folder preferences saved successfully:', currentPrefs);
+                })
+                .catch(err => console.error('Error saving folder preference:', err));
+        })
+        .catch(err => {
+            console.error('Error getting current folder preferences:', err);
+        });
 });
 
 // Function to load categories into the select elements

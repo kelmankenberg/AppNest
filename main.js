@@ -325,7 +325,7 @@ function registerIPCHandlers() {
         }
     });
 
-    // Folder preferences handlers
+    // Folder preferences handlers - unified API (using hyphenated version)
     ipcMain.handle('get-folder-preferences', () => {
         try {
             // Always try to get the latest store
@@ -378,43 +378,12 @@ function registerIPCHandlers() {
         }
     });
 
-    // Register folder preferences handlers
-    ipcMain.handle('getFolderPreferences', async () => {
-        try {
-            const storeToUse = storeInitialized ? store : await initializeStore();
-            return storeToUse.get('folderPreferences', {
-                folderType: 'app', // Default to app folders
-                appFolders: {
-                    documents: true,
-                    music: true,
-                    pictures: true,
-                    videos: true,
-                    downloads: true
-                },
-                windowsFolders: {
-                    documents: true,
-                    music: true,
-                    pictures: true,
-                    videos: true,
-                    downloads: true
-                }
-            });
-        } catch (err) {
-            console.error('Error getting folder preferences:', err);
-            return null;
-        }
-    });
+    // For backward compatibility - map camelCase to hyphenated versions
+    ipcMain.handle('getFolderPreferences', (event, ...args) => 
+        ipcMain.handlers['get-folder-preferences'](event, ...args));
 
-    ipcMain.handle('setFolderPreferences', async (_, preferences) => {
-        try {
-            const storeToUse = storeInitialized ? store : await initializeStore();
-            storeToUse.set('folderPreferences', preferences);
-            return true;
-        } catch (err) {
-            console.error('Error saving folder preferences:', err);
-            return false;
-        }
-    });
+    ipcMain.handle('setFolderPreferences', (event, ...args) => 
+        ipcMain.handlers['set-folder-preferences'](event, ...args));
 
     // Handle folder preferences synchronization between windows
     ipcMain.on('sync-folder-preferences', (_, preferences) => {

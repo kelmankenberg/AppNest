@@ -322,7 +322,8 @@ function saveFolderPreferences() {
     // Save to electron store
     window.electronAPI.setFolderPreferences(folderPreferences)
         .then(() => {
-            console.log('Folder preferences saved');
+            console.log('Folder preferences saved:', folderPreferences);
+            
             // Notify main window to update folder button visibility
             window.electronAPI.syncFolderPreferences(folderPreferences);
         })
@@ -432,17 +433,36 @@ function loadSettingsFromStore() {
 
 // Load folder visibility settings for both app and windows folder types
 function loadFolderVisibilitySettings() {
-    const folderTypes = ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads'];
-    
-    // Load app folder visibility settings
-    folderTypes.forEach(type => {
-        loadFolderVisibility('app', type);
-    });
-    
-    // Load Windows folder visibility settings
-    folderTypes.forEach(type => {
-        loadFolderVisibility('win', type);
-    });
+    // Get folder preferences from store to set toggle states correctly
+    window.electronAPI.getFolderPreferences()
+        .then(prefs => {
+            if (prefs) {
+                // Set the toggle states for app folders
+                if (prefs.appFolders) {
+                    document.getElementById('appDocuments').checked = !!prefs.appFolders.documents;
+                    document.getElementById('appMusic').checked = !!prefs.appFolders.music;
+                    document.getElementById('appPictures').checked = !!prefs.appFolders.pictures;
+                    document.getElementById('appVideos').checked = !!prefs.appFolders.videos;
+                    document.getElementById('appDownloads').checked = !!prefs.appFolders.downloads;
+                }
+                
+                // Set the toggle states for windows folders
+                if (prefs.windowsFolders) {
+                    document.getElementById('winDocuments').checked = !!prefs.windowsFolders.documents;
+                    document.getElementById('winMusic').checked = !!prefs.windowsFolders.music;
+                    document.getElementById('winPictures').checked = !!prefs.windowsFolders.pictures;
+                    document.getElementById('winVideos').checked = !!prefs.windowsFolders.videos;
+                    document.getElementById('winDownloads').checked = !!prefs.windowsFolders.downloads;
+                }
+                
+                console.log('Folder visibility settings loaded from preferences:', prefs);
+            } else {
+                console.log('No folder preferences found, using defaults (all visible)');
+            }
+        })
+        .catch(err => {
+            console.error('Error loading folder preferences:', err);
+        });
     
     // Load app folder path
     // window.electronAPI.getAppFolderPath()
@@ -453,30 +473,6 @@ function loadFolderVisibilitySettings() {
     //        }
     //    })
     //    .catch(err => console.error('Error loading app folder path:', err));
-}
-
-// Load folder visibility setting for a specific folder type
-function loadFolderVisibility(prefix, folderType) {
-    const settingKey = `${prefix}Folder_${folderType}`;
-    const toggleId = `${prefix}${folderType}`;
-    const toggleElement = document.getElementById(toggleId);
-    
-    if (toggleElement) {
-        // Default to visible (checked) if setting doesn't exist
-        let isVisible = true;
-        
-        // Uncomment when API is available:
-        // window.electronAPI.getFolderVisibility(settingKey)
-        //    .then(visibility => {
-        //        // If the setting exists, use it, otherwise default to true
-        //        isVisible = visibility !== undefined ? visibility : true;
-        //        toggleElement.checked = isVisible;
-        //    })
-        //    .catch(err => {
-        //        console.error(`Error loading ${settingKey} visibility:`, err);
-        //        toggleElement.checked = true; // Default to visible on error
-        //    });
-    }
 }
 
 // Load the active folder type preference from store
