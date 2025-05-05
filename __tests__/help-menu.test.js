@@ -19,6 +19,7 @@ describe('Help Menu', () => {
   let releaseNotesMenuItem;
   let aboutMenuItem;
   let appVersionMenuItem;
+  let toolbarVersionSpan;
   
   // Set up DOM and mocks before each test
   beforeEach(() => {
@@ -33,6 +34,12 @@ describe('Help Menu', () => {
         <div class="menu-item" id="aboutMenuItem">About</div>
         <div class="menu-item version-item" id="appVersionMenuItem">v0.0.0</div>
       </div>
+      <div class="app-branding">
+        <div class="app-title-version">
+          <span class="app-title">AppNest</span>
+          <span class="app-version">v0.0.0</span>
+        </div>
+      </div>
     `;
     
     // Get references to DOM elements
@@ -42,6 +49,7 @@ describe('Help Menu', () => {
     releaseNotesMenuItem = document.getElementById('releaseNotesMenuItem');
     aboutMenuItem = document.getElementById('aboutMenuItem');
     appVersionMenuItem = document.getElementById('appVersionMenuItem');
+    toolbarVersionSpan = document.querySelector('.app-version');
     
     // Mock window.electronAPI
     window.electronAPI = {
@@ -149,6 +157,9 @@ describe('Help Menu', () => {
         window.electronAPI.getAppVersion()
           .then(version => {
             appVersionMenuItem.textContent = `v${version}`;
+            if (toolbarVersionSpan) {
+              toolbarVersionSpan.textContent = `v${version}`;
+            }
           })
           .catch(error => {
             console.error('Error getting app version:', error);
@@ -302,5 +313,17 @@ describe('Help Menu', () => {
     
     // Clean up
     stopPropagationSpy.mockRestore();
+  });
+
+  test('Version number should be updated from API in both help menu and toolbar', async () => {
+    // Wait for the version update promise to resolve
+    await new Promise(process.nextTick);
+    
+    // Check if the API was called
+    expect(mockGetAppVersion).toHaveBeenCalled();
+    
+    // Check if the version was updated in both places
+    expect(appVersionMenuItem.textContent).toBe('v1.0.0');
+    expect(toolbarVersionSpan.textContent).toBe('v1.0.0');
   });
 });

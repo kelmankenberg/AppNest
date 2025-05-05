@@ -1,5 +1,17 @@
 # AppNest Release Notes
 
+## Version 0.3.1 (May 5, 2025)
+
+### Bug Fixes
+- Fixed Help and Settings windows positioning issue - windows now properly appear centered on screen
+- Resolved issue where modal windows would inherit position from main application window
+- Improved window management for multi-monitor setups
+
+### Technical Enhancements
+- Refactored window creation code for better position handling
+- Enhanced screen coordinates calculation for proper window centering
+- Standardized window creation APIs for Help and Settings windows
+
 ## Version 0.3.0 (May 5, 2025)
 
 ### Features

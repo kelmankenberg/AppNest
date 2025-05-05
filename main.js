@@ -1281,14 +1281,17 @@ function createSettingsWindow() {
         return;
     }
 
+    const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+    const windowWidth = 890;
+    const windowHeight = 490;
+    
     settingsWindow = new BrowserWindow({
-        width: 890,
-        height: 490,
+        width: windowWidth,
+        height: windowHeight,
         resizable: false,
         maximizable: false,
         minimizable: true,
         fullscreenable: false,
-        center: true,
         parent: mainWindow,
         modal: true,
         frame: false,
@@ -1299,6 +1302,11 @@ function createSettingsWindow() {
             preload: path.join(__dirname, 'preload.js')
         }
     });
+
+    // Calculate and set the window position to center it on the screen
+    const x = Math.floor((screenWidth - windowWidth) / 2);
+    const y = Math.floor((screenHeight - windowHeight) / 2);
+    settingsWindow.setPosition(x, y);
 
     settingsWindow.loadFile('settings.html');
 
@@ -1316,12 +1324,15 @@ function createHelpWindow() {
         return;
     }
 
+    const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+    const windowWidth = 1024;
+    const windowHeight = 700;
+
     helpWindow = new BrowserWindow({
-        width: 1024,
-        height: 700,
+        width: windowWidth,
+        height: windowHeight,
         minWidth: 800,
         minHeight: 600,
-        center: true,
         parent: mainWindow,
         modal: false,
         frame: false,
@@ -1332,6 +1343,11 @@ function createHelpWindow() {
             preload: path.join(__dirname, 'preload.js')
         }
     });
+
+    // Calculate and set the window position to center it on the screen
+    const x = Math.floor((screenWidth - windowWidth) / 2);
+    const y = Math.floor((screenHeight - windowHeight) / 2);
+    helpWindow.setPosition(x, y);
 
     helpWindow.loadFile('help.html');
 

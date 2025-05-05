@@ -107,12 +107,21 @@ function initializeHelpMenu() {
 async function updateVersionNumber() {
     try {
         const appVersionMenuItem = document.getElementById('appVersionMenuItem');
-        if (!appVersionMenuItem) return;
-
+        const toolbarVersionSpan = document.querySelector('.app-version');
+        
         // Get app version from the electronAPI
         if (window.electronAPI && window.electronAPI.getAppVersion) {
             const version = await window.electronAPI.getAppVersion();
-            appVersionMenuItem.textContent = `v${version}`;
+            
+            // Update version in the help menu
+            if (appVersionMenuItem) {
+                appVersionMenuItem.textContent = `v${version}`;
+            }
+            
+            // Update version in the toolbar
+            if (toolbarVersionSpan) {
+                toolbarVersionSpan.textContent = `v${version}`;
+            }
         }
     } catch (error) {
         console.error('Error getting app version:', error);
