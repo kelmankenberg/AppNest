@@ -34,6 +34,7 @@ async function initializeStore() {
                     'continue-iteration': true, // Set default value
                     'theme': 'light',
                     'font-size': 16, // Default font size for app table
+                    'start-with-windows': false, // Default auto-start setting
                     'searchbar-style': {
                         'borderTop': false,
                         'borderRight': false,
@@ -258,10 +259,10 @@ function registerIPCHandlers() {
     });
     
     // Font size sync handler
-    ipcMain.on('sync-font-size', (_, size) => {
-        // If main window exists, update it with the new font size in real-time
+    ipcMain.on('sync-font-size', (_, size, iconSize) => {
+        // If main window exists, update it with the new font size and icon size in real-time
         if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('font-size-changed', size);
+            mainWindow.webContents.send('font-size-changed', size, iconSize);
         }
     });
 
@@ -276,11 +277,45 @@ function registerIPCHandlers() {
         }
     });
 
-    ipcMain.handle('set-font-size', async (_, size) => {
+    // Icon size handler
+    ipcMain.handle('get-icon-size', async () => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            // If icon-size is not set, calculate it based on font-size
+            if (!storeToUse.has('icon-size')) {
+                const fontSize = storeToUse.get('font-size', '16');
+                // For font size 9px → icon size 14px
+                // For font size 14px → icon size 20px
+                const minFontSize = 9;
+                const maxFontSize = 14;
+                const minIconSize = 14;
+                const maxIconSize = 20;
+                
+                // Calculate the icon size based on the font size
+                const boundedFontSize = Math.max(minFontSize, Math.min(maxFontSize, parseInt(fontSize)));
+                const proportion = (boundedFontSize - minFontSize) / (maxFontSize - minFontSize);
+                const iconSize = Math.round(minIconSize + proportion * (maxIconSize - minIconSize));
+                
+                // Save it for next time
+                storeToUse.set('icon-size', iconSize.toString());
+                return iconSize.toString();
+            }
+            return storeToUse.get('icon-size', '20');
+        } catch (error) {
+            console.error('Error in get-icon-size handler:', error);
+            return '20';  // Default icon size
+        }
+    });
+
+    ipcMain.handle('set-font-size', async (_, size, iconSize) => {
         try {
             const storeToUse = storeInitialized ? store : await initializeStore();
             if (storeToUse) {
                 storeToUse.set('font-size', size);
+                // Also store the icon size if provided
+                if (iconSize !== undefined) {
+                    storeToUse.set('icon-size', iconSize);
+                }
                 return true;
             }
             return false;
@@ -290,7 +325,7 @@ function registerIPCHandlers() {
         }
     });
 
-    // Folder preferences handlers
+    // Folder preferences handlers - unified API (using hyphenated version)
     ipcMain.handle('get-folder-preferences', () => {
         try {
             // Always try to get the latest store
@@ -343,43 +378,12 @@ function registerIPCHandlers() {
         }
     });
 
-    // Register folder preferences handlers
-    ipcMain.handle('getFolderPreferences', async () => {
-        try {
-            const storeToUse = storeInitialized ? store : await initializeStore();
-            return storeToUse.get('folderPreferences', {
-                folderType: 'app', // Default to app folders
-                appFolders: {
-                    documents: true,
-                    music: true,
-                    pictures: true,
-                    videos: true,
-                    downloads: true
-                },
-                windowsFolders: {
-                    documents: true,
-                    music: true,
-                    pictures: true,
-                    videos: true,
-                    downloads: true
-                }
-            });
-        } catch (err) {
-            console.error('Error getting folder preferences:', err);
-            return null;
-        }
-    });
+    // For backward compatibility - map camelCase to hyphenated versions
+    ipcMain.handle('getFolderPreferences', (event, ...args) => 
+        ipcMain.handlers['get-folder-preferences'](event, ...args));
 
-    ipcMain.handle('setFolderPreferences', async (_, preferences) => {
-        try {
-            const storeToUse = storeInitialized ? store : await initializeStore();
-            storeToUse.set('folderPreferences', preferences);
-            return true;
-        } catch (err) {
-            console.error('Error saving folder preferences:', err);
-            return false;
-        }
-    });
+    ipcMain.handle('setFolderPreferences', (event, ...args) => 
+        ipcMain.handlers['set-folder-preferences'](event, ...args));
 
     // Handle folder preferences synchronization between windows
     ipcMain.on('sync-folder-preferences', (_, preferences) => {
@@ -671,6 +675,125 @@ function registerIPCHandlers() {
         // If settings window exists, update it with the new searchbar style
         if (settingsWindow && !settingsWindow.isDestroyed()) {
             settingsWindow.webContents.send('searchbar-style-changed', styleOptions);
+        }
+    });
+
+    // Auto-start with Windows handlers
+    ipcMain.handle('set-auto-start', async (_, enable) => {
+        try {
+            if (process.platform !== 'win32') {
+                console.warn('Auto-start is only supported on Windows');
+                return false;
+            }
+            
+            // Using child_process to interact with the registry directly
+            const { execFile } = require('child_process');
+            const util = require('util');
+            const execFileAsync = util.promisify(execFile);
+            
+            const appName = 'AppNest';
+            let success = false;
+            
+            // Create command line with proper quoting
+            let execPath = process.execPath; // node.exe in dev, app.exe in prod
+            let args = '';
+            
+            const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+            if (isDev) {
+                // In development, point to our main.js file
+                args = ` "${path.join(app.getAppPath(), 'main.js')}"`;
+            }
+            
+            const command = `"${execPath}"${args}`;
+            console.log(`Setting auto-start with command: ${command}`);
+            
+            if (enable) {
+                // Add to registry - using reg.exe, a built-in Windows command
+                try {
+                    const regKey = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run';
+                    await execFileAsync('reg', ['add', regKey, '/v', appName, '/t', 'REG_SZ', '/d', command, '/f']);
+                    console.log(`Registry key set for ${appName}`);
+                    success = true;
+                } catch (err) {
+                    console.error('Failed to set registry key:', err);
+                    return false;
+                }
+            } else {
+                // Remove from registry
+                try {
+                    const regKey = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run';
+                    await execFileAsync('reg', ['delete', regKey, '/v', appName, '/f']);
+                    console.log(`Registry key removed for ${appName}`);
+                    success = true;
+                } catch (err) {
+                    // An error code of 1 typically means the key was not found, which is fine when disabling
+                    if (err.code !== 1) {
+                        console.error('Failed to remove registry key:', err);
+                        return false;
+                    }
+                    success = true;
+                }
+            }
+            
+            // Store the setting
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            if (storeToUse) {
+                storeToUse.set('start-with-windows', enable);
+            }
+            
+            return success;
+        } catch (error) {
+            console.error('Error setting auto-start:', error);
+            return false;
+        }
+    });
+
+    ipcMain.handle('get-auto-start', async () => {
+        try {
+            // Using child_process to interact with the registry directly
+            const { execFile } = require('child_process');
+            const util = require('util');
+            const execFileAsync = util.promisify(execFile);
+            
+            const appName = 'AppNest';
+            let registryExists = false;
+            
+            // Check if registry key exists
+            try {
+                const regKey = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run';
+                const { stdout } = await execFileAsync('reg', ['query', regKey, '/v', appName]);
+                
+                // If we got output without error, the key exists
+                if (stdout && stdout.includes(appName)) {
+                    console.log(`Found registry key for ${appName}`);
+                    registryExists = true;
+                }
+            } catch (err) {
+                // An error code of 1 typically means the key was not found
+                if (err.code === 1) {
+                    console.log('Registry key not found, auto-start is disabled');
+                } else {
+                    console.error('Error querying registry:', err);
+                }
+            }
+            
+            // Get the stored preference
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            let storedPreference = false;
+            
+            if (storeToUse) {
+                storedPreference = storeToUse.get('start-with-windows', false);
+                
+                // If actual setting and stored preference are inconsistent, update the stored preference
+                if (storedPreference !== registryExists) {
+                    storeToUse.set('start-with-windows', registryExists);
+                }
+            }
+            
+            return registryExists;
+        } catch (error) {
+            console.error('Error getting auto-start status:', error);
+            return false;
         }
     });
 

@@ -13,3 +13,172 @@
     opacity: 0.7;
     font-size: 0.85em;
 }
+
+/* Style for the sort menu item and submenu */
+.sort-menu-item {
+    position: relative;
+}
+
+.sort-menu-item .menu-icon {
+    color: var(--primary-color, #3498db);
+}
+
+.sort-menu-item .submenu-icon {
+    position: absolute;
+    right: 10px;
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+
+/* Submenu styles */
+.submenu {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    min-width: 180px;
+    background-color: var(--bg-secondary, white);
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 4px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 10;
+}
+
+.submenu.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.submenu-item {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 8px 16px;
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: background-color 0.2s;
+}
+
+.submenu-item:hover {
+    background-color: var(--hover-color);
+}
+
+.submenu-item.active {
+    background-color: var(--active-color);
+}
+
+.submenu-icon {
+    width: 16px;
+    margin-right: 10px;
+    text-align: center;
+}
+
+.submenu-check {
+    width: 16px;
+    margin-right: 8px;
+    text-align: center;
+    color: var(--accent-color);
+}
+
+.submenu-check-placeholder {
+    width: 16px;
+    margin-right: 8px;
+    display: inline-block;
+}
+
+.submenu-text {
+    flex-grow: 1;
+}
+
+/* Menu styling */
+
+.menu {
+    position: absolute;
+    display: none;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    min-width: 180px;
+    z-index: 10;
+    overflow: hidden;
+}
+
+.menu-separator {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 5px 0;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: background-color 0.2s;
+}
+
+.menu-item:hover {
+    background-color: var(--hover-color);
+}
+
+.menu-item i {
+    margin-right: 10px;
+    width: 16px;
+    text-align: center;
+}
+
+/* Sort submenu styling */
+.sort-menu-item .submenu-icon {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.sort-submenu {
+    position: absolute;
+    display: none;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    min-width: 170px; /* Reduced from 180px to 170px */
+    z-index: 11;
+}
+
+.sort-submenu.show {
+    display: block;
+}
+
+/* Sort notification */
+.sort-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: var(--notification-bg, rgba(0, 0, 0, 0.7));
+    color: var(--notification-text, white);
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    opacity: 0;
+    transition: transform 0.3s, opacity 0.3s;
+    z-index: 1000;
+}
+
+.sort-notification.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}

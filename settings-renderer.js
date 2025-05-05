@@ -108,18 +108,45 @@ function initializeSliders() {
             const value = fontSizeSlider.value;
             fontSizeValue.textContent = `${value}px`;
             
-            // Dynamically update app-table font size in real-time
-            window.electronAPI.syncFontSize(value);
+            // Calculate icon size: 14px when font is 9px, 20px when font is 14px
+            const iconSize = calculateIconSize(parseInt(value));
+            
+            // Dynamically update app-table font size and icon size in real-time
+            window.electronAPI.syncFontSize(value, iconSize);
         });
         
         fontSizeSlider.addEventListener('change', () => {
             // Save the value when slider stops (mouseup)
             const value = fontSizeSlider.value;
-            // Save font size to settings
-            window.electronAPI.setFontSize(value)
+            const iconSize = calculateIconSize(parseInt(value));
+            
+            // Save font size and icon size to settings
+            window.electronAPI.setFontSize(value, iconSize)
                 .catch(err => console.error('Error saving font size:', err));
         });
     }
+}
+
+// Helper function to calculate proportional icon size based on font size
+function calculateIconSize(fontSize) {
+    // For font size 9px → icon size 14px
+    // For font size 14px → icon size 20px
+    // Linear scaling between those points
+    const minFontSize = 9;
+    const maxFontSize = 14;
+    const minIconSize = 14;
+    const maxIconSize = 20;
+    
+    // Ensure fontSize is within bounds
+    const boundedFontSize = Math.max(minFontSize, Math.min(maxFontSize, fontSize));
+    
+    // Calculate the proportion of the way from min to max font size
+    const proportion = (boundedFontSize - minFontSize) / (maxFontSize - minFontSize);
+    
+    // Calculate the icon size based on that proportion
+    const iconSize = Math.round(minIconSize + proportion * (maxIconSize - minIconSize));
+    
+    return iconSize;
 }
 
 // Initialize input controls with immediate saving
@@ -138,22 +165,53 @@ function initializeInputs() {
     // Start with Windows toggle
     const startWithWindows = document.getElementById('startWithWindows');
     if (startWithWindows) {
+        // Initialize the checkbox state from stored settings
+        window.electronAPI.getAutoStart()
+            .then(enabled => {
+                startWithWindows.checked = enabled;
+                console.log(`Auto-start is currently ${enabled ? 'enabled' : 'disabled'}`);
+            })
+            .catch(err => {
+                console.error('Error getting auto-start setting:', err);
+                startWithWindows.checked = false; // Default to off if there's an error
+            });
+        
+        // Set up listener for changes
         startWithWindows.addEventListener('change', () => {
             const enabled = startWithWindows.checked;
-            // Implement auto-start setting when API is available
-            // window.electronAPI.setAutoStart(enabled)
-            //    .catch(err => console.error('Error saving auto-start setting:', err));
-        });
-    }
-    
-    // Default view selector
-    const defaultView = document.getElementById('defaultView');
-    if (defaultView) {
-        defaultView.addEventListener('change', () => {
-            const value = defaultView.value;
-            // Implement default view saving when API is available
-            // window.electronAPI.setDefaultView(value)
-            //    .catch(err => console.error('Error saving default view:', err));
+            
+            // Show feedback indicator
+            const settingGroup = startWithWindows.closest('.setting-group');
+            const statusIndicator = document.createElement('span');
+            statusIndicator.className = 'setting-status';
+            statusIndicator.textContent = 'Saving...';
+            settingGroup.appendChild(statusIndicator);
+            
+            window.electronAPI.setAutoStart(enabled)
+                .then(success => {
+                    console.log(`Auto-start ${enabled ? 'enabled' : 'disabled'}: ${success}`);
+                    statusIndicator.textContent = success ? 'Saved ✓' : 'Failed ✗';
+                    statusIndicator.className = `setting-status ${success ? 'success' : 'error'}`;
+                    
+                    // Remove the status indicator after a delay
+                    setTimeout(() => {
+                        if (statusIndicator.parentNode) {
+                            statusIndicator.parentNode.removeChild(statusIndicator);
+                        }
+                    }, 3000);
+                })
+                .catch(err => {
+                    console.error('Error saving auto-start setting:', err);
+                    statusIndicator.textContent = 'Error ✗';
+                    statusIndicator.className = 'setting-status error';
+                    
+                    // Remove the status indicator after a delay
+                    setTimeout(() => {
+                        if (statusIndicator.parentNode) {
+                            statusIndicator.parentNode.removeChild(statusIndicator);
+                        }
+                    }, 3000);
+                });
         });
     }
     
@@ -264,7 +322,8 @@ function saveFolderPreferences() {
     // Save to electron store
     window.electronAPI.setFolderPreferences(folderPreferences)
         .then(() => {
-            console.log('Folder preferences saved');
+            console.log('Folder preferences saved:', folderPreferences);
+            
             // Notify main window to update folder button visibility
             window.electronAPI.syncFolderPreferences(folderPreferences);
         })
@@ -374,17 +433,36 @@ function loadSettingsFromStore() {
 
 // Load folder visibility settings for both app and windows folder types
 function loadFolderVisibilitySettings() {
-    const folderTypes = ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads'];
-    
-    // Load app folder visibility settings
-    folderTypes.forEach(type => {
-        loadFolderVisibility('app', type);
-    });
-    
-    // Load Windows folder visibility settings
-    folderTypes.forEach(type => {
-        loadFolderVisibility('win', type);
-    });
+    // Get folder preferences from store to set toggle states correctly
+    window.electronAPI.getFolderPreferences()
+        .then(prefs => {
+            if (prefs) {
+                // Set the toggle states for app folders
+                if (prefs.appFolders) {
+                    document.getElementById('appDocuments').checked = !!prefs.appFolders.documents;
+                    document.getElementById('appMusic').checked = !!prefs.appFolders.music;
+                    document.getElementById('appPictures').checked = !!prefs.appFolders.pictures;
+                    document.getElementById('appVideos').checked = !!prefs.appFolders.videos;
+                    document.getElementById('appDownloads').checked = !!prefs.appFolders.downloads;
+                }
+                
+                // Set the toggle states for windows folders
+                if (prefs.windowsFolders) {
+                    document.getElementById('winDocuments').checked = !!prefs.windowsFolders.documents;
+                    document.getElementById('winMusic').checked = !!prefs.windowsFolders.music;
+                    document.getElementById('winPictures').checked = !!prefs.windowsFolders.pictures;
+                    document.getElementById('winVideos').checked = !!prefs.windowsFolders.videos;
+                    document.getElementById('winDownloads').checked = !!prefs.windowsFolders.downloads;
+                }
+                
+                console.log('Folder visibility settings loaded from preferences:', prefs);
+            } else {
+                console.log('No folder preferences found, using defaults (all visible)');
+            }
+        })
+        .catch(err => {
+            console.error('Error loading folder preferences:', err);
+        });
     
     // Load app folder path
     // window.electronAPI.getAppFolderPath()
@@ -395,30 +473,6 @@ function loadFolderVisibilitySettings() {
     //        }
     //    })
     //    .catch(err => console.error('Error loading app folder path:', err));
-}
-
-// Load folder visibility setting for a specific folder type
-function loadFolderVisibility(prefix, folderType) {
-    const settingKey = `${prefix}Folder_${folderType}`;
-    const toggleId = `${prefix}${folderType}`;
-    const toggleElement = document.getElementById(toggleId);
-    
-    if (toggleElement) {
-        // Default to visible (checked) if setting doesn't exist
-        let isVisible = true;
-        
-        // Uncomment when API is available:
-        // window.electronAPI.getFolderVisibility(settingKey)
-        //    .then(visibility => {
-        //        // If the setting exists, use it, otherwise default to true
-        //        isVisible = visibility !== undefined ? visibility : true;
-        //        toggleElement.checked = isVisible;
-        //    })
-        //    .catch(err => {
-        //        console.error(`Error loading ${settingKey} visibility:`, err);
-        //        toggleElement.checked = true; // Default to visible on error
-        //    });
-    }
 }
 
 // Load the active folder type preference from store
@@ -472,15 +526,19 @@ function applyTheme(theme) {
 }
 
 // Reset all settings to defaults
-function resetToDefaults() {
-    if (confirm('Reset all settings to default values?')) {
+function resetToDefaults(testAPIs) {
+    // Use either the injected APIs for testing or the real window.electronAPI
+    const apis = testAPIs || window.electronAPI;
+    
+    // Show confirmation prompt
+    if (confirm('Reset all settings to default values? This will revert all your preferences to their default state.')) {
         // Reset theme to light and save immediately
         document.body.classList.remove('dark-theme');
-        window.electronAPI.setTheme('light')
+        apis.setTheme('light')
             .catch(err => console.error('Error saving theme:', err));
         
         // Sync the theme change to the main app
-        window.electronAPI.syncTheme('light');
+        apis.syncTheme('light');
         
         // Update theme options UI
         const themeOptions = document.querySelectorAll('.theme-option');
@@ -488,69 +546,111 @@ function resetToDefaults() {
             option.classList.toggle('active', option.getAttribute('data-theme') === 'light');
         });
         
-        // Reset font size slider
+        // Reset font size slider to 14px (as per requirement)
         const fontSizeSlider = document.getElementById('fontSize');
         const fontSizeValue = document.getElementById('fontSizeValue');
         if (fontSizeSlider && fontSizeValue) {
-            fontSizeSlider.value = 16;
-            fontSizeValue.textContent = '16px';
-            // Save font size setting
-            window.electronAPI.setFontSize(16)
+            fontSizeSlider.value = 14;
+            fontSizeValue.textContent = '14px';
+            
+            // Calculate icon size based on the font size
+            const iconSize = calculateIconSize(14);
+            
+            // Save font size and icon size setting
+            apis.setFontSize(14, iconSize)
                 .catch(err => console.error('Error saving font size:', err));
+            
+            // Sync the font size change to the main app
+            apis.syncFontSize(14, iconSize);
         }
         
-        // Reset folder toggles - show all folders by default
-        resetFolderToggles('app', ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads']);
-        resetFolderToggles('win', ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads']);
+        // Reset folder visibility to all ON for both App Folders and Windows Folders
+        resetFolderToggles('app', ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads'], testAPIs);
+        resetFolderToggles('win', ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads'], testAPIs);
         
-        // Reset to App folders by default
-        const appFolderSegment = document.querySelector('.segment-option[data-folder-type="app"]');
-        if (appFolderSegment) {
-            appFolderSegment.click(); // This will trigger the click handler to display app folders
-        }
+        // Set folder type to 'app' (App Folders)
+        activateFolderType('app');
         
-        // Reset app folder path to default
+        // Reset app folder path to './AppData'
         const pathValueElement = document.querySelector('.path-value');
         if (pathValueElement) {
             pathValueElement.textContent = './AppData';
-            // Save when API is available
-            // window.electronAPI.setAppFolderPath('./AppData')
-            //    .catch(err => console.error('Error saving app folder path:', err));
+            // Save the app folder path
+            if (apis.setAppFoldersRootPath) {
+                apis.setAppFoldersRootPath('./AppData')
+                    .catch(err => console.error('Error saving app folder path:', err));
+            }
         }
         
-        // Reset other settings to their defaults
-        // App name
-        const appNameInput = document.getElementById('appName');
-        if (appNameInput) {
-            appNameInput.value = 'MyPAs Launcher';
-            // Save when API is available
-        }
-        
-        // Start with Windows toggle
+        // Reset Start with Windows toggle to OFF
         const startWithWindows = document.getElementById('startWithWindows');
         if (startWithWindows) {
             startWithWindows.checked = false;
-            // Save when API is available
+            // Save the auto-start setting
+            apis.setAutoStart(false)
+                .catch(err => console.error('Error saving auto-start setting:', err));
         }
         
-        // Default view
-        const defaultView = document.getElementById('defaultView');
-        if (defaultView) {
-            defaultView.value = 'all';
-            // Save when API is available
-        }
-        
-        // Search mode
+        // Reset Search Mode to 'name' (Name Only)
         const searchMode = document.getElementById('searchMode');
         if (searchMode) {
             searchMode.value = 'name';
-            // Save when API is available
+            // Save the search mode setting
+            if (apis.setSearchMode) {
+                apis.setSearchMode('name')
+                    .catch(err => console.error('Error saving search mode:', err));
+            }
         }
+        
+        // Create a comprehensive folderPreferences object with all defaults
+        const defaultFolderPreferences = {
+            folderType: 'app',
+            appFolders: {
+                documents: true,
+                music: true,
+                pictures: true,
+                videos: true,
+                downloads: true
+            },
+            windowsFolders: {
+                documents: true,
+                music: true,
+                pictures: true,
+                videos: true,
+                downloads: true
+            }
+        };
+        
+        // Save the folder preferences and sync with main window
+        apis.setFolderPreferences(defaultFolderPreferences)
+            .then(() => {
+                console.log('Default folder preferences saved:', defaultFolderPreferences);
+                apis.syncFolderPreferences(defaultFolderPreferences);
+            })
+            .catch(err => {
+                console.error('Error saving default folder preferences:', err);
+            });
+            
+        // Show a confirmation message to the user
+        const statusMessage = document.createElement('div');
+        statusMessage.className = 'settings-status-message';
+        statusMessage.textContent = 'Settings reset to default values';
+        document.body.appendChild(statusMessage);
+        
+        // Remove the message after a few seconds
+        setTimeout(() => {
+            if (statusMessage.parentNode) {
+                statusMessage.parentNode.removeChild(statusMessage);
+            }
+        }, 3000);
     }
 }
 
 // Reset folder toggles to default (all visible)
-function resetFolderToggles(prefix, folderTypes) {
+function resetFolderToggles(prefix, folderTypes, testAPIs) {
+    // Use either the injected APIs for testing or the real window.electronAPI
+    const apis = testAPIs || window.electronAPI;
+    
     folderTypes.forEach(type => {
         const toggleId = `${prefix}${type}`;
         const toggleElement = document.getElementById(toggleId);
@@ -558,11 +658,13 @@ function resetFolderToggles(prefix, folderTypes) {
         if (toggleElement) {
             // Set all toggles to checked (visible)
             toggleElement.checked = true;
-            
-            // Save the visibility setting
-            saveFolderPreferences();
         }
     });
+    
+    // After toggling all folders, save the preferences if not in test mode
+    if (!testAPIs) {
+        saveFolderPreferences();
+    }
 }
 
 // Close the settings window
@@ -611,4 +713,15 @@ function initializeWindowsBuiltInApps() {
             }
         });
     });
+}
+
+// Export functions for testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        resetToDefaults,
+        calculateIconSize,
+        saveFolderPreferences,
+        activateFolderType,
+        resetFolderToggles
+    };
 }

@@ -1052,6 +1052,51 @@ body {
     display: none;
 }
 
+/* Folder header container and toggle button */
+.folder-header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.folder-set-header {
+    margin: 0;
+    flex-grow: 1;
+}
+
+.folder-toggle-button {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.folder-toggle-button:hover {
+    background-color: var(--hover-background);
+}
+
+.folder-toggle-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+/* Add a subtle rotation animation for the icon when clicked */
+.folder-toggle-button i {
+    transition: transform 0.3s ease;
+}
+
+.folder-toggle-button.active i {
+    transform: rotate(180deg);
+}
+
 /* Hidden element class */
 .hidden {
     display: none !important;
@@ -1065,8 +1110,8 @@ body {
 }
 
 .app-icon-container {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1076,8 +1121,8 @@ body {
 }
 
 .app-icon {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     object-fit: contain;
     border-radius: 4px;
     background-color: var(--input-bg, #fff);
@@ -1090,8 +1135,8 @@ body {
 }
 
 .app-icon-fallback {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     background-color: var(--accent-color, #0078d4);
     color: white;
     border-radius: 4px;
@@ -1099,7 +1144,7 @@ body {
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 16px;
+    font-size: 14px;
     box-sizing: border-box;
 }
 
@@ -1117,6 +1162,41 @@ body {
 .name-icon-group input {
     flex: 1;
     min-width: 0;
+}
+
+/* App name container with favorite indicator */
+.app-name-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    overflow: hidden; /* Prevent overflow */
+}
+
+/* App name should allow truncation */
+.app-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+/* Favorite indicator styles - now positioned within the app name container */
+.favorite-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px; /* Small gap between name and star */
+    color: gold;
+    font-size: 14px;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.favorite-indicator i {
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));
+}
+
+body.dark-theme .favorite-indicator i {
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.3));
 }
 
 /* Icon container for dialogs */
@@ -1202,4 +1282,113 @@ body {
     border-radius: 4px;
     overflow: hidden;
     background-color: #f0f0f0;
+}
+
+/* Sort menu and submenu styles */
+.sort-menu-item {
+    position: relative;
+}
+
+.sort-menu-item .submenu-icon {
+    position: absolute;
+    right: 10px;
+    font-size: 0.8em;
+}
+
+.submenu {
+    position: fixed;
+    z-index: 1000;
+    background-color: var(--bg-secondary, #ffffff);
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: none;
+    overflow: hidden;
+    min-width: 180px;
+}
+
+.submenu.show {
+    display: block;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.submenu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 8px 15px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text-primary);
+    transition: background-color 0.2s ease;
+}
+
+.submenu-item:hover {
+    background-color: var(--menu-hover, rgba(0, 0, 0, 0.05));
+}
+
+.submenu-item.active {
+    background-color: var(--menu-active, rgba(0, 0, 0, 0.08));
+    font-weight: bold;
+}
+
+.submenu-item .submenu-icon {
+    margin-right: 10px;
+    width: 16px;
+    text-align: center;
+}
+
+/* Sort notification */
+.sort-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    background-color: var(--bg-notification, rgba(0, 0, 0, 0.7));
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    z-index: 1000;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.sort-notification.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* Dark theme adjustments */
+body.dark-theme .submenu {
+    background-color: var(--bg-secondary, #2d2d2d);
+    border-color: var(--border-dark, #444);
+}
+
+body.dark-theme .submenu-item:hover {
+    background-color: var(--menu-hover-dark, rgba(255, 255, 255, 0.05));
+}
+
+body.dark-theme .submenu-item.active {
+    background-color: var(--menu-active-dark, rgba(255, 255, 255, 0.08));
+}
+
+/* Favorite indicator styles */
+.favorite-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px; /* Small gap between name and star */
+    color: gold;
+    font-size: 14px;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.favorite-indicator i {
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));
+}
+
+body.dark-theme .favorite-indicator i {
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.3));
 }

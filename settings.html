@@ -45,10 +45,6 @@
                 <div id="general" class="settings-section active">
                     <h3>General Settings</h3>
                     <div class="setting-group">
-                        <label class="setting-label">Application Name</label>
-                        <input type="text" id="appName" class="setting-input" value="AppNest">
-                    </div>
-                    <div class="setting-group">
                         <label class="setting-label">Start with Windows</label>
                         <div class="toggle-switch">
                             <input type="checkbox" id="startWithWindows" class="toggle-input">
@@ -74,22 +70,13 @@
                     <div class="setting-group">
                         <label class="setting-label">App Menu Font Size</label>
                         <div class="slider-container">
-                            <input type="range" min="6" max="14" value="10" id="fontSize" class="slider">
+                            <input type="range" min="9" max="14" value="10" id="fontSize" class="slider">
                             <span id="fontSizeValue">10px</span>
                         </div>
                     </div>
                 </div>
                 <div id="app-config" class="settings-section">
                     <h3>Application Configuration</h3>
-                    <div class="setting-group">
-                        <label class="setting-label">Default View</label>
-                        <select id="defaultView" class="setting-select">
-                            <option value="all">All Applications</option>
-                            <option value="recent">Recently Used</option>
-                            <option value="favorite">Favorites</option>
-                            <option value="category">Categories</option>
-                        </select>
-                    </div>
                     <div class="setting-group">
                         <label class="setting-label">Search Mode</label>
                         <select id="searchMode" class="setting-select">
