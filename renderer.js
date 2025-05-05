@@ -739,8 +739,51 @@ function launchApplication(appId) {
 
 // Power and close button handlers
 document.querySelector('button[title="Power"]').addEventListener('click', () => {
-    window.electronAPI.quitApp();
+    // Get the current minimize-on-power-button setting
+    window.electronAPI.getMinimizeOnPowerButton()
+        .then(minimizeEnabled => {
+            if (minimizeEnabled) {
+                // If the setting is enabled, minimize the app instead of quitting
+                window.electronAPI.minimizeApp();
+            } else {
+                // Otherwise use the default behavior: quit the app
+                window.electronAPI.quitApp();
+            }
+        })
+        .catch(err => {
+            console.error('Error checking minimize-on-power-button setting:', err);
+            // Default to quitting if there's an error
+            window.electronAPI.quitApp();
+        });
 });
+
+// Listen for minimize-on-power-button setting changes from settings window
+window.electronAPI.onMinimizeOnPowerButtonChanged((enabled) => {
+    updatePowerButtonIcon(enabled);
+});
+
+// Function to update the power button icon based on the minimize-on-power-button setting
+function updatePowerButtonIcon(minimizeEnabled) {
+    const powerButton = document.querySelector('button[title="Power"], button[title="Minimize"]');
+    
+    if (powerButton) {
+        console.log(`Updating power button icon. Minimize enabled: ${minimizeEnabled}`);
+        
+        if (minimizeEnabled === true) {
+            // Change icon to minimize icon when the setting is enabled
+            powerButton.innerHTML = '<i class="fas fa-window-minimize"></i>';
+            powerButton.title = "Minimize";
+            console.log('Set to minimize icon');
+        } else {
+            // Use the default power icon when the setting is disabled (quit behavior)
+            powerButton.innerHTML = '<i class="fas fa-power-off"></i>';
+            powerButton.title = "Power";
+            console.log('Set to power icon');
+        }
+    } else {
+        console.error('Power button element not found');
+    }
+}
 
 // Variables for drive panel functionality
 let isPanelActive = false;
@@ -1554,6 +1597,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Apply search bar styles when page loads
     applySearchBarStyles();
+    
+    // Initialize the power button icon based on minimize-on-power-button setting
+    window.electronAPI.getMinimizeOnPowerButton()
+        .then(minimizeEnabled => {
+            updatePowerButtonIcon(minimizeEnabled);
+        })
+        .catch(err => {
+            console.error('Error getting minimize-on-power-button setting:', err);
+        });
     
     // Load saved font size and icon size
     Promise.all([

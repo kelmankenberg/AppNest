@@ -36,6 +36,7 @@ async function initializeStore() {
                     'theme': 'light',
                     'font-size': 16, // Default font size for app table
                     'start-with-windows': false, // Default auto-start setting
+                    'minimize-on-power-button': false, // Default power button behavior is to quit
                     'searchbar-style': {
                         'borderTop': false,
                         'borderRight': false,
@@ -991,6 +992,49 @@ function registerIPCHandlers() {
             return [];
         }
     });
+
+    // Add handlers for minimize-on-power-button setting
+    ipcMain.handle('get-minimize-on-power-button', async () => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            return storeToUse.get('minimize-on-power-button', false);
+        } catch (error) {
+            console.error('Error getting minimize-on-power-button setting:', error);
+            return false;
+        }
+    });
+
+    ipcMain.handle('set-minimize-on-power-button', async (_, value) => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            storeToUse.set('minimize-on-power-button', value);
+            return true;
+        } catch (error) {
+            console.error('Error setting minimize-on-power-button setting:', error);
+            return false;
+        }
+    });
+
+    ipcMain.on('sync-minimize-on-power-button', (_, enabled) => {
+        // If the settings window is open, sync the setting there
+        if (settingsWindow && !settingsWindow.isDestroyed()) {
+            settingsWindow.webContents.send('minimize-on-power-button-changed', enabled);
+        }
+        // Also sync to main window - allows for real-time UI updates
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('minimize-on-power-button-changed', enabled);
+        }
+    });
+
+    ipcMain.on('app-quit', () => {
+        app.quit();
+    });
+
+    ipcMain.on('app-minimize', () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.minimize();
+        }
+    });
 }
 
 // Helper function to generate help content
@@ -1406,6 +1450,12 @@ app.on('activate', () => {
 
 ipcMain.on('app-quit', () => {
     app.quit();
+});
+
+ipcMain.on('app-minimize', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.minimize();
+    }
 });
 
 // In test environments, we might need to initialize immediately
