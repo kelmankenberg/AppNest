@@ -8,6 +8,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="styles/search-input.css">
+    <link rel="stylesheet" href="styles/modal.css">
+    <link rel="stylesheet" href="styles/release-notes.css">
 </head>
 <body>
     <div class="content">
@@ -116,13 +118,37 @@
             <!-- <button class="vertical-button">
                 <i class="fas fa-search"></i> Search
             </button> -->
-            <button class="vertical-button">
+            <button class="vertical-button" id="helpButton">
                 <i class="fas fa-question-circle"></i> Help
             </button>
+            <!-- Help Menu -->
+            <div class="apps-menu" id="helpMenu">
+                <button class="menu-item" id="helpMenuItem">
+                    <i class="fas fa-question"></i>
+                    <span>Help</span>
+                </button>
+                <button class="menu-item" id="releaseNotesMenuItem">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Release Notes</span>
+                </button>
+                <hr class="menu-separator">
+                <button class="menu-item" id="aboutMenuItem">
+                    <i class="fas fa-info-circle"></i>
+                    <span>About</span>
+                </button>
+                <hr class="menu-separator">
+                <div class="menu-item version-item">
+                    <i class="fas fa-code-branch"></i>
+                    <span id="appVersionMenuItem">v0.2.0</span>
+                </div>
+            </div>
         </div>
     </div>
     <div class="toolbar">
         <div class="left-side">
+            <div class="app-logo">
+                <img src="resources/images/nest-with-eggs-blue.svg" alt="AppNest Logo" class="toolbar-logo">
+            </div>
             <div class="app-branding">
                 <div class="app-title-version">
                     <span class="app-title">AppNest</span>
@@ -432,5 +458,7 @@
     <script src="renderer/menu.js"></script>
     <script src="renderer/search.js"></script>
     <script src="renderer/apps-menu.js"></script>
+    <script src="renderer/help-menu.js"></script>
+    <script src="renderer/release-notes.js"></script>
 </body>
 </html>

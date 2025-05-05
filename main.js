@@ -11,6 +11,7 @@ const os = require('os');
 let store;
 let mainWindow;
 let settingsWindow; // Add a reference for the settings window
+let helpWindow; // Add a reference for the help window
 let storeInitialized = false; // Track if store is initialized
 let storeInitPromise = null; // Promise for async initialization
 let dbInitialized = false; // Track if database is initialized
@@ -922,6 +923,246 @@ function registerIPCHandlers() {
             return false;
         }
     });
+
+    // Version and release notes handlers
+    ipcMain.handle('get-app-version', () => {
+        try {
+            const packageJson = require('./package.json');
+            return packageJson.version;
+        } catch (error) {
+            console.error('Error getting app version:', error);
+            return '0.0.0';
+        }
+    });
+    
+    ipcMain.handle('read-release-notes', () => {
+        try {
+            const notesPath = path.join(app.getAppPath(), 'RELEASE_NOTES.md');
+            if (fs.existsSync(notesPath)) {
+                return fs.readFileSync(notesPath, 'utf8');
+            } else {
+                console.error('Release notes file not found');
+                return '# Release Notes\n\nNo release notes available.';
+            }
+        } catch (error) {
+            console.error('Error reading release notes:', error);
+            return '# Release Notes\n\nError loading release notes.';
+        }
+    });
+
+    // Add handlers for help window
+    ipcMain.handle('open-help-window', () => {
+        createHelpWindow();
+        return true;
+    });
+    
+    ipcMain.handle('close-help-window', () => {
+        if (helpWindow && !helpWindow.isDestroyed()) {
+            helpWindow.close();
+            return true;
+        }
+        return false;
+    });
+    
+    ipcMain.handle('get-help-content', async (_, topicId) => {
+        try {
+            // Check if help content file exists for this topic
+            const helpContentPath = path.join(app.getAppPath(), 'help-content', `${topicId}.html`);
+            if (fs.existsSync(helpContentPath)) {
+                return fs.readFileSync(helpContentPath, 'utf8');
+            }
+            
+            // Fallback to generating content from templates
+            return generateHelpContent(topicId);
+        } catch (error) {
+            console.error('Error loading help content:', error);
+            return null;
+        }
+    });
+    
+    ipcMain.handle('search-help', async (_, searchTerm) => {
+        try {
+            // Implement a simple search through help content
+            // This would be more sophisticated in a real implementation
+            const results = await searchHelpContent(searchTerm);
+            return results;
+        } catch (error) {
+            console.error('Error searching help content:', error);
+            return [];
+        }
+    });
+}
+
+// Helper function to generate help content
+function generateHelpContent(topicId) {
+    // In a real app, this would dynamically generate content or load from templates
+    // For now, we'll return placeholder content for each topic
+    
+    const topics = {
+        'system-requirements': `
+            <h1>System Requirements</h1>
+            <p class="introduction">
+                AppNest is designed to be lightweight and run efficiently on most modern Windows systems.
+            </p>
+            <div class="help-section">
+                <h2>Minimum Requirements</h2>
+                <ul>
+                    <li><strong>Operating System:</strong> Windows 10 (64-bit) or newer</li>
+                    <li><strong>Processor:</strong> 1.5 GHz dual-core processor or faster</li>
+                    <li><strong>Memory:</strong> 2 GB RAM (4 GB recommended)</li>
+                    <li><strong>Disk Space:</strong> 100 MB available space</li>
+                    <li><strong>Graphics:</strong> Any graphics card with DirectX 10 support</li>
+                    <li><strong>Display:</strong> 1280 x 720 resolution or higher</li>
+                    <li><strong>Internet:</strong> Not required for basic functionality</li>
+                </ul>
+            </div>
+            <div class="help-section">
+                <h2>Recommended Configuration</h2>
+                <p>For the best experience with AppNest, we recommend:</p>
+                <ul>
+                    <li><strong>Operating System:</strong> Windows 10 (64-bit) or Windows 11</li>
+                    <li><strong>Processor:</strong> 2.0 GHz quad-core processor or faster</li>
+                    <li><strong>Memory:</strong> 8 GB RAM</li>
+                    <li><strong>Disk Space:</strong> 500 MB available space (for icon caching)</li>
+                    <li><strong>Display:</strong> 1920 x 1080 resolution or higher</li>
+                </ul>
+            </div>
+            <div class="help-section note">
+                <p>AppNest is designed to be efficient and should run well even on systems with lower specifications than those listed above.</p>
+            </div>
+        `,
+        'installation': `
+            <h1>Installation Guide</h1>
+            <p class="introduction">
+                Installing AppNest is a straightforward process designed to get you up and running quickly.
+            </p>
+            <div class="help-section">
+                <h2>Standard Installation</h2>
+                <ol>
+                    <li><strong>Download:</strong> Obtain the latest AppNest installer from our official website</li>
+                    <li><strong>Run the Installer:</strong> Double-click the downloaded .exe file</li>
+                    <li><strong>Follow Prompts:</strong> Choose your installation folder and preferences</li>
+                    <li><strong>Launch:</strong> After installation, AppNest can be started from the desktop shortcut or Start menu</li>
+                </ol>
+            </div>
+            <div class="help-section">
+                <h2>Portable Installation</h2>
+                <p>AppNest also supports a portable mode with no installation required:</p>
+                <ol>
+                    <li><strong>Download:</strong> Obtain the portable .zip version of AppNest</li>
+                    <li><strong>Extract:</strong> Unzip the archive to any location of your choice</li>
+                    <li><strong>Run:</strong> Execute AppNest.exe directly from the extracted folder</li>
+                    <li><strong>Optional:</strong> Create a shortcut on your desktop or taskbar</li>
+                </ol>
+            </div>
+            <div class="help-section">
+                <h2>First Launch Setup</h2>
+                <p>When you first launch AppNest, you'll have the opportunity to:</p>
+                <ul>
+                    <li>Choose your preferred theme (Light or Dark)</li>
+                    <li>Select folder locations for your portable applications</li>
+                    <li>Set startup preferences</li>
+                    <li>Import existing applications</li>
+                </ul>
+            </div>
+            <div class="help-section warning">
+                <p><strong>Note:</strong> Administrative privileges may be required to install AppNest in certain locations (e.g., Program Files). If you encounter permission issues, right-click the installer and select "Run as administrator".</p>
+            </div>
+        `,
+        'add-app': `
+            <h1>Adding a New Application</h1>
+            <p class="introduction">
+                Add your favorite applications to AppNest to create a centralized hub for launching all your software.
+            </p>
+            <div class="help-section">
+                <h2>Adding an Application</h2>
+                <ol>
+                    <li>Click the <i class="fas fa-th-large"></i> <strong>Apps</strong> button in the right sidebar</li>
+                    <li>Select <i class="fas fa-plus-circle"></i> <strong>Add New App</strong> from the menu (or use shortcut Ctrl+Shift+A)</li>
+                    <li>In the dialog that appears, fill in the following information:
+                        <ul>
+                            <li><strong>Application Name:</strong> Enter a name for the application</li>
+                            <li><strong>Executable Path:</strong> Click the folder icon to browse and select the .exe file</li>
+                            <li><strong>Category:</strong> Select from existing categories or create a new one</li>
+                            <li><strong>Type:</strong> Choose whether it's a portable or installed application</li>
+                            <li><strong>Description:</strong> Add an optional description</li>
+                            <li><strong>Add to favorites:</strong> Check this box to add the app to your favorites</li>
+                        </ul>
+                    </li>
+                    <li>Click <strong>Add Application</strong> to complete the process</li>
+                </ol>
+                <p>The application will now appear in your AppNest launcher with its icon automatically extracted.</p>
+            </div>
+            <div class="help-section">
+                <h2>Application Details</h2>
+                <p>When adding an application, consider the following details:</p>
+                <ul>
+                    <li><strong>Name:</strong> A clear, recognizable name that helps you identify the app</li>
+                    <li><strong>Icon:</strong> AppNest will automatically extract an icon from the executable</li>
+                    <li><strong>Category:</strong> Organizing apps by category helps you find them more easily</li>
+                    <li><strong>Portable vs. Installed:</strong> Selecting the correct type helps AppNest manage the app appropriately</li>
+                </ul>
+            </div>
+            <div class="help-section tip">
+                <p>You can add multiple versions of the same application if needed. Simply provide a unique name for each version.</p>
+            </div>
+        `
+    };
+    
+    return topics[topicId] || null;
+}
+
+// Helper function to search help content
+async function searchHelpContent(searchTerm) {
+    // In a real app, this would search through all help content files
+    // For now, we'll return some placeholder search results
+    
+    const searchTermLower = searchTerm.toLowerCase();
+    const results = [];
+    
+    // Define some sample search results
+    const searchIndex = {
+        'welcome': {
+            title: 'Welcome to AppNest',
+            content: 'AppNest is an application launcher designed to work in harmony with the Windows Start menu or as a standalone launcher.'
+        },
+        'system-requirements': {
+            title: 'System Requirements',
+            content: 'AppNest is designed to be lightweight and run efficiently on most modern Windows systems.'
+        },
+        'installation': {
+            title: 'Installation Guide',
+            content: 'Installing AppNest is a straightforward process designed to get you up and running quickly.'
+        },
+        'add-app': {
+            title: 'Adding a New Application',
+            content: 'Add your favorite applications to AppNest to create a centralized hub for launching all your software.'
+        },
+        'portable-apps': {
+            title: 'Working with Portable Apps',
+            content: 'AppNest provides powerful management options for portable applications, making them easy to organize and launch.'
+        }
+    };
+    
+    // Search through our mock index
+    for (const [id, data] of Object.entries(searchIndex)) {
+        const titleMatch = data.title.toLowerCase().includes(searchTermLower);
+        const contentMatch = data.content.toLowerCase().includes(searchTermLower);
+        
+        if (titleMatch || contentMatch) {
+            results.push({
+                id: id,
+                title: data.title,
+                excerpt: data.content.substring(0, 100) + '...',
+                relevance: titleMatch ? 2 : 1 // Title matches are more relevant
+            });
+        }
+    }
+    
+    // Sort results by relevance
+    results.sort((a, b) => b.relevance - a.relevance);
+    
+    return results;
 }
 
 // Add function to get drive information
@@ -1007,7 +1248,7 @@ function createSettingsWindow() {
         parent: mainWindow,
         modal: true,
         frame: false,
-        icon: path.join(__dirname, 'icon.ico'),
+        icon: path.join(__dirname, 'resources', 'images', 'nest-with-eggs.244x256.png'),
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -1020,6 +1261,39 @@ function createSettingsWindow() {
     // Clean up the window when it's closed
     settingsWindow.on('closed', () => {
         settingsWindow = null;
+    });
+}
+
+// Create and show help window
+function createHelpWindow() {
+    // If help window already exists, focus it instead of creating a new one
+    if (helpWindow && !helpWindow.isDestroyed()) {
+        helpWindow.focus();
+        return;
+    }
+
+    helpWindow = new BrowserWindow({
+        width: 1024,
+        height: 700,
+        minWidth: 800,
+        minHeight: 600,
+        center: true,
+        parent: mainWindow,
+        modal: false,
+        frame: false,
+        icon: path.join(__dirname, 'resources', 'images', 'nest-with-eggs.244x256.png'),
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload.js')
+        }
+    });
+
+    helpWindow.loadFile('help.html');
+
+    // Clean up the window when it's closed
+    helpWindow.on('closed', () => {
+        helpWindow = null;
     });
 }
 
@@ -1052,7 +1326,7 @@ function createWindow() {
         resizable: false,
         frame: false,
         transparent: false,
-        icon: path.join(__dirname, 'icon.ico'),
+        icon: path.join(__dirname, 'resources', 'images', 'nest-with-eggs-blue.ico'),
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -1150,6 +1424,7 @@ module.exports = {
     registerIPCHandlers,
     createWindow,
     createSettingsWindow,
+    createHelpWindow, // Export the new help window creation function
     startApp,
     getStore: () => store, // Expose store getter for tests
 };

@@ -60,7 +60,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     extractIcon: (executablePath) => ipcRenderer.invoke('extract-icon', executablePath), // Added extractIcon function
     
     // Drive information
-    getDriveInfo: () => ipcRenderer.invoke('get-drive-info')
+    getDriveInfo: () => ipcRenderer.invoke('get-drive-info'),
+
+    // Version and application info
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    readReleaseNotes: () => ipcRenderer.invoke('read-release-notes'),
+    
+    // Help window functionality
+    openHelpWindow: () => ipcRenderer.invoke('open-help-window'),
+    closeHelpWindow: () => ipcRenderer.invoke('close-help-window'),
+    getHelpContent: (topicId) => ipcRenderer.invoke('get-help-content', topicId),
+    searchHelp: (searchTerm) => ipcRenderer.invoke('search-help', searchTerm)
 });
 
 contextBridge.exposeInMainWorld('api', {

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; font-src https://cdnjs.cloudflare.com; script-src 'self'">
+    <title>AppNest Help</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles/help.css">
+</head>
+<body>
+    <div class="help-container">
+        <!-- Help Header -->
+        <header class="help-header">
+            <div class="help-title">
+                <img src="resources/images/nest-with-eggs.244x256.png" alt="AppNest Logo" class="help-logo">
+                <h1>AppNest Help</h1>
+            </div>
+            <div class="help-search">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="helpSearchInput" placeholder="Search help topics...">
+                </div>
+            </div>
+            <div class="window-controls">
+                <button id="closeHelpWindow" class="window-control-button" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="help-content">
+            <!-- Help Sidebar Navigation -->
+            <nav class="help-sidebar">
+                <ul class="help-nav-menu">
+                    <li class="help-nav-item active" data-section="getting-started">
+                        <i class="fas fa-rocket"></i> Getting Started
+                        <ul class="help-subnav">
+                            <li data-topic="welcome" class="active">Welcome to AppNest</li>
+                            <li data-topic="system-requirements">System Requirements</li>
+                            <li data-topic="installation">Installation Guide</li>
+                        </ul>
+                    </li>
+                    <li class="help-nav-item" data-section="adding-applications">
+                        <i class="fas fa-plus-circle"></i> Adding Applications
+                        <ul class="help-subnav">
+                            <li data-topic="add-app">Adding a New Application</li>
+                            <li data-topic="portable-apps">Working with Portable Apps</li>
+                            <li data-topic="installed-apps">Working with Installed Apps</li>
+                            <li data-topic="categories">Using Categories</li>
+                        </ul>
+                    </li>
+                    <li class="help-nav-item" data-section="managing-applications">
+                        <i class="fas fa-tasks"></i> Managing Applications
+                        <ul class="help-subnav">
+                            <li data-topic="launch-apps">Launching Applications</li>
+                            <li data-topic="edit-apps">Editing Application Details</li>
+                            <li data-topic="remove-apps">Removing Applications</li>
+                            <li data-topic="favorites">Using Favorites</li>
+                            <li data-topic="sorting">Sorting Applications</li>
+                        </ul>
+                    </li>
+                    <li class="help-nav-item" data-section="settings-customization">
+                        <i class="fas fa-sliders-h"></i> Settings & Customization
+                        <ul class="help-subnav">
+                            <li data-topic="theme">Theme Settings</li>
+                            <li data-topic="font-size">Font Size Adjustments</li>
+                            <li data-topic="folders">Folder Management</li>
+                            <li data-topic="startup">Startup Options</li>
+                        </ul>
+                    </li>
+                    <li class="help-nav-item" data-section="troubleshooting">
+                        <i class="fas fa-wrench"></i> Troubleshooting
+                        <ul class="help-subnav">
+                            <li data-topic="common-issues">Common Issues</li>
+                            <li data-topic="missing-icons">Missing Icons</li>
+                            <li data-topic="app-launch-failures">Application Launch Failures</li>
+                        </ul>
+                    </li>
+                    <li class="help-nav-item" data-section="about">
+                        <i class="fas fa-info-circle"></i> About AppNest
+                        <ul class="help-subnav">
+                            <li data-topic="version-info">Version Information</li>
+                            <li data-topic="credits">Credits</li>
+                            <li data-topic="license">License</li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Help Main Content Area -->
+            <main class="help-main-content">
+                <div id="help-content-container">
+                    <!-- Content will be loaded dynamically here -->
+                    <div class="help-topic active" id="welcome">
+                        <h1>Welcome to AppNest</h1>
+                        <p class="introduction">
+                            AppNest is an application launcher designed to work in harmony with the Windows Start menu or as a standalone launcher. Its goal is to provide a seamless, efficient way to launch both installed and portable applications, enhancing workflow and organization for all types of users.
+                        </p>
+                        
+                        <div class="help-section">
+                            <h2>Key Features</h2>
+                            <ul>
+                                <li><strong>Unified Launcher:</strong> Access both portable and installed applications from one interface</li>
+                                <li><strong>Organization Tools:</strong> Sort apps by favorites, categories, usage, and more</li> 
+                                <li><strong>Quick Search:</strong> Find your applications instantly with the search feature</li>
+                                <li><strong>Folder Access:</strong> Quick access to important folders for seamless workflow</li>
+                                <li><strong>Drive Space Monitoring:</strong> Visual indicators of available disk space</li>
+                                <li><strong>Dark & Light Themes:</strong> Work comfortably in any lighting conditions</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="help-section">
+                            <h2>Getting Started</h2>
+                            <p>To get the most out of AppNest, we recommend starting with these steps:</p>
+                            
+                            <ol>
+                                <li>Add your most frequently used applications using the <i class="fas fa-plus-circle"></i> button in the Apps menu</li>
+                                <li>Create categories to organize your applications</li>
+                                <li>Mark your essential apps as favorites for quick access</li>
+                                <li>Experiment with different sort options to find your preferred view</li>
+                                <li>Customize AppNest's appearance in the Settings</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="help-section">
+                            <h2>Need More Help?</h2>
+                            <p>Navigate through the topics on the left sidebar to find detailed guidance on specific features and functionalities. If you encounter any issues or have questions not covered in this documentation, please refer to the Troubleshooting section.</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="renderer/help-renderer.js"></script>
+</body>
+</html>
