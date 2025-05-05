@@ -60,9 +60,9 @@
     },
     "publish": [
       {
-        "provider": "github",
-        "owner": "KelMankenberg",
-        "repo": "AppNest"
+        "provider": "generic",
+        "url": "https://github.com/Kelly-Mankenberg_wkl/AppNest/releases/download/${version}",
+        "publishAutoUpdate": true
       }
     ],
     "forceCodeSigning": false,
