@@ -802,6 +802,7 @@ function loadDriveInfo() {
         // Create the main system drive indicator with just the circle visualization
         const mainDriveCircle = document.createElement('div');
         mainDriveCircle.className = 'drive-circle';
+        mainDriveCircle.style.cursor = 'pointer';
         
         // Add color coding based on usage percentage
         if (systemDrive.percentUsed >= 90) {
@@ -834,6 +835,12 @@ function loadDriveInfo() {
             <span class="drive-letter">${systemDrive.letter.replace(':', '')}</span>
         `;
         
+        // Add click event to open the drive
+        mainDriveCircle.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent panel toggle
+            window.electronAPI.openFolder('windows', systemDrive.letter.charAt(0).toLowerCase());
+        });
+        
         // Create main drive display with expand icon
         const mainDrive = document.createElement('div');
         mainDrive.className = 'main-drive';
@@ -843,6 +850,10 @@ function loadDriveInfo() {
         const expandIcon = document.createElement('span');
         expandIcon.className = 'expand-icon';
         expandIcon.innerHTML = '<i class="fas fa-chevron-up"></i>';
+        expandIcon.addEventListener('click', (e) => {
+            e.stopPropagation(); // Only trigger panel toggle
+            toggleDrivePanel();
+        });
         mainDrive.appendChild(expandIcon);
         
         // Add main drive to system drive indicator
@@ -876,6 +887,7 @@ function createDriveIndicator(drive) {
     // Create drive circle element
     const driveCircle = document.createElement('div');
     driveCircle.className = 'drive-circle';
+    driveCircle.style.cursor = 'pointer';
     
     // Add color coding based on usage percentage
     if (drive.percentUsed >= 90) {
@@ -900,6 +912,11 @@ function createDriveIndicator(drive) {
         <span class="drive-letter">${drive.letter.replace(':', '')}</span>
     `;
     
+    // Add click event to open the drive in the system file manager
+    driveCircle.addEventListener('click', () => {
+        window.electronAPI.openFolder('windows', drive.letter.charAt(0).toLowerCase());
+    });
+
     driveIndicator.appendChild(driveCircle);
     return driveIndicator;
 }

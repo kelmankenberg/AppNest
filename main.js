@@ -858,6 +858,12 @@ function registerIPCHandlers() {
             console.log(`Opening folder: ${folderType}/${folderName}`);
             
             if (folderType === 'windows') {
+                // Check if it's a drive letter
+                if (folderName.length === 1) {
+                    exec(`explorer ${folderName}:`);
+                    return true;
+                }
+                
                 // Open Windows standard user folders
                 const userFolders = {
                     'documents': os.homedir() + '\\Documents',
