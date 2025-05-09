@@ -1499,6 +1499,7 @@ module.exports = {
     createHelpWindow, // Export the new help window creation function
     startApp,
     getStore: () => store, // Expose store getter for tests
+    getDriveInfo // Add getDriveInfo export
 };
 
 async function getExecutableMetadata(filePath) {

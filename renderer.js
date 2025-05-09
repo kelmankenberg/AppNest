@@ -1750,3 +1750,12 @@ if (window.electronAPI && window.electronAPI.onDefaultViewChanged) {
         });
     });
 }
+
+// Export functions for testing
+if (process.env.NODE_ENV === 'test') {
+    module.exports = {
+        loadDriveInfo,
+        createDriveIndicator,
+        toggleDrivePanel
+    };
+}
