@@ -1414,14 +1414,15 @@ function createWindow() {
     globalShortcut.register('F12', () => {
         if (mainWindow) {
             mainWindow.webContents.toggleDevTools();
-        }
-    });
+        }    });
 
-    // Register search shortcut (Ctrl+F)
-    globalShortcut.register('CommandOrControl+F', () => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('focus-search');
+    // Set up local keyboard shortcuts
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+        // Check if Ctrl+F is pressed and window is focused
+        if (input.control && input.key.toLowerCase() === 'f' && !input.alt && !input.meta) {
             mainWindow.focus(); // Make sure window is focused
+            event.preventDefault();  // Prevent default browser Ctrl+F behavior
+            mainWindow.webContents.send('focus-search');
         }
     });
 

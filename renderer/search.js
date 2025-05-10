@@ -62,7 +62,20 @@ function setupShortcutHandler() {
         // Register callback for when focus-search event is received
         window.api.onFocusSearch(() => {
             console.log('Received Ctrl+F shortcut from main process');
-            toggleSearch();
+            // Force the search header to be shown
+            const searchHeader = document.querySelector('.search-header');
+            if (searchHeader) {
+                searchHeader.classList.remove('hidden');
+                searchVisible = true;
+            }
+            // Focus the search input
+            const searchInput = document.querySelector('.search-input');
+            if (searchInput) {
+                setTimeout(() => {
+                    searchInput.focus();
+                    searchInput.select(); // Select any existing text
+                }, 50);
+            }
         });
         console.log('Ctrl+F shortcut handler registered');
     } else {
