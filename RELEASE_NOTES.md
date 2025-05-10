@@ -1,5 +1,10 @@
 # AppNest Release Notes
 
+## Version 9.3.2 (May 10, 2025)
+
+### Features
+- Drive Panel icons now open the system file manager to the associated system drive when clicked.
+
 ## Version 0.3.1 (May 5, 2025)
 
 ### Bug Fixes
