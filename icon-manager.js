@@ -74,22 +74,111 @@ async function extractIcon(executablePath) {
 
     // On Windows, use PowerShell to extract icon
     if (process.platform === 'win32') {
-      // PowerShell script to extract icon from executable
       const psScript = `
+        $ErrorActionPreference = "Stop"
         Add-Type -AssemblyName System.Drawing
-        try {
-          $icon = [System.Drawing.Icon]::ExtractAssociatedIcon("${executablePath.replace(/\\/g, '\\\\')}")
-          if ($icon -ne $null) {
-            $bitmap = $icon.ToBitmap()
-            $bitmap.Save("${iconPath.replace(/\\/g, '\\\\')}", [System.Drawing.Imaging.ImageFormat]::Png)
+        Add-Type -AssemblyName System.Windows.Forms
+
+        function Save-Icon {
+          param($Icon, $Path)
+          try {
+            $bitmap = $Icon.ToBitmap()
+            $bitmap.Save($Path, [System.Drawing.Imaging.ImageFormat]::Png)
             $bitmap.Dispose()
-            $icon.Dispose()
-            Write-Output "Success: Icon extracted to ${iconPath.replace(/\\/g, '\\\\')}"
-          } else {
-            Write-Error "Failed to extract icon: No icon found in the file"
+            $Icon.Dispose()
+            return $true
+          } catch {
+            Write-Error "Failed to save icon: $_"
+            return $false
           }
+        }
+
+        try {
+          $ExecutablePath = '${executablePath.replace(/'/g, "''")}' 
+          Write-Host "Extracting icon from: $ExecutablePath"
+
+          # Check if this is a UWP app by looking for AppxManifest.xml first
+          $appDir = Split-Path -Parent $ExecutablePath
+          $manifestPath = Get-ChildItem -Path $appDir -Filter "AppxManifest.xml" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          
+          if ($manifestPath) {
+            Write-Host "UWP app detected, using AppxManifest method first..."
+            try {
+              [xml]$manifest = Get-Content $manifestPath.FullName
+              # Look for Square44x44Logo or relevant logo paths
+              $logoPath = $null
+              $visualElements = $manifest.Package.Applications.Application.VisualElements
+              
+              # Try different logo attributes in priority order
+              $logoAttributes = @(
+                'Square44x44Logo',
+                'Logo',
+                'Square150x150Logo',
+                'SmallLogo'
+              )
+              
+              foreach ($attr in $logoAttributes) {
+                if ($visualElements.$attr) {
+                  $logoPath = $visualElements.$attr
+                  Write-Host "Found logo path: $logoPath from attribute: $attr"
+                  break
+                }
+              }
+              
+              if ($logoPath) {
+                $logoFullPath = Join-Path (Split-Path -Parent $manifestPath.FullName) $logoPath
+                if (Test-Path $logoFullPath) {
+                  Write-Host "Found logo file: $logoFullPath"
+                  Copy-Item $logoFullPath '${iconPath.replace(/\\/g, '\\\\')}' -Force
+                  Write-Host "Successfully copied UWP app icon"
+                  exit 0
+                }
+              }
+            } catch {
+              Write-Host "AppxManifest method failed: $_"
+            }
+          }
+
+          # Try ExtractAssociatedIcon method
+          Write-Host "Trying ExtractAssociatedIcon method..."
+          try {
+            $icon = [System.Drawing.Icon]::ExtractAssociatedIcon($ExecutablePath)
+            if ($icon -ne $null) {
+              Write-Host "ExtractAssociatedIcon succeeded"
+              if (Save-Icon $icon '${iconPath.replace(/\\/g, '\\\\')}') {
+                Write-Host "Successfully saved icon using ExtractAssociatedIcon"
+                exit 0
+              }
+            }
+          } catch {
+            Write-Host "ExtractAssociatedIcon failed: $_"
+          }
+
+          # Try Shell.Application method
+          Write-Host "Trying Shell.Application method..."
+          try {
+            $shell = New-Object -ComObject Shell.Application
+            $folder = $shell.Namespace((Split-Path -Parent $ExecutablePath))
+            $file = $folder.ParseName((Split-Path -Leaf $ExecutablePath))
+            $icon = $file.ExtractIcon(0)
+            [System.Runtime.Interopservices.Marshal]::ReleaseComObject($shell) | Out-Null
+            
+            if ($icon -ne $null) {
+              Write-Host "Shell.Application succeeded"
+              if (Save-Icon $icon '${iconPath.replace(/\\/g, '\\\\')}') {
+                Write-Host "Successfully saved icon using Shell.Application"
+                exit 0
+              }
+            }
+          } catch {
+            Write-Host "Shell.Application method failed: $_"
+          }
+
+          Write-Error "All icon extraction methods failed"
+          exit 1
         } catch {
-          Write-Error "Error extracting icon: $_"
+          Write-Error "Top-level error: $_"
+          exit 1
         }
       `;
 
@@ -100,23 +189,24 @@ async function extractIcon(executablePath) {
 
       try {
         const { stdout, stderr } = await execFileAsync('powershell', ['-Command', psScript]);
-
+        console.log('PowerShell output:', stdout);
+        
         if (stderr) {
           console.error('PowerShell error:', stderr);
           return null;
         }
+
+        // Verify the file was created
+        try {
+          await fs.access(iconPath);
+          console.log(`Icon successfully extracted to: ${iconPath}`);
+          return iconPath;
+        } catch (err) {
+          console.error(`Icon file not found after extraction: ${iconPath}`);
+          return null;
+        }
       } catch (error) {
         console.error('Error executing PowerShell command:', error);
-        return null;
-      }
-
-      // Verify the file was created
-      try {
-        await fs.access(iconPath);
-        console.log(`Icon successfully extracted to: ${iconPath}`);
-        return iconPath;
-      } catch (err) {
-        console.error(`Icon file not found after extraction: ${iconPath}`);
         return null;
       }
     } else {

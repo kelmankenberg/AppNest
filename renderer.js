@@ -1596,9 +1596,6 @@ document.getElementById('winDownloads').addEventListener('click', () => {
 // Set up interval to refresh drive info every minute
 setInterval(loadDriveInfo, 60000);
 
-// Load all apps
-loadAllApps();
-
 // Initial load
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize folder header with default text in case preferences take time to load
@@ -1606,6 +1603,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (folderHeader) {
         folderHeader.textContent = 'App Folders'; // Default value
     }
+    
+    // Set up apps-updated event listener first
+    setupAppsUpdatedListener();
     
     loadApplications();
     loadDriveInfo();
@@ -1654,9 +1654,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const fallbackIcons = document.querySelectorAll('.app-icon-fallback');
             fallbackIcons.forEach(icon => {
                 icon.style.width = `${iconSizeNum}px`;
-                fallbackIcons.style.height = `${iconSizeNum}px`;
-                fallbackIcons.style.fontSize = `${Math.round(iconSizeNum * 0.6)}px`; // Adjust font size proportionally
-                fallbackIcons.style.lineHeight = `${iconSizeNum}px`;
+                icon.style.height = `${iconSizeNum}px`;
+                icon.style.fontSize = `${Math.round(iconSizeNum * 0.6)}px`; // Adjust font size proportionally
+                icon.style.lineHeight = `${iconSizeNum}px`;
             });
             
             // Also update the icon containers
@@ -1672,90 +1672,61 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Helper function to calculate proportional icon size based on font size
-function calculateIconSize(fontSize) {
-    // For font size 9px → icon size 14px
-    // For font size 14px → icon size 20px
-    // Linear scaling between those points
-    const minFontSize = 9;
-    const maxFontSize = 14;
-    const minIconSize = 14;
-    const maxIconSize = 20;
-    
-    // Ensure fontSize is within bounds
-    const boundedFontSize = Math.max(minFontSize, Math.min(maxFontSize, fontSize));
-    
-    // Calculate the proportion of the way from min to max font size
-    const proportion = (boundedFontSize - minFontSize) / (maxFontSize - minFontSize);
-    
-    // Calculate the icon size based on that proportion
-    return Math.round(minIconSize + proportion * (maxIconSize - minIconSize));
-}
+// Listen for apps-updated events that provide the new app list
+let appsUpdatedCleanup = null;
 
-// Listen for default view changes from settings window
-if (window.electronAPI && window.electronAPI.onDefaultViewChanged) {
-    window.electronAPI.onDefaultViewChanged((value) => {
-        console.log(`Default view changed from settings: ${value}`);
-        
-        // Update the sort selection in the Sort menu
-        const sortSubmenu = document.getElementById('sortSubmenu');
-        if (sortSubmenu) {
-            // Remove active class from all sort options
-            sortSubmenu.querySelectorAll('.submenu-item').forEach(item => {
-                item.classList.remove('active');
-            });
+function setupAppsUpdatedListener() {
+    console.log('Setting up apps-updated listener');
+    
+    // Clean up existing listener if any
+    if (appsUpdatedCleanup) {
+        console.log('Cleaning up existing apps-updated listener');
+        appsUpdatedCleanup();
+    }
+    
+    // Set up new listener
+    appsUpdatedCleanup = window.electronAPI.onAppsUpdated((apps) => {
+        console.log('Main window received apps-updated event with apps:', apps.length);
+        if (Array.isArray(apps)) {
+            // Apply current sorting before displaying
+            const sortPreference = localStorage.getItem('appnest-sort-preference') || 'alphabetical';
+            const sortedApps = sortApplications(apps, sortPreference);
             
-            // Add active class to the matching sort option
-            const matchingOption = sortSubmenu.querySelector(`.submenu-item[data-sort-value="${value}"]`);
-            if (matchingOption) {
-                matchingOption.classList.add('active');
-            }
-        }
-        
-        // Save to localStorage for persistence in the current window
-        localStorage.setItem('appnest-sort-preference', value);
-        
-        // Show a visual indicator that sorting has been applied
-        const sortNames = {
-            'alphabetical': 'Alphabetical',
-            'categories': 'Categories',
-            'favorites': 'Favorites',
-            'most-used': 'Most Used',
-            'installation-type': 'Portable/Installed'
-        };
-        
-        // Create notification element if it doesn't exist
-        let notification = document.getElementById('sort-notification');
-        if (!notification) {
-            notification = document.createElement('div');
-            notification.id = 'sort-notification';
-            notification.className = 'sort-notification';
-            document.body.appendChild(notification);
-        }
-        
-        // Set notification text and show it
-        notification.textContent = `Sorted by: ${sortNames[value] || value}`;
-        notification.classList.add('show');
-        
-        // Hide notification after a delay
-        setTimeout(() => {
-            notification.classList.remove('show');
-        }, 2000);
-        
-        // Instead of calling loadApplications() again, which would cause duplication,
-        // get the current apps from the table and re-sort them
-        window.electronAPI.getAllApps().then(apps => {
-            const sortedApps = sortApplications(apps, value);
+            // Update the UI immediately with the new apps
             displayApplications(sortedApps);
-        });
+            
+            // Store updated apps in global data
+            window.appData = window.appData || {};
+            window.appData.apps = apps;
+        }
     });
 }
 
-// Export functions for testing
-if (process.env.NODE_ENV === 'test') {
-    module.exports = {
-        loadDriveInfo,
-        createDriveIndicator,
-        toggleDrivePanel
-    };
-}
+// Re-establish listener when window is focused
+window.addEventListener('focus', () => {
+    console.log('Main window focused, re-establishing apps-updated listener');
+    setupAppsUpdatedListener();
+});
+
+// Clean up listener when window is closed
+window.addEventListener('beforeunload', () => {
+    if (appsUpdatedCleanup) {
+        console.log('Cleaning up apps-updated listener on window close');
+        appsUpdatedCleanup();
+    }
+});
+
+// Listen for app list refresh events (used as a fallback)
+window.electronAPI.onRefreshApps(() => {
+    console.log('Refresh apps event received');
+    window.electronAPI.getAllApps()
+        .then(apps => {
+            const sortPreference = localStorage.getItem('appnest-sort-preference') || 'alphabetical';
+            const sortedApps = sortApplications(apps, sortPreference);
+            displayApplications(sortedApps);
+            
+            window.appData = window.appData || {};
+            window.appData.apps = apps;
+        })
+        .catch(err => console.error('Error refreshing apps:', err));
+});
