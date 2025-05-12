@@ -535,21 +535,43 @@ function registerIPCHandlers() {
     ipcMain.handle('launch-app', async (_, appId) => {
         try {
             const apps = await db.getAllApps();
-            const app = apps.find(a => a.id === appId);
-
-            if (!app) {
+            const app = apps.find(a => a.id === appId);            if (!app) {
                 throw new Error(`Application with ID ${appId} not found`);
             }
 
-            let command = `"${app.executable_path}"`;
+            // Get the executable path from the app
+            let executablePath = app.executable_path;
+            
+            // If this is a Windows built-in app, try to resolve its full path at launch time
+            if (process.platform === 'win32' && isWindowsBuiltInApp(executablePath)) {
+                console.log(`Resolving system path for ${app.name} (${executablePath})`);
+                const resolvedPath = await resolveWindowsSystemPath(path.basename(executablePath));
+                if (resolvedPath) {
+                    console.log(`Successfully resolved path: ${resolvedPath}`);
+                    executablePath = resolvedPath;
+                } else {
+                    console.error(`Failed to resolve system path for ${app.name}`);
+                }
+            }
+
+            // Ensure proper command formatting using quotes
+            let command = `"${executablePath}"`;
             if (app.launch_arguments) {
                 command += ` ${app.launch_arguments}`;
             }
 
-            const options = {};
+            // Set up options for process execution
+            const options = {
+                windowsHide: false,  // This ensures the window is shown on Windows
+                windowsVerbatimArguments: true  // This ensures args are passed correctly on Windows
+            };
+
             if (app.working_directory) {
                 options.cwd = app.working_directory;
             }
+
+            console.log(`Launching application with command: ${command}`);
+            console.log('Execute options:', options);
 
             exec(command, options, (err) => {
                 if (err) {
@@ -1040,6 +1062,68 @@ function registerIPCHandlers() {
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.minimize();
         }
+    });    // Handle adding Windows built-in apps
+    ipcMain.handle('add-windows-app', async (_, appInfo) => {
+        try {            let executablePath = appInfo.path;
+            
+            // If this is a Windows built-in app, try to resolve its full path
+            if (process.platform === 'win32' && isWindowsBuiltInApp(executablePath)) {// For Windows built-in apps, attempt to resolve the path
+                console.log(`Resolving system path for ${appInfo.name} (${executablePath})`);
+                const resolvedPath = await resolveWindowsSystemPath(path.basename(executablePath));
+                if (resolvedPath) {
+                    console.log(`Successfully resolved path: ${resolvedPath}`);
+                    executablePath = resolvedPath;
+                } else {
+                    console.error(`Failed to resolve system path for ${appInfo.name} (${executablePath})`);
+                    throw new Error(`Could not resolve system path for ${appInfo.name}`);
+                }
+            }
+            
+            // Extract icon from the executable
+            console.log(`Extracting icon from: ${executablePath}`);
+            const iconPath = await iconManager.extractIcon(executablePath);
+              // Get the category ID for 'System'
+            const categories = await db.getCategories();
+            const systemCategory = categories.find(c => c.name === 'System') 
+                || categories.find(c => c.name === 'Administrative')
+                || categories.find(c => c.name === 'Office')
+                || categories.find(c => c.name === 'Utility');
+            
+            if (!systemCategory) {
+                throw new Error('No suitable category found (System/Administrative/Office/Utility)');
+            }
+
+            const appData = {
+                name: appInfo.name || path.basename(executablePath, '.exe'),
+                executable_path: executablePath,
+                is_portable: false,
+                category_id: systemCategory.id,
+                icon_path: iconPath,
+                description: appInfo.description || '',
+                publisher: 'Microsoft',
+                version: appInfo.version || '',
+                launch_mode: 'normal',
+                is_favorite: false,
+                is_hidden: false            };
+            const newAppId = await db.addApp(appData);
+            
+            // Get the updated list of apps with category information
+            const updatedApps = await db.getAllApps();  // Use getAllApps to get complete app info
+            
+            // Notify both windows to refresh the app list
+            [mainWindow, settingsWindow].forEach(window => {
+                if (window && !window.isDestroyed()) {
+                    console.log('Sending apps-updated event to window:', window.id);
+                    // Send the updated apps so they're immediately available
+                    window.webContents.send('apps-updated', updatedApps);
+                }
+            });
+            
+            return { success: true, id: newAppId };
+        } catch (err) {
+            console.error('Error adding Windows app:', err);
+            throw err;
+        }
     });
 }
 
@@ -1316,6 +1400,14 @@ function createSettingsWindow() {
 
     settingsWindow.loadFile('settings.html');
 
+    // Add keyboard shortcut for Developer Tools
+    settingsWindow.webContents.on('before-input-event', (event, input) => {
+        if (input.control && input.shift && input.key.toLowerCase() === 'i') {
+            settingsWindow.webContents.toggleDevTools();
+            event.preventDefault();
+        }
+    });
+
     // Clean up the window when it's closed
     settingsWindow.on('closed', () => {
         settingsWindow = null;
@@ -1550,4 +1642,178 @@ async function getExecutableMetadata(filePath) {
             icon: ''
         };
     }
+}
+
+/**
+ * Resolves the full path for Windows built-in apps
+ * @param {string} executableName - The name of the executable (e.g. "write.exe")
+ * @returns {Promise<string|null>} - The full path to the executable or null if not found
+ */
+async function resolveWindowsSystemPath(executableName) {
+    if (process.platform !== 'win32') return null;
+
+    const windir = process.env.SystemRoot || process.env.WINDIR || 'C:\\Windows';
+    console.log(`Resolving path for ${executableName} in Windows directory: ${windir}`);
+    
+    // Try to find the executable using our registry first
+    const app = WINDOWS_BUILTIN_APPS[executableName.toLowerCase()];
+    if (app) {
+        console.log(`Found app info for ${executableName}: ${app.name}`);
+        
+        // First try the Windows system directories
+        const systemPaths = [
+            path.join(windir, 'System32'),
+            path.join(windir, 'SysWOW64'),
+            windir
+        ];
+
+        // Check each system directory first
+        for (const sysPath of systemPaths) {
+            const fullPath = path.join(sysPath, executableName);
+            try {
+                await fs.promises.access(fullPath, fs.constants.F_OK);
+                console.log(`Found ${executableName} in system directory: ${fullPath}`);
+                return fullPath;
+            } catch (err) {
+                console.log(`Not found in system directory: ${fullPath}`);
+            }
+        }
+
+        // Then try the registered paths
+        for (const searchPath of app.searchPaths) {
+            // Handle paths that start with .. to look outside Windows directory
+            let fullPath;
+            if (searchPath.startsWith('..')) {
+                fullPath = path.join(path.dirname(windir), searchPath.substring(3));
+            } else {
+                fullPath = path.join(windir, searchPath);
+            }
+            
+            try {
+                await fs.promises.access(fullPath, fs.constants.F_OK);
+                console.log(`Found ${executableName} at registered path: ${fullPath}`);
+                return fullPath;
+            } catch (err) {
+                console.log(`Not found at registered path: ${fullPath}`);
+            }
+        }
+
+        // For modern Windows 10/11, try WindowsApps location
+        try {
+            const programFilesDirs = ['C:\\Program Files', 'C:\\Program Files (x86)'];
+            for (const programFilesDir of programFilesDirs) {
+                const windowsAppsDir = path.join(programFilesDir, 'WindowsApps');
+                console.log(`Checking WindowsApps directory: ${windowsAppsDir}`);
+                
+                try {                    const entries = await fs.promises.readdir(windowsAppsDir);
+                    // Search patterns based on the executable name
+                    const searchPatterns = [executableName.toLowerCase()];
+                    // First pass: collect all potential matches
+                    const matches = entries.filter(entry => 
+                        searchPatterns.some(pattern => entry.toLowerCase().includes(pattern))
+                    );
+                    
+                    console.log(`Found ${matches.length} potential matches in WindowsApps:`, matches);
+                    
+                    // For each match, try different possible locations/names
+                    for (const entry of matches) {                        const possibleNames = [executableName];
+                        const possibleSubdirs = ['', 'app', 'App', 'bin', 'Bin'];
+                        
+                        for (const subdir of possibleSubdirs) {
+                            for (const exeName of possibleNames) {
+                                const appPath = path.join(
+                                    windowsAppsDir,
+                                    entry,
+                                    subdir,
+                                    exeName
+                                );
+                                try {
+                                    await fs.promises.access(appPath, fs.constants.F_OK);
+                                    console.log(`Found ${executableName} in WindowsApps: ${appPath}`);
+                                    return appPath;
+                                } catch (err) {
+                                    console.log(`Not found at WindowsApps path: ${appPath}`);
+                                }
+                            }
+                        }
+                        
+                        // Also try searching recursively one level deep
+                        try {
+                            const entryPath = path.join(windowsAppsDir, entry);
+                            const subdirs = await fs.promises.readdir(entryPath, { withFileTypes: true });
+                            for (const subdir of subdirs) {
+                                if (subdir.isDirectory()) {
+                                    for (const exeName of possibleNames) {
+                                        const appPath = path.join(entryPath, subdir.name, exeName);
+                                        try {
+                                            await fs.promises.access(appPath, fs.constants.F_OK);
+                                            console.log(`Found ${executableName} in WindowsApps subdirectory: ${appPath}`);
+                                            return appPath;
+                                        } catch {
+                                            console.log(`Not found at WindowsApps subpath: ${appPath}`);
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            console.log(`Error searching subdirectories in ${entry}:`, err.message);
+                        }
+                    }
+                } catch (err) {
+                    console.log(`Error reading WindowsApps directory ${windowsAppsDir}:`, err.message);
+                }
+            }
+        } catch (err) {
+            console.log('Could not search WindowsApps directories:', err.message);
+        }
+    }
+
+    // Fallback to searching common system directories
+    const systemPaths = [
+        path.join(windir, 'System32'),
+        windir,
+        path.join(windir, 'SysWOW64')
+    ];
+
+    // Check each directory for the executable
+    for (const sysPath of systemPaths) {
+        const fullPath = path.join(sysPath, executableName);
+        try {
+            await fs.promises.access(fullPath, fs.constants.F_OK);
+            console.log(`Found ${executableName} at ${fullPath}`);
+            return fullPath;
+        } catch (err) {
+            console.log(`Path not found: ${fullPath}`);
+            continue;  // File not found in this path
+        }
+    }
+    return null;
+}
+
+// Registry of well-known Windows apps and their locations
+// Removed WordPad since it's being deprecated in Windows 11
+const WINDOWS_BUILTIN_APPS = {
+    'notepad.exe': { 
+        name: 'Notepad', 
+        searchPaths: ['System32/notepad.exe', 'notepad.exe'] 
+    },
+    'calc.exe': { 
+        name: 'Calculator', 
+        searchPaths: ['System32/calc.exe'] 
+    },
+    'mspaint.exe': { 
+        name: 'Paint', 
+        searchPaths: ['System32/mspaint.exe'] 
+    }
+};
+
+/**
+ * Checks if an app is a Windows built-in app
+ * @param {string} executablePath - The path to check
+ * @returns {boolean} - True if this is a Windows built-in app
+ */
+function isWindowsBuiltInApp(executablePath) {
+    if (!executablePath) return false;
+    const basename = path.basename(executablePath).toLowerCase();
+    return WINDOWS_BUILTIN_APPS.hasOwnProperty(basename);
 }

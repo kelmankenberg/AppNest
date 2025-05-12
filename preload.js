@@ -38,6 +38,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onFontSizeChanged: (callback) => ipcRenderer.on('font-size-changed', (_, size) => callback(size)),
     onShowAddAppDialog: (callback) => ipcRenderer.on('show-add-app-dialog', () => callback()),
     onMinimizeOnPowerButtonChanged: (callback) => ipcRenderer.on('minimize-on-power-button-changed', (_, enabled) => callback(enabled)),
+    onRefreshApps: (callback) => ipcRenderer.on('refresh-apps', () => callback()),
+    onAppsUpdated: (callback) => {
+        // Add the new listener without removing existing ones
+        const listener = (_, apps) => {
+            console.log('Preload: Received apps-updated event with apps:', apps);
+            callback(apps);
+        };
+        ipcRenderer.on('apps-updated', listener);
+        // Return cleanup function
+        return () => {
+            ipcRenderer.removeListener('apps-updated', listener);
+        };
+    },
     
     // Database operations
     getAllApps: () => ipcRenderer.invoke('get-all-apps'),

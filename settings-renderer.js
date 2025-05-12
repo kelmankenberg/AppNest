@@ -1,15 +1,55 @@
+console.log('Settings renderer script loaded');
+
 // When DOM is loaded, initialize settings window functionality
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM Content Loaded - Initializing settings...');
+    
+    // Set up event listeners first
+    console.log('Setting up event listeners...');
+    setupEventListeners();
+    console.log('Event listeners setup complete');
+    
+    // Then initialize other functionality
+    console.log('Initializing title bar buttons...');
     initializeTitleBarButtons();
+    console.log('Initializing settings navigation...');
     initializeSettingsNavigation();
+    console.log('Initializing theme settings...');
     initializeThemeSettings();
+    console.log('Initializing sliders...');
     initializeSliders();
+    console.log('Initializing inputs...');
     initializeInputs();
+    console.log('Initializing theme change listener...');
     initializeThemeChangeListener();
+    console.log('Initializing folder controls...');
     initializeFolderControls();
-    initializeWindowsBuiltInApps(); // Add initialization for Windows built-in apps
+    console.log('Initializing Windows built-in apps...');
+    await initializeWindowsBuiltInApps();
+    console.log('Initializing apps list...');
+    await initializeAppsList();
+    console.log('Loading settings from store...');
     loadSettingsFromStore();
+    console.log('Settings initialization complete');
 });
+
+// Set up all event listeners
+function setupEventListeners() {
+    console.log('Setting up event listeners...');
+    
+    // Set up apps-updated event listener
+    console.log('Setting up apps-updated event listener...');
+    const cleanup = window.electronAPI.onAppsUpdated((apps) => {
+        console.log('Settings: Received apps-updated event');
+        console.log('Updated apps list:', apps);
+        updateAppList(apps);
+    });
+    console.log('Apps-updated event listener setup complete');
+    
+    // Store cleanup function for later use
+    window._appsUpdatedCleanup = cleanup;
+    console.log('Cleanup function stored');
+}
 
 // Initialize titlebar buttons
 function initializeTitleBarButtons() {
@@ -741,35 +781,52 @@ function closeWindow() {
 }
 
 // Initialize Windows built-in apps section
-function initializeWindowsBuiltInApps() {
+async function initializeWindowsBuiltInApps() {
+    console.log('Initializing Windows built-in apps...');
     const addAppButtons = document.querySelectorAll('.add-app-button');
+    console.log('Found add app buttons:', addAppButtons.length);
     const appAddStatus = document.getElementById('appAddStatus');
     
+    // Get initial list of apps to check which ones are already added
+    console.log('Fetching initial apps list...');
+    const initialApps = await window.electronAPI.getAllApps();
+    console.log('Initial apps list:', initialApps);
+    updateAppList(initialApps);
+    
     addAppButtons.forEach(button => {
+        console.log('Setting up click handler for button:', button.getAttribute('data-app-name'));
         button.addEventListener('click', async () => {
             const appName = button.getAttribute('data-app-name');
             const appPath = button.getAttribute('data-app-path');
             const appCategory = button.getAttribute('data-app-category');
-            const appPathType = button.getAttribute('data-app-path-type') || 'system';
+            console.log('Add button clicked for:', appName);
             
             try {
                 // Call the IPC method to add the Windows app
+                console.log('Calling addWindowsApp with:', { name: appName, path: appPath, category: appCategory });
                 await window.electronAPI.addWindowsApp({
                     name: appName,
                     path: appPath,
-                    category: appCategory,
-                    pathType: appPathType
+                    description: `Windows ${appName}`,
+                    category: appCategory
                 });
+                console.log('Windows app added successfully');
                 
                 // Show success message
                 appAddStatus.textContent = `${appName} was added to your launcher successfully!`;
                 appAddStatus.className = 'app-add-status success';
+                
+                // Update button state immediately
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-check"></i>';
+                button.title = 'Already added';
                 
                 // Hide the message after 3 seconds
                 setTimeout(() => {
                     appAddStatus.style.display = 'none';
                 }, 3000);
             } catch (error) {
+                console.error('Error adding Windows app:', error);
                 // Show error message
                 appAddStatus.textContent = `Failed to add ${appName}: ${error.message}`;
                 appAddStatus.className = 'app-add-status error';
@@ -782,6 +839,58 @@ function initializeWindowsBuiltInApps() {
         });
     });
 }
+
+// Initialize apps list
+async function initializeAppsList() {
+    console.log('Initializing apps list...');
+    try {
+        // Get initial list of apps
+        console.log('Fetching initial apps list...');
+        const apps = await window.electronAPI.getAllApps();
+        console.log('Initial apps list:', apps);
+        updateAppList(apps);
+    } catch (error) {
+        console.error('Error initializing apps list:', error);
+    }
+}
+
+function updateAppList(apps) {
+    console.log('Updating app list UI with:', apps);
+    // Diagnostic: print all add-app-button elements and their data-app-name attributes
+    const addAppButtons = document.querySelectorAll('.add-app-button');
+    console.log('Found add app buttons:', addAppButtons.length);
+    addAppButtons.forEach((button, idx) => {
+        console.log(`Button[${idx}]: data-app-name="${button.getAttribute('data-app-name')}"`);
+    });
+    // Diagnostic: print all app names in the apps array
+    const appNames = apps.map(app => app.name);
+    console.log('App names in updated list:', appNames);
+    
+    addAppButtons.forEach(button => {
+        const appName = button.getAttribute('data-app-name');
+        const isAppAdded = apps.some(app => app.name === appName);
+        console.log(`Checking app ${appName}: isAdded=${isAppAdded}`);
+        
+        if (isAppAdded) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            button.title = 'Already added';
+        } else {
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-plus"></i>';
+            button.title = 'Add application';
+        }
+    });
+}
+
+// Clean up event listeners when the window is closed
+window.addEventListener('beforeunload', () => {
+    console.log('Window closing, cleaning up event listeners...');
+    if (window._appsUpdatedCleanup) {
+        window._appsUpdatedCleanup();
+        console.log('Apps-updated event listener cleaned up');
+    }
+});
 
 // Export functions for testing
 if (typeof module !== 'undefined' && module.exports) {

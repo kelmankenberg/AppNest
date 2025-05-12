@@ -1,5 +1,12 @@
 # AppNest Release Notes
 
+## Version 9.3.2 (May 12, 2025)
+
+### Improvements
+- Windows app icon extraction and system path resolution
+- App Config section of setting temporarily removed
+- Improved icon extraction reliability
+
 ## Version 9.3.2 (May 10, 2025)
 
 ### Features
