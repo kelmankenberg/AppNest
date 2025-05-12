@@ -1,6 +1,6 @@
 {
   "name": "AppNest",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "AppNest is designed to work in harmony with the Windows Start menu or as a standalone launcher. Its goal is to provide a seamless, efficient way to launch both installed and portable applications, enhancing workflow and organization for all types of users.",
   "license": "ISC",
   "author": "Kel Mankenberg",

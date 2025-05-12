@@ -7,6 +7,54 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
+// Single instance lock
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+    // Another instance is already running
+    app.quit();
+    return;
+} else {
+    // This is the first instance - set up the second-instance handler
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+        // Someone tried to run a second instance, we should focus our window
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) {
+                mainWindow.restore();
+            }
+            mainWindow.focus();
+            
+            // Show the window if it's hidden
+            if (!mainWindow.isVisible()) {
+                mainWindow.show();
+            }
+            
+            // Show a notification to the user
+            const showNotification = () => {
+                if (mainWindow && mainWindow.webContents) {
+                    mainWindow.webContents.send('show-notification', {
+                        title: 'AppNest',
+                        body: 'AppNest is already running',
+                        silent: true
+                    });
+                }
+            };
+            
+            // Ensure the window is ready before sending the notification
+            if (mainWindow.webContents && !mainWindow.webContents.isLoading()) {
+                showNotification();
+            } else {
+                // If the window is still loading, wait for it to be ready
+                const readyListener = () => {
+                    showNotification();
+                    mainWindow.webContents.off('did-finish-load', readyListener);
+                };
+                mainWindow.webContents.on('did-finish-load', readyListener);
+            }
+        }
+    });
+}
+
 // Initialize settings store
 let store;
 let mainWindow;

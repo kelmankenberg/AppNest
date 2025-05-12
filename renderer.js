@@ -1656,6 +1656,35 @@ document.getElementById('winDownloads').addEventListener('click', () => {
 setInterval(loadDriveInfo, 60000);
 
 // Initial load
+// Handle notifications from main process
+if (window.electronAPI && window.electronAPI.onShowNotification) {
+    window.electronAPI.onShowNotification((notification) => {
+        // Check if the Notification API is available
+        if ('Notification' in window) {
+            // Check if notification permissions are already granted
+            if (Notification.permission === 'granted') {
+                // Create and show the notification
+                new Notification(notification.title, {
+                    body: notification.body,
+                    silent: notification.silent
+                });
+            } else if (Notification.permission !== 'denied') {
+                // Request permission from the user
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        new Notification(notification.title, {
+                            body: notification.body,
+                            silent: notification.silent
+                        });
+                    }
+                });
+            }
+        }
+    });
+} else {
+    console.warn('Notification API not available in this context');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize folder header with default text in case preferences take time to load
     const folderHeader = document.getElementById('folderHeader');

@@ -88,7 +88,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openHelpWindow: () => ipcRenderer.invoke('open-help-window'),
     closeHelpWindow: () => ipcRenderer.invoke('close-help-window'),
     getHelpContent: (topicId) => ipcRenderer.invoke('get-help-content', topicId),
-    searchHelp: (searchTerm) => ipcRenderer.invoke('search-help', searchTerm)
+    searchHelp: (searchTerm) => ipcRenderer.invoke('search-help', searchTerm),
+    
+    // Notification functionality
+    onShowNotification: (callback) => {
+        const listener = (_, notification) => callback(notification);
+        ipcRenderer.on('show-notification', listener);
+        return () => {
+            ipcRenderer.removeListener('show-notification', listener);
+        };
+    }
 });
 
 contextBridge.exposeInMainWorld('api', {
