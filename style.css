@@ -85,7 +85,7 @@ body {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    font-size: 10px; /* Default font size matching the slider's default value */
+    font-size: 14px; /* Default font size matching the slider's default value */
 }
 
 .app-table th {
@@ -167,7 +167,7 @@ body {
 }
 
 .toolbar .app-version {
-    font-size: 10px;
+    font-size: 14px;
     color: var(--text-secondary);
     margin-left: 5px;
 }
@@ -351,7 +351,7 @@ body {
 }
 
 .expand-icon {
-    font-size: 10px;
+    font-size: 14px;
     margin-left: 5px;
     transition: transform 0.3s ease;
 }
@@ -494,6 +494,68 @@ body {
 /* Form styles */
 .form-group {
     margin-bottom: 15px;
+}
+
+/* Favorite star styles */
+.favorite-star {
+    cursor: pointer;
+    margin-left: 128px;
+    color: #ccc;
+    transition: all 0.2s ease;
+    font-size: 18px;
+}
+
+.favorite-star:hover {
+    color: #ffd700;
+    transform: scale(1.1);
+}
+
+.favorite-star.fas {
+    color: #ffd700;
+}
+
+/* Form row containing the label and star */
+.form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+/* Adjust label to work with the star */
+.form-row > label {
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* Container for the name input and icon */
+.name-icon-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Make the name input take available space */
+.name-icon-group > input[type="text"] {
+    flex: 1;
+}
+
+/* Icon container styling */
+.icon-container {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f5f5f5;
+}
+
+/* Dark theme adjustments */
+.dark-theme .icon-container {
+    border-color: #444;
+    background-color: #2a2a2a;
 }
 
 .form-group label {
@@ -1205,7 +1267,7 @@ body {
     justify-content: center;
     margin-left: 6px; /* Small gap between name and star */
     color: gold;
-    font-size: 14px;
+    font-size: 10px;
     flex-shrink: 0; /* Prevent shrinking */
 }
 

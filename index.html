@@ -211,7 +211,13 @@
             </div>
             <div class="dialog-body">
                 <div class="form-group">
-                    <label for="appName">Application Name:</label>
+                    <div class="form-row">
+                        <label for="appName">
+                            Application Name:
+                            <i class="far fa-star favorite-star" id="favoriteStar" title="Add to favorites"></i>
+                            <input type="hidden" id="isFavorite" value="0">
+                        </label>
+                    </div>
                     <div class="name-icon-group">
                         <input type="text" id="appName" required>
                         <div id="appIconContainer" class="icon-container">
@@ -251,11 +257,6 @@
                     <label for="appDescription">Description:</label>
                     <textarea id="appDescription"></textarea>
                 </div>
-                <div class="form-group checkbox-group">
-                    <label>
-                        <input type="checkbox" id="isFavorite"> Add to favorites
-                    </label>
-                </div>
             </div>
             <div class="dialog-footer">
                 <button id="cancelAddApp" class="secondary-button">Cancel</button>
@@ -273,7 +274,13 @@
             </div>
             <div class="dialog-body">
                 <div class="form-group">
-                    <label for="editAppName">Application Name:</label>
+                    <div class="form-row">
+                        <label for="editAppName">
+                            Application Name:
+                            <i class="far fa-star favorite-star" id="editFavoriteStar" title="Add to favorites"></i>
+                            <input type="hidden" id="editIsFavorite" value="0">
+                        </label>
+                    </div>
                     <div class="name-icon-group">
                         <input type="text" id="editAppName" required>
                         <div id="editAppIconContainer" class="icon-container">
@@ -316,11 +323,7 @@
                     <label for="editAppDescription">Description:</label>
                     <textarea id="editAppDescription"></textarea>
                 </div>
-                <div class="form-group checkbox-group">
-                    <label>
-                        <input type="checkbox" id="editIsFavorite"> Add to favorites
-                    </label>
-                </div>
+
                 <input type="hidden" id="editAppId">
             </div>
             <div class="dialog-footer">

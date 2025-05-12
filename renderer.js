@@ -187,7 +187,8 @@ function displayApplications(apps) {
             if (app.is_favorite) {
                 const favoriteIcon = document.createElement('div');
                 favoriteIcon.className = 'favorite-indicator';
-                favoriteIcon.innerHTML = '<i class="fas fa-star"></i>';
+                // Add inline style to the icon element
+                favoriteIcon.innerHTML = '<i class="fas fa-star" style="font-size: 10px;"></i>';
                 nameContainer.appendChild(favoriteIcon);
             }
             
@@ -409,8 +410,21 @@ document.getElementById('editAppButton').addEventListener('click', () => {
             const editDescriptionElem = document.getElementById('editAppDescription');
             if (editDescriptionElem) editDescriptionElem.value = app.description || '';
             
-            const editFavoriteElem = document.getElementById('editIsFavorite');
-            if (editFavoriteElem) editFavoriteElem.checked = app.is_favorite || false;
+            // Update favorite star state
+            const editFavoriteStar = document.getElementById('editFavoriteStar');
+            const editIsFavoriteInput = document.getElementById('editIsFavorite');
+            if (editFavoriteStar && editIsFavoriteInput) {
+                const isFavorite = app.is_favorite || false;
+                editIsFavoriteInput.value = isFavorite ? '1' : '0';
+                editFavoriteStar.className = isFavorite ? 'fas fa-star favorite-star' : 'far fa-star favorite-star';
+                if (isFavorite) {
+                    editFavoriteStar.style.color = '#ffd700';
+                    editFavoriteStar.title = 'Remove from favorites';
+                } else {
+                    editFavoriteStar.style.color = '';
+                    editFavoriteStar.title = 'Add to favorites';
+                }
+            }
             
             // Set the app type radio button
             const appTypeRadios = document.getElementsByName('editAppType');
@@ -690,7 +704,7 @@ document.getElementById('updateApp').addEventListener('click', () => {
     // Convert empty string to null, or parse selected category ID as integer
     const category_id = category_id_raw === '' ? null : parseInt(category_id_raw);
     const description = document.getElementById('editAppDescription').value;
-    const is_favorite = document.getElementById('editIsFavorite').checked;
+    const is_favorite = document.getElementById('editIsFavorite').value === '1';
     const is_portable = document.querySelector('input[name="editAppType"]:checked').value === 'portable';
     const icon_path = document.getElementById('editAppIconPath')?.value || null;
     
@@ -1299,19 +1313,64 @@ async function loadAllApps() {
     }
 }
 
+// Toggle favorite status with star icon
+const favoriteStar = document.getElementById('favoriteStar');
+const isFavoriteInput = document.getElementById('isFavorite');
+
+// Initialize star icon state
+function updateStarIcon(isFavorite) {
+    if (isFavorite) {
+        favoriteStar.classList.remove('far');
+        favoriteStar.classList.add('fas');
+        favoriteStar.title = 'Remove from favorites';
+    } else {
+        favoriteStar.classList.remove('fas');
+        favoriteStar.classList.add('far');
+        favoriteStar.title = 'Add to favorites';
+    }
+}
+
+// Handle star click
+favoriteStar.addEventListener('click', function() {
+    const isFavorite = isFavoriteInput.value === '1';
+    isFavoriteInput.value = isFavorite ? '0' : '1';
+    updateStarIcon(!isFavorite);
+});
+
 // Function to clear the add app form
 function clearAddAppForm() {
     document.getElementById('appName').value = '';
     document.getElementById('executablePath').value = '';
     document.getElementById('appCategory').value = '';
     document.getElementById('appDescription').value = '';
-    document.getElementById('isFavorite').checked = false;
-    document.querySelector('input[name="appType"][value="portable"]').checked = true;
-    const iconImg = document.getElementById('appIcon');
-    if (iconImg) {
-        iconImg.src = '';
-        iconImg.style.display = 'none';
-    }
+    document.querySelector('input[name="appType"]:checked').checked = true;
+    document.getElementById('isFavorite').value = '0';
+    document.getElementById('appIconPath').value = '';
+    document.getElementById('appIcon').innerHTML = '<rect width="32" height="32" fill="#a8a8a8"/>';
+    updateStarIcon(false);
+}
+
+// Toggle favorite status with star icon in edit dialog
+const editFavoriteStar = document.getElementById('editFavoriteStar');
+const editIsFavoriteInput = document.getElementById('editIsFavorite');
+
+// Handle star click in edit dialog
+if (editFavoriteStar && editIsFavoriteInput) {
+    editFavoriteStar.addEventListener('click', function() {
+        const isFavorite = editIsFavoriteInput.value === '1';
+        editIsFavoriteInput.value = isFavorite ? '0' : '1';
+        
+        // Update star appearance
+        if (isFavorite) {
+            editFavoriteStar.className = 'far fa-star favorite-star';
+            editFavoriteStar.style.color = '';
+            editFavoriteStar.title = 'Add to favorites';
+        } else {
+            editFavoriteStar.className = 'fas fa-star favorite-star';
+            editFavoriteStar.style.color = '#ffd700';
+            editFavoriteStar.title = 'Remove from favorites';
+        }
+    });
 }
 
 // Add App Dialog close button handler
@@ -1439,7 +1498,7 @@ document.getElementById('saveApp').addEventListener('click', () => {
     const executable_path = document.getElementById('executablePath').value;
     const category = document.getElementById('appCategory').value;
     const description = document.getElementById('appDescription').value;
-    const is_favorite = document.getElementById('isFavorite').checked;
+    const is_favorite = document.getElementById('isFavorite').value === '1';
     const is_portable = document.querySelector('input[name="appType"]:checked').value === 'portable';
     const icon_path = document.getElementById('appIconPath')?.value || null;
     
