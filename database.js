@@ -110,9 +110,8 @@ function createTables() {
             { name: 'Internet', display_order: 6 },
             { name: 'Media', display_order: 7 },
             { name: 'Office', display_order: 8 },
-            { name: 'Productivity', display_order: 9 },
-            { name: 'Security', display_order: 10 },
-            { name: 'Utilities', display_order: 11 }
+            { name: 'Security', display_order: 9 },
+            { name: 'Utilities', display_order: 10 }
         ];
         
         const insertCategory = db.prepare('INSERT OR IGNORE INTO Categories (name, display_order) VALUES (?, ?)');

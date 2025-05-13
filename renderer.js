@@ -87,6 +87,125 @@ function sortApplications(apps, sortType) {
 // Expose the sortApplications function to the window object
 window.sortApplications = sortApplications;
 
+// --- Category Sorting Metadata and Rendering ---
+const CATEGORY_META = [
+  { name: "Accessibility", icon: "fa-wheelchair" },
+  { name: "Development", icon: "fa-code" },
+  { name: "Education", icon: "fa-user-graduate" },
+  { name: "Games", icon: "fa-gamepad" },
+  { name: "Graphics & Pictures", icon: "fa-images" },
+  { name: "Internet", icon: "fa-globe" },
+  { name: "Media", icon: "fa-photo-video" }, // Use closest if unavailable
+  { name: "Office", icon: "fa-briefcase" },
+  { name: "Other", icon: "fa-folder" },
+  { name: "Security", icon: "fa-shield-alt" },
+  { name: "Utilities", icon: "fa-terminal" }
+];
+const CATEGORY_NAMES = CATEGORY_META.map(c => c.name);
+const CATEGORY_ICON_MAP = Object.fromEntries(CATEGORY_META.map(c => [c.name, c.icon]));
+
+function groupAppsByCategory(apps) {
+  const grouped = {};
+  CATEGORY_NAMES.forEach(name => { grouped[name] = []; });
+  apps.forEach(app => {
+    let cat = (app.category_name || "").trim();
+    if (!CATEGORY_NAMES.includes(cat)) cat = "Other";
+    grouped[cat].push(app);
+  });
+  for (const cat in grouped) {
+    grouped[cat].sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return grouped;
+}
+
+function renderAppRowHTML(app, iconSizeNum) {
+  // This mirrors your displayApplications row rendering for consistency
+  // Only the structure is slightly adjusted for div-based rows
+  const hasIcon = !!(app.icon_data || app.icon_path);
+  let iconHtml = '';
+  if (app.icon_data) {
+    iconHtml = `<img class="app-icon" src="${app.icon_data}" style="width:${iconSizeNum}px;height:${iconSizeNum}px;">`;
+  } else if (app.icon_path) {
+    iconHtml = `<img class="app-icon" src="file://${app.icon_path}" style="width:${iconSizeNum}px;height:${iconSizeNum}px;" onerror="this.style.display='none';this.parentNode.innerHTML='<div class=\'app-icon-fallback\' style=\'width:${iconSizeNum}px;height:${iconSizeNum}px;font-size:${Math.round(iconSizeNum * 0.6)}px;line-height:${iconSizeNum}px;\'>${app.name.charAt(0).toUpperCase()}</div>'">`;
+  } else {
+    iconHtml = `<div class="app-icon-fallback" style="width:${iconSizeNum}px;height:${iconSizeNum}px;font-size:${Math.round(iconSizeNum * 0.6)}px;line-height:${iconSizeNum}px;">${app.name.charAt(0).toUpperCase()}</div>`;
+  }
+  const favoriteHtml = app.is_favorite ? '<div class="favorite-indicator"><i class="fas fa-star" style="font-size:10px;"></i></div>' : '';
+  return `
+    <div class="app-table-row" data-app-id="${app.id}">
+      <div class="app-cell">
+        <div class="app-icon-container" style="width:${iconSizeNum}px;height:${iconSizeNum}px;">${iconHtml}</div>
+        <div class="app-name-container"><span class="app-name">${app.name}</span>${favoriteHtml}</div>
+      </div>
+      <!-- Add other columns/buttons as needed -->
+    </div>
+  `;
+}
+
+// --- Updated renderCategorizedFolders: Flat List, App-Style Category Rows ---
+function renderCategorizedFolders(apps) {
+  const grouped = groupAppsByCategory(apps);
+  const container = document.querySelector('.app-table tbody');
+  container.innerHTML = "";
+  window.electronAPI.getIconSize().then(iconSize => {
+    const iconSizeNum = parseInt(iconSize) || 20;
+    // Track expanded/collapsed state for each category (session only)
+    const expanded = {};
+    CATEGORY_META.forEach(({ name, icon }) => { expanded[name] = false; });
+    CATEGORY_META.forEach(({ name, icon }) => {
+      const appsInCat = grouped[name];
+      // Render category row as an app row (tr)
+      const catRow = document.createElement('tr');
+      catRow.className = 'app-row category-folder-row';
+      catRow.dataset.category = name;
+      const catCell = document.createElement('td');
+      catCell.className = 'app-cell category-folder-header';
+      catCell.colSpan = 99;
+      // Folder icon and name
+      catCell.innerHTML = `<div class=\"category-icon-container\" style=\"width:${iconSizeNum}px;height:${iconSizeNum}px;\"><i class=\"fa-solid ${icon}\"></i></div><div class=\"app-name-container\"><span class=\"app-name\">${name}</span></div>`;
+      catRow.appendChild(catCell);
+      container.appendChild(catRow);
+      // Toggle expand/collapse on click
+      catRow.addEventListener('click', () => {
+        expanded[name] = !expanded[name];
+        updateCategoryRows(name);
+      });
+      // Function to update app rows for this category
+      function updateCategoryRows(catName) {
+        // Remove any existing app rows for this category
+        Array.from(container.querySelectorAll(`.categorized-app-row[data-category="${catName}"]`)).forEach(row => row.remove());
+        if (expanded[catName]) {
+          // Insert app rows after the category row
+          let insertAfter = catRow;
+          appsInCat.forEach(app => {
+            const appRow = document.createElement('tr');
+            appRow.className = 'app-row categorized-app-row';
+            appRow.dataset.category = catName;
+            // Indented app cell
+            const appCell = document.createElement('td');
+            appCell.className = 'app-cell';
+            appCell.colSpan = 99;
+            
+            appCell.innerHTML = renderAppRowHTML(app, iconSizeNum);
+            appRow.appendChild(appCell);
+            // Add click/context menu logic
+            appRow.querySelector('.app-table-row').addEventListener('click', () => launchApplication(app.id));
+            appRow.querySelector('.app-table-row').addEventListener('contextmenu', (e) => showContextMenu(e, app.id));
+            // Insert after the category row (or after last app row)
+            insertAfter.parentNode.insertBefore(appRow, insertAfter.nextSibling);
+            insertAfter = appRow;
+          });
+          catRow.classList.add('open');
+        } else {
+          catRow.classList.remove('open');
+        }
+      }
+    });
+  });
+}
+// --- End Updated renderCategorizedFolders ---
+
+
 // Function to display applications in the table
 function displayApplications(apps) {
     const tableBody = document.querySelector('.app-table tbody');
@@ -98,8 +217,13 @@ function displayApplications(apps) {
         tableBody.appendChild(row);
         return;
     }
-    
-    // Get the icon size from the settings, or use default 20px
+    // If the current sort is 'categories', render categorized folders instead
+    const sortPreference = localStorage.getItem('appnest-sort-preference') || 'alphabetical';
+    if (sortPreference === 'categories') {
+        renderCategorizedFolders(apps);
+        return;
+    }
+    // Otherwise, render normal table
     window.electronAPI.getIconSize().then(iconSize => {
         // Convert to number if it's a string
         const iconSizeNum = parseInt(iconSize);
@@ -1339,14 +1463,30 @@ favoriteStar.addEventListener('click', function() {
 
 // Function to clear the add app form
 function clearAddAppForm() {
-    document.getElementById('appName').value = '';
-    document.getElementById('executablePath').value = '';
-    document.getElementById('appCategory').value = '';
-    document.getElementById('appDescription').value = '';
-    document.querySelector('input[name="appType"]:checked').checked = true;
-    document.getElementById('isFavorite').value = '0';
-    document.getElementById('appIconPath').value = '';
-    document.getElementById('appIcon').innerHTML = '<rect width="32" height="32" fill="#a8a8a8"/>';
+    const appName = document.getElementById('appName');
+    if (appName) appName.value = '';
+
+    const executablePath = document.getElementById('executablePath');
+    if (executablePath) executablePath.value = '';
+
+    const appCategory = document.getElementById('appCategory');
+    if (appCategory) appCategory.value = '';
+
+    const appDescription = document.getElementById('appDescription');
+    if (appDescription) appDescription.value = '';
+
+    const appTypeChecked = document.querySelector('input[name="appType"]:checked');
+    if (appTypeChecked) appTypeChecked.checked = true;
+
+    const isFavorite = document.getElementById('isFavorite');
+    if (isFavorite) isFavorite.value = '0';
+
+    const appIconPath = document.getElementById('appIconPath');
+    if (appIconPath) appIconPath.value = '';
+
+    const appIcon = document.getElementById('appIcon');
+    if (appIcon) appIcon.innerHTML = '<rect width="32" height="32" fill="#a8a8a8"/>';
+
     updateStarIcon(false);
 }
 

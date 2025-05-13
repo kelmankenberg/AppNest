@@ -97,7 +97,7 @@ describe('Database Module', () => {
       // Set up mock to return sample applications
       const mockApplications = [
         { id: 1, name: 'App 1', category_name: 'Development', category_id: 1 },
-        { id: 2, name: 'App 2', category_name: 'Productivity', category_id: 2 }
+        { id: 2, name: 'App 2', category_name: 'Office', category_id: 2 }
       ];
       
       mockDb.all.mockImplementation((query, callback) => {
@@ -124,7 +124,7 @@ describe('Database Module', () => {
       // Set up mock to return sample favorites
       const mockFavorites = [
         { id: 1, name: 'Favorite App 1', is_favorite: 1, category_name: 'Development' },
-        { id: 2, name: 'Favorite App 2', is_favorite: 1, category_name: 'Productivity' }
+        { id: 2, name: 'Favorite App 2', is_favorite: 1, category_name: 'Office' }
       ];
       
       mockDb.all.mockImplementation((query, callback) => {
@@ -395,7 +395,7 @@ describe('Database Module', () => {
     it('should fetch all categories ordered by display_order and name', async () => {
       const mockCategories = [
         { id: 1, name: 'Development', display_order: 2 },
-        { id: 2, name: 'Productivity', display_order: 1 }
+        { id: 2, name: 'Office', display_order: 1 }
       ];
       
       mockDb.all.mockImplementation((query, callback) => {

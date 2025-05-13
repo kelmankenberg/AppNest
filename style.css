@@ -106,10 +106,17 @@ body {
 }
 
 .app-row td {
-    padding: 4px 10px;
+    padding: 2px 8px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1;
+    font-size: 13px;
+}
+
+.categorized-app-row td {
+    padding: 0px;
+    margin: 0px;
 }
 
 .no-apps {
@@ -251,6 +258,74 @@ body {
     font-style: italic;
     margin-left: 4px;
 }
+
+/* --- Category Sorting (Categorized Folder UI) --- */
+.category-folder {
+    margin-bottom: 18px;
+    border-radius: 6px;
+    /* background: var(--bg-secondary); */
+}
+
+.category-folder-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 18px;
+    font-size: 1.1em;
+    /* background: var(--bg-toolbar); */
+    color: var(--text-primary);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.category-folder-header:hover {
+    background: var(--menu-hover);
+}
+.category-folder-header .fa {
+    margin-right: 14px;
+    /* font-size: 1.3em; */
+    color: var(--accent-color);
+    transition: color 0.2s;
+}
+
+.category-folder-content {
+    display: none;
+    padding: 0;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+}
+
+.category-folder.open .category-folder-content {
+    display: block;
+}
+
+.category-app-row {
+    /* padding-left: 32px; */
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    /* border-bottom: 1px solid var(--border-color); */
+}
+
+.category-app-row:last-child {
+    border-bottom: none;
+}
+
+.category-app-row .app-table-row {
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    line-height: 1;
+    font-size: 13px;
+    margin: 0;
+    border-spacing: 0;
+    /* Add more as needed to match your table */
+}
+
+body.dark-theme .category-folder-header .fa {
+    color: var(--accent-color);
+}
+
+/* --- End Category Sorting Styles --- */
 
 /* Drive indicators */
 .drive-indicators {
@@ -1189,6 +1264,29 @@ body {
     padding: 8px;
 }
 
+/* Independent app row spacing */
+.categorized-app-row .app-cell {
+    padding: 1px 6px;
+    margin: 0;
+}
+
+/* Independent category row spacing */
+.category-folder-header {
+    padding: 12px 18px;
+    margin: 0;
+}
+
+.category-icon-container {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: -10px;
+    margin-right: 6px;
+}
+
 .app-icon-container {
     width: 20px;
     height: 20px;
@@ -1197,7 +1295,7 @@ body {
     justify-content: center;
     flex-shrink: 0;
     margin-left: 0px;
-    margin-right: 6px; /* Maintaining consistent right spacing */
+    margin-right: 6px; /* Adjust this for app row icon-label spacing */
 }
 
 .app-icon {

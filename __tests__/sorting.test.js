@@ -41,7 +41,7 @@ describe('Application Sorting Tests', () => {
       // Sample data sorted by category
       const mockAppsByCategory = [
         { id: 1, name: 'App A', category_id: 1, category_name: 'Development' },
-        { id: 2, name: 'App B', category_id: 2, category_name: 'Productivity' }
+        { id: 2, name: 'App B', category_id: 2, category_name: 'Office' }
       ];
       
       // Mock the implementation
