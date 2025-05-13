@@ -1825,7 +1825,20 @@ if (window.electronAPI && window.electronAPI.onShowNotification) {
     console.warn('Notification API not available in this context');
 }
 
+// Import the update notification component
+const UpdateNotification = require('./components/UpdateNotification').default;
+const React = require('react');
+const ReactDOM = require('react-dom');
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Add the update notification container to the DOM
+    const updateContainer = document.createElement('div');
+    updateContainer.id = 'update-notification-container';
+    document.body.appendChild(updateContainer);
+    
+    // Render the update notification component
+    ReactDOM.render(React.createElement(UpdateNotification), updateContainer);
+    
     // Initialize folder header with default text in case preferences take time to load
     const folderHeader = document.getElementById('folderHeader');
     if (folderHeader) {

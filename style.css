@@ -904,6 +904,9 @@ body.dark-theme .category-folder-header .fa {
     opacity: 0;
     width: 0;
     height: 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
 .toggle-label {
