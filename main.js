@@ -6,6 +6,14 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const log = require('electron-log');
+
+// Configure logging
+log.transports.file.level = 'info';
+log.info('App starting...');
+
+// Auto-updater will be initialized after the main window is created
+let autoUpdater = null;
 
 // Single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
@@ -58,8 +66,9 @@ if (!gotTheLock) {
 // Initialize settings store
 let store;
 let mainWindow;
-let settingsWindow; // Add a reference for the settings window
-let helpWindow; // Add a reference for the help window
+let settingsWindow = null;
+let helpWindow = null;
+let autoUpdaterUI;
 let storeInitialized = false; // Track if store is initialized
 let storeInitPromise = null; // Promise for async initialization
 let dbInitialized = false; // Track if database is initialized
@@ -229,6 +238,68 @@ async function initializeDatabase() {
 
 // Register IPC handlers
 function registerIPCHandlers() {
+    // Auto-update handlers
+    ipcMain.handle('check-for-updates', async (event, userInitiated = true) => {
+        try {
+            log.info('Checking for updates...');
+            if (autoUpdater) {
+                const result = await autoUpdater.checkForUpdates(userInitiated);
+                log.info('Update check complete');
+                return result;
+            } else {
+                log.warn('Auto-updater not initialized');
+                return { error: 'Auto-updater not initialized' };
+            }
+        } catch (error) {
+            log.error('Error checking for updates:', error);
+            return { error: error.message || 'Failed to check for updates' };
+        }
+    });
+
+    ipcMain.handle('install-update', async () => {
+        try {
+            log.info('Installing update...');
+            if (autoUpdater) {
+                await autoUpdater.installUpdate();
+                return { success: true };
+            } else {
+                log.warn('Auto-updater not initialized');
+                return { error: 'Auto-updater not initialized' };
+            }
+        } catch (error) {
+            log.error('Error installing update:', error);
+            return { error: error.message || 'Failed to install update' };
+        }
+    });
+
+    ipcMain.handle('get-update-status', () => {
+        try {
+            if (autoUpdater) {
+                const status = autoUpdater.getStatus();
+                return { ...status };
+            }
+            return { error: 'Auto-updater not initialized' };
+        } catch (error) {
+            log.error('Error getting update status:', error);
+            return { error: error.message || 'Failed to get update status' };
+        }
+    });
+
+    ipcMain.handle('set-auto-update', (_, enabled) => {
+        try {
+            log.info('Setting auto-update to:', enabled);
+            if (autoUpdater) {
+                autoUpdater.setAutoUpdate(enabled);
+                return { success: true };
+            }
+            return { error: 'Auto-updater not initialized' };
+        } catch (error) {
+            log.error('Error setting auto-update:', error);
+            return { error: error.message || 'Failed to set auto-update' };
+        }
+    });
+    
+    // Existing IPC handlers...
     // Make sure store is initialized before registering handlers that depend on it
     let currentStore;
     try {
@@ -1503,6 +1574,30 @@ function createHelpWindow() {
     });
 }
 
+// Initialize auto-updater after app is ready
+function initializeAutoUpdater() {
+    if (process.env.NODE_ENV === 'test') {
+        log.info('Skipping auto-updater in test environment');
+        return;
+    }
+
+    try {
+        const AutoUpdater = require('./auto-updater');
+        autoUpdater = new AutoUpdater(mainWindow);
+        log.info('Auto-updater initialized');
+        
+        // Check for updates on startup if auto-update is enabled
+        if (store.get('autoUpdate', true)) {
+            log.info('Checking for updates on startup...');
+            autoUpdater.checkForUpdates(false).catch(err => {
+                log.error('Error checking for updates on startup:', err);
+            });
+        }
+    } catch (error) {
+        log.error('Failed to initialize auto-updater:', error);
+    }
+}
+
 // Create main window function
 function createWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
@@ -1572,6 +1667,9 @@ function createWindow() {
     });
 
     mainWindow.loadFile('index.html');
+    
+    // Initialize the auto-updater after the main window is created
+    initializeAutoUpdater();
 }
 
 // App start-up flow

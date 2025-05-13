@@ -97,6 +97,96 @@ contextBridge.exposeInMainWorld('electronAPI', {
         return () => {
             ipcRenderer.removeListener('show-notification', listener);
         };
+    },
+    
+    // Auto-update functionality
+    checkForUpdates: () => {
+        console.log('Checking for updates...');
+        return ipcRenderer.invoke('check-for-updates');
+    },
+    installUpdate: () => {
+        console.log('Installing update...');
+        return ipcRenderer.invoke('install-update');
+    },
+    getUpdateStatus: () => {
+        console.log('Getting update status...');
+        return ipcRenderer.invoke('get-update-status');
+    },
+    setAutoUpdate: (enabled) => {
+        console.log('Setting auto-update to:', enabled);
+        return ipcRenderer.invoke('set-auto-update', enabled);
+    },
+    onUpdateAvailable: (callback) => {
+        console.log('Setting up update-available listener');
+        const handler = (_, info) => {
+            console.log('Update available:', info);
+            callback(info);
+        };
+        ipcRenderer.on('update-available', handler);
+        return () => {
+            console.log('Cleaning up update-available listener');
+            ipcRenderer.removeListener('update-available', handler);
+        };
+    },
+    onUpdateNotAvailable: (callback) => {
+        console.log('Setting up update-not-available listener');
+        const handler = (_, info) => {
+            console.log('No update available:', info);
+            callback(info);
+        };
+        ipcRenderer.on('update-not-available', handler);
+        return () => {
+            console.log('Cleaning up update-not-available listener');
+            ipcRenderer.removeListener('update-not-available', handler);
+        };
+    },
+    onDownloadProgress: (callback) => {
+        console.log('Setting up download-progress listener');
+        const handler = (_, progress) => {
+            console.log('Download progress:', progress);
+            callback(progress);
+        };
+        ipcRenderer.on('download-progress', handler);
+        return () => {
+            console.log('Cleaning up download-progress listener');
+            ipcRenderer.removeListener('download-progress', handler);
+        };
+    },
+    onUpdateDownloaded: (callback) => {
+        console.log('Setting up update-downloaded listener');
+        const handler = (_, info) => {
+            console.log('Update downloaded:', info);
+            callback(info);
+        };
+        ipcRenderer.on('update-downloaded', handler);
+        return () => {
+            console.log('Cleaning up update-downloaded listener');
+            ipcRenderer.removeListener('update-downloaded', handler);
+        };
+    },
+    onUpdateError: (callback) => {
+        console.log('Setting up update-error listener');
+        const handler = (_, error) => {
+            console.error('Update error:', error);
+            callback(error);
+        };
+        ipcRenderer.on('update-error', handler);
+        return () => {
+            console.log('Cleaning up update-error listener');
+            ipcRenderer.removeListener('update-error', handler);
+        };
+    },
+    onUpdateStatus: (callback) => {
+        console.log('Setting up update-status listener');
+        const handler = (_, status) => {
+            console.log('Update status changed:', status);
+            callback(status);
+        };
+        ipcRenderer.on('update-status', handler);
+        return () => {
+            console.log('Cleaning up update-status listener');
+            ipcRenderer.removeListener('update-status', handler);
+        };
     }
 });
 
