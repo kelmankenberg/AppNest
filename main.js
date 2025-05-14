@@ -1635,7 +1635,7 @@ function createWindow() {
         }
     });
 
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
 
     // Position the window to be flush with the taskbar in the bottom right
     // Subtract window width from screen width and account for taskbar offset when positioning

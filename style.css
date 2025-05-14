@@ -114,6 +114,16 @@ body {
     font-size: 13px;
 }
 
+tr.category-folder-row {
+    display: table-row !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+tr.category-folder-row.hidden {
+    display: none !important;
+}
+
 .categorized-app-row td {
     padding: 0px;
     margin: 0px;

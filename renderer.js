@@ -149,62 +149,108 @@ function renderCategorizedFolders(apps) {
   container.innerHTML = "";
   window.electronAPI.getIconSize().then(iconSize => {
     const iconSizeNum = parseInt(iconSize) || 20;
-    // Track expanded/collapsed state for each category (session only)
-    const expanded = {};
-    CATEGORY_META.forEach(({ name, icon }) => { expanded[name] = false; });
+    // Render all categories and all app rows (hidden by default)
     CATEGORY_META.forEach(({ name, icon }) => {
       const appsInCat = grouped[name];
-      // Render category row as an app row (tr)
+      // Render category row
       const catRow = document.createElement('tr');
       catRow.className = 'app-row category-folder-row';
       catRow.dataset.category = name;
       const catCell = document.createElement('td');
       catCell.className = 'app-cell category-folder-header';
       catCell.colSpan = 99;
-      // Folder icon and name
-      catCell.innerHTML = `<div class=\"category-icon-container\" style=\"width:${iconSizeNum}px;height:${iconSizeNum}px;\"><i class=\"fa-solid ${icon}\"></i></div><div class=\"app-name-container\"><span class=\"app-name\">${name}</span></div>`;
+      catCell.innerHTML = `<div class="category-icon-container" style="width:${iconSizeNum}px;height:${iconSizeNum}px;"><i class="fa-solid ${icon}"></i></div><div class="app-name-container"><span class="app-name">${name}</span></div>`;
       catRow.appendChild(catCell);
       container.appendChild(catRow);
+      // Render all app rows for this category (hidden by default)
+      appsInCat.forEach(app => {
+        const appRow = document.createElement('tr');
+        appRow.className = 'app-row categorized-app-row hidden';
+        appRow.dataset.category = name;
+        appRow.dataset.appId = app.id;
+        const appCell = document.createElement('td');
+        appCell.className = 'app-cell';
+        appCell.colSpan = 99;
+        appCell.innerHTML = renderAppRowHTML(app, iconSizeNum);
+        appRow.appendChild(appCell);
+        // Add click/context menu logic
+        appRow.querySelector('.app-table-row').addEventListener('click', () => launchApplication(app.id));
+        appRow.querySelector('.app-table-row').addEventListener('contextmenu', (e) => showContextMenu(e, app.id));
+        container.appendChild(appRow);
+      });
       // Toggle expand/collapse on click
       catRow.addEventListener('click', () => {
-        expanded[name] = !expanded[name];
-        updateCategoryRows(name);
+        const isOpen = catRow.classList.toggle('open');
+        Array.from(container.querySelectorAll(`.categorized-app-row[data-category="${name}"]`)).forEach(row => {
+          row.classList.toggle('hidden', !isOpen);
+        });
       });
-      // Function to update app rows for this category
-      function updateCategoryRows(catName) {
-        // Remove any existing app rows for this category
-        Array.from(container.querySelectorAll(`.categorized-app-row[data-category="${catName}"]`)).forEach(row => row.remove());
-        if (expanded[catName]) {
-          // Insert app rows after the category row
-          let insertAfter = catRow;
-          appsInCat.forEach(app => {
-            const appRow = document.createElement('tr');
-            appRow.className = 'app-row categorized-app-row';
-            appRow.dataset.category = catName;
-            // Indented app cell
-            const appCell = document.createElement('td');
-            appCell.className = 'app-cell';
-            appCell.colSpan = 99;
-            
-            appCell.innerHTML = renderAppRowHTML(app, iconSizeNum);
-            appRow.appendChild(appCell);
-            // Add click/context menu logic
-            appRow.querySelector('.app-table-row').addEventListener('click', () => launchApplication(app.id));
-            appRow.querySelector('.app-table-row').addEventListener('contextmenu', (e) => showContextMenu(e, app.id));
-            // Insert after the category row (or after last app row)
-            insertAfter.parentNode.insertBefore(appRow, insertAfter.nextSibling);
-            insertAfter = appRow;
-          });
-          catRow.classList.add('open');
+    });
+  });
+}
+
+// --- Enhanced search logic for category mode ---
+const searchInput = document.querySelector('.search-input');
+if (searchInput) {
+  searchInput.addEventListener('input', function() {
+    const searchValue = this.value.trim().toLowerCase();
+    const sortPreference = localStorage.getItem('appnest-sort-preference') || 'alphabetical';
+    if (sortPreference !== 'categories') return; // Only handle category mode here
+    const container = document.querySelector('.app-table tbody');
+    if (!searchValue) {
+      // Collapse all categories and hide all app rows
+      CATEGORY_META.forEach(({ name }) => {
+        const catRow = container.querySelector(`.category-folder-row[data-category="${name}"]`);
+        if (catRow) catRow.classList.remove('open', 'hidden'); // collapsed and visible
+        const appRows = Array.from(container.querySelectorAll(`.categorized-app-row[data-category="${name}"]`));
+        appRows.forEach(row => row.classList.add('hidden'));
+      });
+      return;
+    }
+    // Show/hide app rows and categories for search
+    CATEGORY_META.forEach(({ name }) => {
+      const catRow = container.querySelector(`.category-folder-row[data-category="${name}"]`);
+      const appRows = Array.from(container.querySelectorAll(`.categorized-app-row[data-category="${name}"]`));
+      let matchCount = 0;
+      appRows.forEach(row => {
+        const appName = row.querySelector('.app-name')?.textContent?.toLowerCase() || '';
+        const match = appName.includes(searchValue);
+        if (match) {
+          row.classList.remove('hidden');
+          matchCount++;
         } else {
+          row.classList.add('hidden');
+        }
+      });
+      if (catRow) {
+        if (matchCount > 0) {
+          catRow.classList.remove('hidden');
+          catRow.classList.add('open');
+          console.log(`Category '${name}': SHOWN (${matchCount} matches)`);
+        } else {
+          catRow.classList.add('hidden');
           catRow.classList.remove('open');
+          console.log(`Category '${name}': HIDDEN (no matches)`);
         }
       }
     });
   });
+  // Handle Esc key to clear and collapse
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      this.value = '';
+      this.dispatchEvent(new Event('input'));
+    }
+  });
 }
-// --- End Updated renderCategorizedFolders ---
 
+
+// Add a CSS class for .hidden if not already present
+(function ensureHiddenClass() {
+  const style = document.createElement('style');
+  style.textContent = `.hidden { display: none !important; }`;
+  document.head.appendChild(style);
+})();
 
 // Function to display applications in the table
 function displayApplications(apps) {
