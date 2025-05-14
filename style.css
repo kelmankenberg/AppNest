@@ -65,7 +65,7 @@ body {
 }
 
 .search-input {
-    width: 100%;
+    /* width: 100%; */
     padding: 10px;
     border: 1px solid var(--border-color);
     border-radius: 0;
