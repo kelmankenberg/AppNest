@@ -332,11 +332,11 @@ function displayApplications(apps) {
             tableBody.appendChild(row);
         });
         
-        console.log(`Applied icon size of ${iconSizeNum}px to ${apps.length} application icons`);
+        // console.log(`Applied icon size of ${iconSizeNum}px to ${apps.length} application icons`);
     }).catch(error => {
         console.error("Error getting icon size:", error);
         // If there's an error, just use default styling from CSS
-        console.log("Using default icon styling due to error");
+        // console.log("Using default icon styling due to error");
     });
 }
 
@@ -345,7 +345,7 @@ window.displayApplications = displayApplications;
 
 // Apply the selected sort option - exposed for menu.js
 window.applySortOption = function(sortValue) {
-    console.log(`Applying sort option from window function: ${sortValue}`);
+    // console.log(`Applying sort option from window function: ${sortValue}`);
     
     // Save the user's preference to localStorage for persistence in the current window
     localStorage.setItem('appnest-sort-preference', sortValue);
@@ -353,7 +353,7 @@ window.applySortOption = function(sortValue) {
     // Also save to electron-store so it persists between app restarts and syncs with settings
     window.electronAPI.setDefaultView(sortValue)
         .then(() => {
-            console.log(`Default view preference saved: ${sortValue}`);
+            // console.log(`Default view preference saved: ${sortValue}`);
             // Sync with settings window if it's open
             window.electronAPI.syncDefaultView(sortValue);
         })
@@ -476,7 +476,7 @@ function showContextMenu(e, appId) {
 // Context menu action handlers
 document.getElementById('editAppButton').addEventListener('click', () => {
     const appId = document.getElementById('appContextMenu').dataset.appId;
-    console.log('Edit button clicked for appId:', appId);
+    // console.log('Edit button clicked for appId:', appId);
     
     // Hide the context menu
     document.getElementById('appContextMenu').style.display = 'none';
@@ -484,7 +484,7 @@ document.getElementById('editAppButton').addEventListener('click', () => {
     // Open the edit dialog and populate with app data
     window.electronAPI.getAppById(appId).then(app => {
         if (app) {
-            console.log('App data retrieved:', app);
+            // console.log('App data retrieved:', app);
             // Populate the edit form with app data
             const editNameElem = document.getElementById('editAppName');
             if (editNameElem) editNameElem.value = app.name;
@@ -508,7 +508,7 @@ document.getElementById('editAppButton').addEventListener('click', () => {
                     
                     // Now set the selected category based on the app's category_id
                     if (app.category_id) {
-                        console.log('Setting category to:', app.category_id);
+                        // console.log('Setting category to:', app.category_id);
                         editCategoryElem.value = app.category_id;
                         
                         // Double check if value was set correctly
@@ -731,7 +731,7 @@ document.getElementById('confirmRemoveApp').addEventListener('click', () => {
     
     // Remove the app
     window.electronAPI.removeApp(appId).then(() => {
-        console.log(`Removed app with ID: ${appId}`);
+        // console.log(`Removed app with ID: ${appId}`);
         // Reload the application list
         loadApplications();
     }).catch(err => {
@@ -851,7 +851,7 @@ document.getElementById('updateApp').addEventListener('click', () => {
         icon_path: icon_path // Include the icon path when updating
     };
     
-    console.log('Updating app with data:', updatedApp);
+    // console.log('Updating app with data:', updatedApp);
     
     // Update the app
     window.electronAPI.updateApp(updatedApp).then(() => {
@@ -869,7 +869,7 @@ document.getElementById('updateApp').addEventListener('click', () => {
 // Launch an application
 function launchApplication(appId) {
     window.electronAPI.launchApp(appId).then(() => {
-        console.log(`Launched application ${appId}`);
+        // console.log(`Launched application ${appId}`);
     }).catch(err => {
         console.error(`Error launching application ${appId}:`, err);
     });
@@ -905,18 +905,18 @@ function updatePowerButtonIcon(minimizeEnabled) {
     const powerButton = document.querySelector('button[title="Power"], button[title="Minimize"]');
     
     if (powerButton) {
-        console.log(`Updating power button icon. Minimize enabled: ${minimizeEnabled}`);
+        // console.log(`Updating power button icon. Minimize enabled: ${minimizeEnabled}`);
         
         if (minimizeEnabled === true) {
             // Change icon to minimize icon when the setting is enabled
             powerButton.innerHTML = '<i class="fas fa-window-minimize"></i>';
             powerButton.title = "Minimize";
-            console.log('Set to minimize icon');
+            // console.log('Set to minimize icon');
         } else {
             // Use the default power icon when the setting is disabled (quit behavior)
             powerButton.innerHTML = '<i class="fas fa-power-off"></i>';
             powerButton.title = "Power";
-            console.log('Set to power icon');
+            // console.log('Set to power icon');
         }
     } else {
         console.error('Power button element not found');
@@ -1220,7 +1220,7 @@ function loadFolderButtonPreferences() {
                 }
             });
             
-            console.log('Loaded folder preferences:', prefs);
+            // console.log('Loaded folder preferences:', prefs);
             
             // Apply folder button visibility
             updateFolderButtonVisibility(prefs);
@@ -1320,7 +1320,7 @@ document.getElementById('folderToggleBtn').addEventListener('click', () => {
             // Save the complete preferences object
             window.electronAPI.setFolderPreferences(currentPrefs)
                 .then(() => {
-                    console.log('Folder preferences saved successfully:', currentPrefs);
+                    // console.log('Folder preferences saved successfully:', currentPrefs);
                 })
                 .catch(err => console.error('Error saving folder preference:', err));
         })
@@ -1331,9 +1331,9 @@ document.getElementById('folderToggleBtn').addEventListener('click', () => {
 
 // Function to load categories into the select elements
 function loadCategories() {
-    console.log('Loading categories...');
+    // console.log('Loading categories...');
     window.electronAPI.getCategories().then(categories => {
-        console.log('Categories loaded:', categories);
+        // console.log('Categories loaded:', categories);
         // Get the category select elements
         const addCategorySelect = document.getElementById('appCategory');
         const editCategorySelect = document.getElementById('editAppCategory');
@@ -1349,7 +1349,7 @@ function loadCategories() {
         
         // Add category options to both select elements
         categories.forEach(category => {
-            console.log('Adding category option:', category);
+            // console.log('Adding category option:', category);
             // Add to 'Add App' dialog
             const addOption = document.createElement('option');
             addOption.value = category.id; // Use category ID as value
@@ -1379,7 +1379,7 @@ async function applySearchBarStyles() {
         
         // Get style configuration from main process
         const style = await window.api.getSearchbarStyle();
-        console.log('Applying search bar styles:', style);
+        // console.log('Applying search bar styles:', style);
         
         // Apply style using direct DOM manipulation to override any existing styles
         // Remove all borders first
@@ -1418,7 +1418,7 @@ async function loadAllApps() {
         
         // Load apps from API
         const apps = await window.api.getAllApps();
-        console.log(`Loaded ${apps.length} apps`);
+        // console.log(`Loaded ${apps.length} apps`);
         
         // Store apps in global data
         window.appData.apps = apps;
@@ -1742,7 +1742,7 @@ window.electronAPI.onFontSizeChanged((size, iconSize) => {
         container.style.height = `${iconSize}px`;
     });
     
-    console.log(`Font size changed to ${size}px, icon size to ${iconSize}px`);
+    // console.log(`Font size changed to ${size}px, icon size to ${iconSize}px`);
 });
 
 // Listen for style changes from settings window or other sources
@@ -1826,9 +1826,10 @@ if (window.electronAPI && window.electronAPI.onShowNotification) {
 }
 
 // Import the update notification component
-const UpdateNotification = require('./components/UpdateNotification').default;
-const React = require('react');
-const ReactDOM = require('react-dom');
+const updateContainer = document.createElement('div');
+updateContainer.id = 'update-notification-container';
+updateContainer.textContent = 'An update is available!'; // or your notification text
+document.body.appendChild(updateContainer);
 
 document.addEventListener('DOMContentLoaded', () => {
     // Add the update notification container to the DOM
@@ -1837,7 +1838,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(updateContainer);
     
     // Render the update notification component
-    ReactDOM.render(React.createElement(UpdateNotification), updateContainer);
+    // ReactDOM.render(React.createElement(UpdateNotification), updateContainer);
     
     // Initialize folder header with default text in case preferences take time to load
     const folderHeader = document.getElementById('folderHeader');
@@ -1871,7 +1872,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.electronAPI.getIconSize()
     ])
     .then(([fontSize, iconSize]) => {
-        console.log(`Loaded settings - Font size: ${fontSize}px, Icon size: ${iconSize}px`);
+        // console.log(`Loaded settings - Font size: ${fontSize}px, Icon size: ${iconSize}px`);
         
         // Apply font size to app table
         const appTable = document.querySelector('.app-table');
@@ -1917,17 +1918,17 @@ document.addEventListener('DOMContentLoaded', () => {
 let appsUpdatedCleanup = null;
 
 function setupAppsUpdatedListener() {
-    console.log('Setting up apps-updated listener');
+    // console.log('Setting up apps-updated listener');
     
     // Clean up existing listener if any
     if (appsUpdatedCleanup) {
-        console.log('Cleaning up existing apps-updated listener');
+        // console.log('Cleaning up existing apps-updated listener');
         appsUpdatedCleanup();
     }
     
     // Set up new listener
     appsUpdatedCleanup = window.electronAPI.onAppsUpdated((apps) => {
-        console.log('Main window received apps-updated event with apps:', apps.length);
+        // console.log('Main window received apps-updated event with apps:', apps.length);
         if (Array.isArray(apps)) {
             // Apply current sorting before displaying
             const sortPreference = localStorage.getItem('appnest-sort-preference') || 'alphabetical';
@@ -1945,21 +1946,21 @@ function setupAppsUpdatedListener() {
 
 // Re-establish listener when window is focused
 window.addEventListener('focus', () => {
-    console.log('Main window focused, re-establishing apps-updated listener');
+    // console.log('Main window focused, re-establishing apps-updated listener');
     setupAppsUpdatedListener();
 });
 
 // Clean up listener when window is closed
 window.addEventListener('beforeunload', () => {
     if (appsUpdatedCleanup) {
-        console.log('Cleaning up apps-updated listener on window close');
+        // console.log('Cleaning up apps-updated listener on window close');
         appsUpdatedCleanup();
     }
 });
 
 // Listen for app list refresh events (used as a fallback)
 window.electronAPI.onRefreshApps(() => {
-    console.log('Refresh apps event received');
+    // console.log('Refresh apps event received');
     window.electronAPI.getAllApps()
         .then(apps => {
             const sortPreference = localStorage.getItem('appnest-sort-preference') || 'alphabetical';

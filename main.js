@@ -1506,8 +1506,8 @@ function createSettingsWindow() {
         frame: false,
         icon: path.join(__dirname, 'resources', 'images', 'nest-with-eggs.244x256.png'),
         webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
+            nodeIntegration: true,
+            contextIsolation: false,
             preload: path.join(__dirname, 'preload.js')
         }
     });
@@ -1634,6 +1634,8 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js')
         }
     });
+
+    mainWindow.webContents.openDevTools();
 
     // Position the window to be flush with the taskbar in the bottom right
     // Subtract window width from screen width and account for taskbar offset when positioning
