@@ -399,6 +399,9 @@ function closeDatabase() {
     }
 }
 
+// Alias addApplication to addApp for compatibility with tests
+const addApplication = addApp;
+
 module.exports = {
     initDatabase,
     getAllApps,
@@ -408,6 +411,7 @@ module.exports = {
     getMostUsedApplications,
     searchApplications,
     addApp,
+    addApplication,
     updateApplication,
     deleteApplication,
     getCategories,

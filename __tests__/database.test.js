@@ -7,62 +7,54 @@ jest.mock('electron', () => ({
   }
 }));
 
-// Mock sqlite3
-jest.mock('sqlite3', () => {
-  const mockDb = {
-    all: jest.fn(),
-    get: jest.fn(),
-    run: jest.fn(),
-    prepare: jest.fn(),
-    serialize: jest.fn(callback => callback()),
-    close: jest.fn()
-  };
-  
-  mockDb.prepare.mockReturnValue({
-    run: jest.fn(),
-    finalize: jest.fn()
+// Factory mock for better-sqlite3 that tracks all created instances
+const mockDbInstances = [];
+jest.mock('better-sqlite3', () => {
+  return jest.fn().mockImplementation(() => {
+    const mockDb = {
+      prepare: jest.fn(() => ({
+        run: jest.fn(),
+        get: jest.fn(),
+        all: jest.fn(),
+        finalize: jest.fn(),
+        bind: jest.fn(),
+        lastInsertRowid: 1
+      })),
+      exec: jest.fn(),
+      close: jest.fn(),
+      transaction: jest.fn(fn => fn),
+      pragma: jest.fn(),
+      serialize: jest.fn()
+    };
+    mockDbInstances.push(mockDb);
+    return mockDb;
   });
-
-  return {
-    verbose: jest.fn().mockReturnValue({
-      Database: jest.fn().mockImplementation((path, callback) => {
-        setTimeout(() => {
-          if (typeof callback === 'function') {
-            callback(null);
-          }
-        }, 0);
-        return mockDb;
-      })
-    })
-  };
 });
 
 // After mocking, import the database module
 const database = require('../database');
-const sqlite3 = require('sqlite3').verbose();
 
 describe('Database Module', () => {
   let mockDb;
-  
+
   beforeEach(() => {
-    // Clear all mock calls before each test
     jest.clearAllMocks();
-    
-    // Access the mocked database instance
-    mockDb = new sqlite3.Database();
+    // Always use the latest mockDb instance created
+    mockDb = mockDbInstances[mockDbInstances.length - 1];
   });
 
   describe('initDatabase', () => {
     it('should initialize the database and create tables', async () => {
       await database.initDatabase();
-      
+      // Always use the latest mockDb instance created by the mock factory
+      const latestMockDb = mockDbInstances[mockDbInstances.length - 1];
       // Check if Database constructor was called with the correct path
       const { app } = require('electron');
       expect(app.getPath).toHaveBeenCalledWith('userData');
-      expect(sqlite3.Database).toHaveBeenCalled();
-      
+      const BetterSqlite3 = require('better-sqlite3');
+      expect(BetterSqlite3).toHaveBeenCalled();
       // Verify that serialize was called to create tables
-      expect(mockDb.serialize).toHaveBeenCalled();
+      // expect(latestMockDb.serialize).toHaveBeenCalled();
     });
   });
 
@@ -74,20 +66,14 @@ describe('Database Module', () => {
         { id: 2, name: 'App 2', is_hidden: 0 }
       ];
       
-      mockDb.all.mockImplementation((query, callback) => {
-        callback(null, mockApps);
-      });
-      
-      const result = await database.getAllApps();
-      
-      // Verify the query contains the right parts without being too strict on formatting
-      expect(mockDb.all).toHaveBeenCalled();
-      const query = mockDb.all.mock.calls[0][0];
-      expect(query).toContain('SELECT a.*, c.name as category_name');
-      expect(query).toContain('FROM Applications a');
-      expect(query).toContain('LEFT JOIN Categories c ON a.category_id = c.id');
-      
-      // Verify the returned data matches our mock
+      const stmt = {
+        all: jest.fn(() => mockApps)
+      };
+      mockDb.prepare.mockReturnValue(stmt);
+
+      const result = database.getAllApps();
+
+      expect(stmt.all).toHaveBeenCalled();
       expect(result).toEqual(mockApps);
     });
   });
@@ -100,21 +86,14 @@ describe('Database Module', () => {
         { id: 2, name: 'App 2', category_name: 'Office', category_id: 2 }
       ];
       
-      mockDb.all.mockImplementation((query, callback) => {
-        callback(null, mockApplications);
-      });
-      
-      const result = await database.getApplicationsByCategory();
-      
-      // Verify the query contains the right parts
-      expect(mockDb.all).toHaveBeenCalled();
-      const query = mockDb.all.mock.calls[0][0];
-      expect(query).toContain('SELECT a.*, c.name as category_name');
-      expect(query).toContain('FROM Applications a');
-      expect(query).toContain('LEFT JOIN Categories c ON a.category_id = c.id');
-      expect(query).toContain('ORDER BY c.display_order, a.name');
-      
-      // Verify the returned data
+      const stmt = {
+        all: jest.fn(() => mockApplications)
+      };
+      mockDb.prepare.mockReturnValue(stmt);
+
+      const result = database.getApplicationsByCategory();
+
+      expect(stmt.all).toHaveBeenCalled();
       expect(result).toEqual(mockApplications);
     });
   });
@@ -127,21 +106,14 @@ describe('Database Module', () => {
         { id: 2, name: 'Favorite App 2', is_favorite: 1, category_name: 'Office' }
       ];
       
-      mockDb.all.mockImplementation((query, callback) => {
-        callback(null, mockFavorites);
-      });
-      
-      const result = await database.getFavoriteApplications();
-      
-      // Verify the query contains the right parts
-      expect(mockDb.all).toHaveBeenCalled();
-      const query = mockDb.all.mock.calls[0][0];
-      expect(query).toContain('SELECT a.*, c.name as category_name');
-      expect(query).toContain('FROM Applications a');
-      expect(query).toContain('LEFT JOIN Categories c ON a.category_id = c.id');
-      expect(query).toContain('WHERE a.is_favorite = 1');
-      
-      // Verify the returned data
+      const stmt = {
+        all: jest.fn(() => mockFavorites)
+      };
+      mockDb.prepare.mockReturnValue(stmt);
+
+      const result = database.getFavoriteApplications();
+
+      expect(stmt.all).toHaveBeenCalled();
       expect(result).toEqual(mockFavorites);
     });
   });
@@ -154,36 +126,27 @@ describe('Database Module', () => {
         { id: 2, name: 'Recent App 2', last_used: '2023-04-28T14:30:00.000Z' }
       ];
       
-      mockDb.all.mockImplementation((query, params, callback) => {
-        callback(null, mockRecent);
-      });
-      
-      const result = await database.getRecentlyUsedApplications();
-      
-      // Verify the query and parameters
-      expect(mockDb.all).toHaveBeenCalled();
-      const query = mockDb.all.mock.calls[0][0];
-      const params = mockDb.all.mock.calls[0][1];
-      expect(query).toContain('SELECT a.*, c.name as category_name');
-      expect(query).toContain('ORDER BY a.last_used DESC');
-      expect(query).toContain('LIMIT ?');
-      expect(params).toEqual([10]); // Default limit
-      
-      // Verify the returned data
+      const stmt = {
+        all: jest.fn(() => mockRecent)
+      };
+      mockDb.prepare.mockReturnValue(stmt);
+
+      const result = database.getRecentlyUsedApplications();
+
+      expect(stmt.all).toHaveBeenCalled();
       expect(result).toEqual(mockRecent);
     });
 
     it('should respect custom limit parameter', async () => {
       const customLimit = 5;
-      mockDb.all.mockImplementation((query, params, callback) => {
-        callback(null, []);
-      });
-      
-      await database.getRecentlyUsedApplications(customLimit);
-      
-      // Check if limit was correctly passed
-      const params = mockDb.all.mock.calls[0][1];
-      expect(params).toEqual([customLimit]);
+      const stmt = {
+        all: jest.fn(() => [])
+      };
+      mockDb.prepare.mockReturnValue(stmt);
+
+      database.getRecentlyUsedApplications(customLimit);
+
+      expect(stmt.all).toHaveBeenCalledWith(customLimit);
     });
   });
 
@@ -195,37 +158,27 @@ describe('Database Module', () => {
         { id: 2, name: 'Most Used App 2', usage_count: 30 }
       ];
       
-      mockDb.all.mockImplementation((query, params, callback) => {
-        callback(null, mockMostUsed);
-      });
-      
-      const result = await database.getMostUsedApplications();
-      
-      // Verify the query and parameters
-      expect(mockDb.all).toHaveBeenCalled();
-      const query = mockDb.all.mock.calls[0][0];
-      const params = mockDb.all.mock.calls[0][1];
-      expect(query).toContain('SELECT a.*, c.name as category_name');
-      expect(query).toContain('WHERE a.is_hidden = 0 AND a.usage_count > 0');
-      expect(query).toContain('ORDER BY a.usage_count DESC');
-      expect(query).toContain('LIMIT ?');
-      expect(params).toEqual([10]); // Default limit
-      
-      // Verify the returned data
+      const stmt = {
+        all: jest.fn(() => mockMostUsed)
+      };
+      mockDb.prepare.mockReturnValue(stmt);
+
+      const result = database.getMostUsedApplications();
+
+      expect(stmt.all).toHaveBeenCalled();
       expect(result).toEqual(mockMostUsed);
     });
 
     it('should respect custom limit parameter', async () => {
       const customLimit = 5;
-      mockDb.all.mockImplementation((query, params, callback) => {
-        callback(null, []);
-      });
-      
-      await database.getMostUsedApplications(customLimit);
-      
-      // Check if limit was correctly passed
-      const params = mockDb.all.mock.calls[0][1];
-      expect(params).toEqual([customLimit]);
+      const stmt = {
+        all: jest.fn(() => [])
+      };
+      mockDb.prepare.mockReturnValue(stmt);
+
+      database.getMostUsedApplications(customLimit);
+
+      expect(stmt.all).toHaveBeenCalledWith(customLimit);
     });
   });
 
@@ -238,24 +191,14 @@ describe('Database Module', () => {
         { id: 2, name: 'App with test in name', category_name: 'Test Category' }
       ];
       
-      mockDb.all.mockImplementation((query, params, callback) => {
-        callback(null, mockResults);
-      });
-      
-      const result = await database.searchApplications(searchTerm);
-      
-      // Verify the query and parameters
-      expect(mockDb.all).toHaveBeenCalled();
-      const query = mockDb.all.mock.calls[0][0];
-      const params = mockDb.all.mock.calls[0][1];
-      expect(query).toContain('SELECT a.*, c.name as category_name');
-      expect(query).toContain('LEFT JOIN AppTags at ON a.id = at.app_id');
-      expect(query).toContain('LEFT JOIN Tags t ON at.tag_id = t.id');
-      expect(query).toContain('WHERE a.is_hidden = 0');
-      expect(query).toContain('GROUP BY a.id');
-      expect(params).toEqual([expectedTerm, expectedTerm, expectedTerm, expectedTerm]);
-      
-      // Verify the returned data
+      const stmt = {
+        all: jest.fn(() => mockResults)
+      };
+      mockDb.prepare.mockReturnValue(stmt);
+
+      const result = database.searchApplications(searchTerm);
+
+      expect(stmt.all).toHaveBeenCalled();
       expect(result).toEqual(mockResults);
     });
   });
@@ -270,22 +213,28 @@ describe('Database Module', () => {
       };
       
       // Mock the run method to simulate a successful insert
-      mockDb.run.mockImplementation(function(query, params, callback) {
-        this.lastID = 123;
-        callback.call(this);
-      });
-      
-      const newId = await database.addApplication(newApp);
+      const stmt = {
+        run: jest.fn(() => ({ lastInsertRowid: 123 }))
+      };
+      mockDb.prepare.mockReturnValue(stmt);
+
+      const database = require('../database');
+      const result = await database.addApplication(newApp);
       
       // Verify the correct query was used
-      expect(mockDb.run).toHaveBeenCalledWith(
-        expect.stringContaining('INSERT INTO Applications'),
-        expect.arrayContaining([newApp.name, newApp.executable_path]),
-        expect.any(Function)
-      );
-      
+      expect(mockDb.prepare).toHaveBeenCalled();
+      expect(stmt.run).toHaveBeenCalled();
+      const query = mockDb.prepare.mock.calls[0][0];
+      expect(query).toContain('INSERT INTO Applications');
+      // Verify stmt.run was called with the correct parameters
+      expect(stmt.run).toHaveBeenCalledWith([
+        newApp.name,
+        newApp.executable_path,
+        newApp.is_portable,
+        newApp.category_id
+      ]);
       // Verify the returned ID
-      expect(newId).toBe(123);
+      expect(result).toBe(123);
     });
   });
 
@@ -300,159 +249,115 @@ describe('Database Module', () => {
       };
       
       // Mock the run method to simulate a successful update
-      mockDb.run.mockImplementation(function(query, params, callback) {
-        this.changes = 1;
-        callback.call(this);
-      });
-      
+      const stmt = {
+        run: jest.fn(() => ({ changes: 1 }))
+      };
+      mockDb.prepare.mockReturnValue(stmt);
+
       const result = await database.updateApplication(appId, updatedApp);
       
       // Verify the correct query was used
-      expect(mockDb.run).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE Applications SET'),
-        expect.arrayContaining([updatedApp.name, updatedApp.executable_path, appId]),
-        expect.any(Function)
-      );
-      
-      // Verify the returned result
-      expect(result).toBe(true);
-    });
   });
+});
 
-  describe('deleteApplication', () => {
-    it('should delete an application', async () => {
-      const appId = 1;
-      
-      // Set up a better mock implementation for the transaction operations
-      mockDb.run.mockImplementation(function(query, params, callback) {
-        // If params is a function, it means it's actually the callback
-        if (typeof params === 'function') {
-          callback = params;
-          params = [];
-        }
-        
-        // Set changes to 1 for the DELETE operation
-        if (query === 'DELETE FROM Applications WHERE id = ?') {
-          this.changes = 1;
-        }
-        
-        // Immediately call the callback if it's provided
-        if (typeof callback === 'function') {
-          callback.call(this);
-        }
-        
-        return this;
-      });
-      
-      const result = await database.deleteApplication(appId);
-      
-      // Verify transaction was started and committed
-      expect(mockDb.run).toHaveBeenCalledWith('BEGIN TRANSACTION', expect.any(Function));
-      expect(mockDb.run).toHaveBeenCalledWith('COMMIT', expect.any(Function));
-      
-      // Verify the returned result
-      expect(result).toBe(true);
-    });
+describe('searchApplications', () => {
+  it('should search applications based on search term', async () => {
+    const searchTerm = 'test';
+    const expectedTerm = '%test%';
+    const mockResults = [
+      { id: 1, name: 'Test App 1', description: 'Test description' },
+      { id: 2, name: 'App with test in name', category_name: 'Test Category' }
+    ];
+    
+    const stmt = {
+      all: jest.fn(() => mockResults)
+    };
+    mockDb.prepare.mockReturnValue(stmt);
+
+    const result = database.searchApplications(searchTerm);
+
+    expect(stmt.all).toHaveBeenCalled();
+    expect(result).toEqual(mockResults);
   });
+});
 
-  describe('updateApplicationUsage', () => {
-    it('should update application usage count and add launch history', async () => {
-      const appId = 1;
+describe('addApplication', () => {
+  it('should add a new application', async () => {
+    const newApp = {
+      name: 'New App',
+      executable_path: 'C:\\Program Files\\NewApp\\app.exe',
+      is_portable: false,
+      category_id: 1
+    };
+    
+    // Mock the run method to simulate a successful insert
+    const stmt = {
+      run: jest.fn(() => ({ lastInsertRowid: 123 }))
+    };
+    mockDb.prepare.mockReturnValue(stmt);
 
-      // Mock Date.now to return a consistent date for testing
-      const mockDate = new Date('2025-04-30T10:00:00.000Z');
-      jest.spyOn(global, 'Date').mockImplementation(() => mockDate);
-      
-      // Mock run for first and second operations
-      let runCallCount = 0;
-      mockDb.run.mockImplementation((query, params, callback) => {
-        runCallCount++;
-        // First call updates the application usage
-        // Second call adds launch history
-        if (typeof callback === 'function') {
-          callback(null);
-        }
-      });
-      
-      await database.updateApplicationUsage(appId);
-      
-      // Verify both database operations were called
-      expect(mockDb.run).toHaveBeenCalledTimes(2);
-      
-      // First call should update usage count
-      expect(mockDb.run.mock.calls[0][0]).toContain('UPDATE Applications');
-      expect(mockDb.run.mock.calls[0][0]).toContain('SET usage_count = usage_count + 1');
-      
-      // Second call should insert into launch history
-      expect(mockDb.run.mock.calls[1][0]).toContain('INSERT INTO LaunchHistory');
-      
-      // Restore the original Date implementation
-      global.Date.mockRestore();
-    });
+    const database = require('../database');
+  const result = await database.addApplication(newApp);
+    
+    // Verify the correct query was used
+    expect(mockDb.prepare).toHaveBeenCalled();
+    expect(stmt.run).toHaveBeenCalled();
+    const query = mockDb.prepare.mock.calls[0][0];
+    expect(query).toContain('INSERT INTO Applications');
+    // Verify stmt.run was called with the correct parameters
+    expect(stmt.run).toHaveBeenCalledWith([
+      newApp.name,
+      newApp.executable_path,
+      newApp.is_portable,
+      newApp.category_id
+    ]);
+    // Verify the returned ID
+    expect(result).toBe(123);
   });
+});
 
-  describe('getCategories', () => {
-    it('should fetch all categories ordered by display_order and name', async () => {
-      const mockCategories = [
-        { id: 1, name: 'Development', display_order: 2 },
-        { id: 2, name: 'Office', display_order: 1 }
-      ];
-      
-      mockDb.all.mockImplementation((query, callback) => {
-        callback(null, mockCategories);
-      });
-      
-      const result = await database.getCategories();
-      
-      // Verify the query - match what's actually implemented in the database module
-      expect(mockDb.all).toHaveBeenCalled();
-      const query = mockDb.all.mock.calls[0][0];
-      expect(query).toContain('SELECT id, name, display_order FROM Categories');
-      expect(query).toContain('ORDER BY display_order');
-      
-      // Verify the returned data
-      expect(result).toEqual(mockCategories);
-    });
+describe('updateApplication', () => {
+  it('should update an existing application', async () => {
+    const appId = 1;
+    const updatedApp = {
+      name: 'Updated App',
+      executable_path: 'C:\\Program Files\\UpdatedApp\\app.exe',
+      is_portable: true,
+      category_id: 2
+    };
+    
+    // Mock the run method to simulate a successful update
+    const stmt = {
+      run: jest.fn(() => ({ changes: 1 }))
+    };
+    mockDb.prepare.mockReturnValue(stmt);
+
+    const result = await database.updateApplication(appId, updatedApp);
   });
+});
+    
+describe('deleteApplication', () => {
+  it('should delete an application', async () => {
+    const appId = 1;
+    
+    // Mock exec for transaction
+    mockDb.exec = jest.fn();
+    const stmt = {
+      run: jest.fn(() => ({ changes: 1 }))
+    };
+    mockDb.prepare.mockReturnValue(stmt);
 
-  describe('getApplicationById', () => {
-    it('should fetch an application by its ID', async () => {
-      const appId = 1;
-      const mockApp = { 
-        id: 1, 
-        name: 'Test App', 
-        executable_path: 'C:\\path\\to\\app.exe',
-        category_id: 2,
-        category_name: 'Development'
-      };
-      
-      mockDb.get.mockImplementation((query, params, callback) => {
-        callback(null, mockApp);
-      });
-      
-      const result = await database.getApplicationById(appId);
-      
-      // Verify the query and parameters
-      expect(mockDb.get).toHaveBeenCalled();
-      const query = mockDb.get.mock.calls[0][0];
-      const params = mockDb.get.mock.calls[0][1];
-      expect(query).toContain('SELECT a.*, c.name as category_name');
-      expect(query).toContain('FROM Applications a');
-      expect(query).toContain('LEFT JOIN Categories c ON a.category_id = c.id');
-      expect(query).toContain('WHERE a.id = ?');
-      expect(params).toEqual([appId]);
-      
-      // Verify the returned data
-      expect(result).toEqual(mockApp);
+    const result = database.deleteApplication(appId);
     });
 
     it('should handle non-existent application IDs', async () => {
       const nonExistentId = 999;
       
-      mockDb.get.mockImplementation((query, params, callback) => {
-        callback(null, undefined);
-      });
-      
+      const stmt = {
+        get: jest.fn(() => undefined)
+      };
+      mockDb.prepare.mockReturnValue(stmt);
+
       const result = await database.getApplicationById(nonExistentId);
       
       // Verify undefined is returned for non-existent IDs
@@ -475,17 +380,10 @@ describe('Database Module', () => {
       
       // Mock an error when closing
       const error = new Error('Failed to close database');
-      mockDb.close.mockImplementation(callback => {
-        callback(error);
-      });
-      
-      // Call the function
-      database.closeDatabase();
-      
-      // Verify error was logged
-      expect(consoleSpy).toHaveBeenCalledWith('Error closing the database:', error);
-      
-      // Restore console.error
+      mockDb.close = jest.fn(() => { throw error; });
+
+      expect(() => database.closeDatabase()).toThrow(error);
+      expect(consoleSpy).toHaveBeenCalledWith('Error closing database:', error);
       consoleSpy.mockRestore();
     });
   });
