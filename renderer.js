@@ -1099,6 +1099,10 @@ function createDriveIndicator(drive) {
     // Add click event to open the drive in the system file manager
     driveCircle.addEventListener('click', () => {
         window.electronAPI.openFolder('windows', drive.letter.charAt(0).toLowerCase());
+        // Close the drive panel
+        isPanelActive = false;
+        drivePanel.classList.remove('active');
+        systemDriveIndicator.classList.remove('expanded');
     });
 
     driveIndicator.appendChild(driveCircle);
