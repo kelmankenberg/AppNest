@@ -584,7 +584,7 @@ body.dark-theme .category-folder-header .fa {
 /* Favorite star styles */
 .favorite-star {
     cursor: pointer;
-    margin-left: 128px;
+    /* margin-left: 128px; */
     color: #ccc;
     transition: all 0.2s ease;
     font-size: 18px;
@@ -1340,7 +1340,11 @@ body.dark-theme .category-folder-header .fa {
 }
 
 .app-name {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .name-icon-group {
@@ -1360,6 +1364,9 @@ body.dark-theme .category-folder-header .fa {
     display: flex;
     align-items: center;
     width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
+}
     overflow: hidden; /* Prevent overflow */
 }
 
@@ -1376,11 +1383,28 @@ body.dark-theme .category-folder-header .fa {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: 6px; /* Small gap between name and star */
+    margin-left: 6px;
     color: gold;
-    font-size: 10px;
-    flex-shrink: 0; /* Prevent shrinking */
+    font-size: 14px;
+    flex-shrink: 0;
 }
+
+.favorite-indicator.not-favorite {
+    visibility: hidden;
+    opacity: 0;
+    color: orange !important;
+    transition: opacity 0.15s;
+}
+
+.app-row:hover .favorite-indicator.not-favorite {
+    visibility: visible;
+    opacity: 1;
+}
+
+.favorite-indicator.favorite {
+    visibility: visible;
+}
+
 
 .favorite-indicator i {
     filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));

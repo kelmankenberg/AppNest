@@ -130,16 +130,17 @@ function renderAppRowHTML(app, iconSizeNum) {
   } else {
     iconHtml = `<div class="app-icon-fallback" style="width:${iconSizeNum}px;height:${iconSizeNum}px;font-size:${Math.round(iconSizeNum * 0.6)}px;line-height:${iconSizeNum}px;">${app.name.charAt(0).toUpperCase()}</div>`;
   }
-  const favoriteHtml = app.is_favorite ? '<div class="favorite-indicator"><i class="fas fa-star" style="font-size:10px;"></i></div>' : '';
-  return `
-    <div class="app-table-row" data-app-id="${app.id}">
-      <div class="app-cell">
-        <div class="app-icon-container" style="width:${iconSizeNum}px;height:${iconSizeNum}px;">${iconHtml}</div>
-        <div class="app-name-container"><span class="app-name">${app.name}</span>${favoriteHtml}</div>
-      </div>
-      <!-- Add other columns/buttons as needed -->
+  const favoriteHtml = `<div class="favorite-indicator${app.is_favorite ? ' favorite' : ' not-favorite'}" data-app-id="${app.id}" title="${app.is_favorite ? 'Remove from favorites' : 'Add to favorites'}">
+  <i class="${app.is_favorite ? 'fas' : 'far'} fa-star favorite-star" style="font-size:10px;"></i>
+</div>`;
+return `
+  <div class="app-table-row" data-app-id="${app.id}">
+    <div class="app-cell">
+      <div class="app-icon-container" style="width:${iconSizeNum}px;height:${iconSizeNum}px;">${iconHtml}</div>
+      <div class="app-name-container"><span class="app-name">${app.name}</span>${favoriteHtml}</div>
     </div>
-  `;
+  </div>
+`;
 }
 
 // --- Updated renderCategorizedFolders: Flat List, App-Style Category Rows ---
@@ -163,21 +164,63 @@ function renderCategorizedFolders(apps) {
       catRow.appendChild(catCell);
       container.appendChild(catRow);
       // Render all app rows for this category (hidden by default)
-      appsInCat.forEach(app => {
-        const appRow = document.createElement('tr');
-        appRow.className = 'app-row categorized-app-row hidden';
-        appRow.dataset.category = name;
-        appRow.dataset.appId = app.id;
-        const appCell = document.createElement('td');
-        appCell.className = 'app-cell';
-        appCell.colSpan = 99;
-        appCell.innerHTML = renderAppRowHTML(app, iconSizeNum);
-        appRow.appendChild(appCell);
-        // Add click/context menu logic
-        appRow.querySelector('.app-table-row').addEventListener('click', () => launchApplication(app.id));
-        appRow.querySelector('.app-table-row').addEventListener('contextmenu', (e) => showContextMenu(e, app.id));
-        container.appendChild(appRow);
-      });
+appsInCat.forEach(app => {
+  const appRow = document.createElement('tr');
+  appRow.className = 'app-row categorized-app-row hidden';
+  appRow.dataset.category = name;
+  appRow.dataset.appId = app.id;
+  const appCell = document.createElement('td');
+  appCell.className = 'app-cell';
+  appCell.colSpan = 99;
+  appCell.innerHTML = renderAppRowHTML(app, iconSizeNum);
+  appRow.appendChild(appCell);
+  // Add hover effect for outline star (not-favorite)
+  appRow.addEventListener('mouseenter', () => {
+    const fav = appRow.querySelector('.favorite-indicator.not-favorite');
+    if (fav) fav.classList.add('show');
+  });
+  appRow.addEventListener('mouseleave', () => {
+    const fav = appRow.querySelector('.favorite-indicator.not-favorite');
+    if (fav) fav.classList.remove('show');
+  });
+  // Add click/context menu logic
+  const rowDiv = appRow.querySelector('.app-table-row');
+  rowDiv.addEventListener('click', (e) => {
+    // Prevent launching if star is clicked
+    if (e.target.closest('.favorite-indicator')) return;
+    launchApplication(app.id);
+  });
+  rowDiv.addEventListener('contextmenu', (e) => showContextMenu(e, app.id));
+  // Favorite star click handler
+  const starDiv = rowDiv.querySelector('.favorite-indicator');
+  if (starDiv) {
+    starDiv.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const appId = app.id;
+      const isFavorite = app.is_favorite;
+      // Optimistic lock: disable until backend responds
+      starDiv.style.pointerEvents = 'none';
+      try {
+        const updated = await window.electronAPI.toggleFavorite(appId, !isFavorite);
+        if (updated && typeof updated.is_favorite !== 'undefined') {
+          app.is_favorite = updated.is_favorite;
+          // Re-render just this row
+          appCell.innerHTML = renderAppRowHTML(app, iconSizeNum);
+          // Re-attach handler
+          const newStarDiv = appCell.querySelector('.favorite-indicator');
+          if (newStarDiv) {
+            newStarDiv.addEventListener('click', arguments.callee);
+          }
+        }
+      } finally {
+        starDiv.style.pointerEvents = '';
+      }
+    });
+    // Show outline star only on hover for non-favorites
+
+  }
+  container.appendChild(appRow);
+});
       // Toggle expand/collapse on click
       catRow.addEventListener('click', () => {
         const isOpen = catRow.classList.toggle('open');
@@ -353,14 +396,24 @@ function displayApplications(apps) {
             nameSpan.textContent = app.name;
             nameContainer.appendChild(nameSpan);
             
-            // Add favorite indicator if app is marked as favorite
-            if (app.is_favorite) {
-                const favoriteIcon = document.createElement('div');
-                favoriteIcon.className = 'favorite-indicator';
-                // Add inline style to the icon element
-                favoriteIcon.innerHTML = '<i class="fas fa-star" style="font-size: 10px;"></i>';
-                nameContainer.appendChild(favoriteIcon);
-            }
+            // Always add favorite indicator for all apps
+            const favoriteIndicatorDiv = document.createElement('div');
+            favoriteIndicatorDiv.className = `favorite-indicator${app.is_favorite ? ' favorite' : ' not-favorite'}`;
+            favoriteIndicatorDiv.setAttribute('data-app-id', app.id);
+            favoriteIndicatorDiv.setAttribute('title', app.is_favorite ? 'Remove from favorites' : 'Add to favorites');
+            favoriteIndicatorDiv.innerHTML = `<i class="${app.is_favorite ? 'fas' : 'far'} fa-star favorite-star" style="font-size:10px;"></i>`;
+            // Add click event to toggle favorite without launching app
+            favoriteIndicatorDiv.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent row click
+                // Toggle favorite status
+                app.is_favorite = !app.is_favorite;
+                // Persist the change (update via API or local storage as needed)
+                window.electronAPI.updateApp({ ...app, is_favorite: app.is_favorite }).then(() => {
+                    // Re-render the app list to update UI
+                    loadApplications();
+                });
+            });
+            nameContainer.appendChild(favoriteIndicatorDiv);
             
             nameCell.appendChild(nameContainer);
             row.appendChild(nameCell);
