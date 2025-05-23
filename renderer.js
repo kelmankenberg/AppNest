@@ -1928,17 +1928,7 @@ if (window.electronAPI && window.electronAPI.onShowNotification) {
     console.warn('Notification API not available in this context');
 }
 
-// Import the update notification component
-const updateContainer = document.createElement('div');
-updateContainer.id = 'update-notification-container';
-updateContainer.textContent = 'An update is available!'; // or your notification text
-document.body.appendChild(updateContainer);
-
 document.addEventListener('DOMContentLoaded', () => {
-    // Add the update notification container to the DOM
-    const updateContainer = document.createElement('div');
-    updateContainer.id = 'update-notification-container';
-    document.body.appendChild(updateContainer);
     
     // Render the update notification component
     // ReactDOM.render(React.createElement(UpdateNotification), updateContainer);
