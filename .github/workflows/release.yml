@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # This will match tags like v1.0, v20.15.10, etc.
+
+
+jobs:
+  release:
+    name: Release
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Build
+      run: npm run build
+      env:
+        NODE_OPTIONS: --openssl-legacy-provider
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: |
+          dist/*.exe
+          dist/*.exe.blockmap
+          dist/latest.yml
+          dist/win-unpacked/**/*
+        generate_release_notes: true
+        draft: false
+        prerelease: false
