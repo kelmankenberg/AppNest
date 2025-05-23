@@ -57,12 +57,32 @@ function initializeTitleBarButtons() {
     const resetButton = document.getElementById('resetSettings');
     
     if (closeButton) {
-        closeButton.addEventListener('click', closeWindow);
+        closeButton.addEventListener('click', () => {            if (window.electronAPI) {
+                // Use IPC to close the window
+                window.electronAPI.closeSettingsWindow();
+            } else {
+                window.close();
+            }
+        });
     }
     
     if (resetButton) {
-        resetButton.addEventListener('click', resetToDefaults);
+        resetButton.addEventListener('click', () => {
+            resetToDefaults();
+        });
     }
+    
+    // Add keyboard shortcuts for the titlebar
+    document.addEventListener('keydown', (e) => {
+        // Close on Escape
+        if (e.key === 'Escape') {
+            if (window.electronAPI) {
+                window.electronAPI.closeSettingsWindow();
+            } else {
+                window.close();
+            }
+        }
+    });
 }
 
 // Initialize settings navigation
@@ -194,11 +214,45 @@ function initializeInputs() {
     // App name input
     const appNameInput = document.getElementById('appName');
     if (appNameInput) {
+        // Initialize the input value from stored settings
+        window.electronAPI.getAppName()
+            .then(name => {
+                appNameInput.value = name || '';
+            })
+            .catch(err => {
+                console.error('Error getting app name setting:', err);
+            });
+
         appNameInput.addEventListener('change', () => {
             const value = appNameInput.value;
-            // Implement app name saving when API is available
-            // window.electronAPI.setAppName(value)
-            //    .catch(err => console.error('Error saving app name:', err));
+            window.electronAPI.setAppName(value)
+                .then(() => {
+                    // Add visual feedback
+                    const statusIndicator = document.createElement('span');
+                    statusIndicator.className = 'setting-status success';
+                    statusIndicator.textContent = 'Saved ✓';
+                    appNameInput.parentNode.appendChild(statusIndicator);
+                    
+                    setTimeout(() => {
+                        if (statusIndicator.parentNode) {
+                            statusIndicator.parentNode.removeChild(statusIndicator);
+                        }
+                    }, 3000);
+                })
+                .catch(err => {
+                    console.error('Error saving app name:', err);
+                    // Add error feedback
+                    const statusIndicator = document.createElement('span');
+                    statusIndicator.className = 'setting-status error';
+                    statusIndicator.textContent = 'Error ✗';
+                    appNameInput.parentNode.appendChild(statusIndicator);
+                    
+                    setTimeout(() => {
+                        if (statusIndicator.parentNode) {
+                            statusIndicator.parentNode.removeChild(statusIndicator);
+                        }
+                    }, 3000);
+                });
         });
     }
     
@@ -314,17 +368,113 @@ function initializeInputs() {
     // Search mode selector
     const searchMode = document.getElementById('searchMode');
     if (searchMode) {
+        // Initialize the select value from stored settings
+        window.electronAPI.getSearchMode()
+            .then(mode => {
+                searchMode.value = mode || 'name';
+            })
+            .catch(err => {
+                console.error('Error getting search mode setting:', err);
+                searchMode.value = 'name'; // Default to name-only search
+            });
+
         searchMode.addEventListener('change', () => {
             const value = searchMode.value;
-            // Implement search mode saving when API is available
-            // window.electronAPI.setSearchMode(value)
-            //    .catch(err => console.error('Error saving search mode:', err));
+            window.electronAPI.setSearchMode(value)
+                .then(() => {
+                    // Add visual feedback
+                    const statusIndicator = document.createElement('span');
+                    statusIndicator.className = 'setting-status success';
+                    statusIndicator.textContent = 'Saved ✓';
+                    searchMode.parentNode.appendChild(statusIndicator);
+                    
+                    // Sync the change to the main window
+                    window.electronAPI.syncSearchMode(value);
+                    
+                    setTimeout(() => {
+                        if (statusIndicator.parentNode) {
+                            statusIndicator.parentNode.removeChild(statusIndicator);
+                        }
+                    }, 3000);
+                })
+                .catch(err => {
+                    console.error('Error saving search mode:', err);
+                    // Add error feedback
+                    const statusIndicator = document.createElement('span');
+                    statusIndicator.className = 'setting-status error';
+                    statusIndicator.textContent = 'Error ✗';
+                    searchMode.parentNode.appendChild(statusIndicator);
+                    
+                    setTimeout(() => {
+                        if (statusIndicator.parentNode) {
+                            statusIndicator.parentNode.removeChild(statusIndicator);
+                        }
+                    }, 3000);
+                });
         });
     }
 }
 
 // Initialize folder segment controls and folder toggles
 function initializeFolderControls() {
+    // Handle app folder path change
+    const pathChangeButton = document.querySelector('.path-change-button');
+    const pathValueElement = document.querySelector('.path-value');
+    
+    if (pathChangeButton && pathValueElement) {
+        // Initialize path display from stored settings
+        window.electronAPI.getAppFolderPath()
+            .then(path => {
+                if (path) {
+                    pathValueElement.textContent = path;
+                }
+            })
+            .catch(err => {
+                console.error('Error getting app folder path:', err);
+            });
+
+        pathChangeButton.addEventListener('click', () => {
+            window.electronAPI.selectAppFolderPath()
+                .then(path => {
+                    if (path) {
+                        pathValueElement.textContent = path;
+                        
+                        // Save the selected app folder path
+                        return window.electronAPI.setAppFolderPath(path);
+                    }
+                })
+                .then(() => {
+                    if (pathValueElement.textContent !== './AppData') {
+                        // Add visual feedback
+                        const statusIndicator = document.createElement('span');
+                        statusIndicator.className = 'setting-status success';
+                        statusIndicator.textContent = 'Path Updated ✓';
+                        pathValueElement.parentNode.appendChild(statusIndicator);
+                        
+                        setTimeout(() => {
+                            if (statusIndicator.parentNode) {
+                                statusIndicator.parentNode.removeChild(statusIndicator);
+                            }
+                        }, 3000);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error setting app folder path:', err);
+                    // Add error feedback
+                    const statusIndicator = document.createElement('span');
+                    statusIndicator.className = 'setting-status error';
+                    statusIndicator.textContent = 'Error ✗';
+                    pathValueElement.parentNode.appendChild(statusIndicator);
+                    
+                    setTimeout(() => {
+                        if (statusIndicator.parentNode) {
+                            statusIndicator.parentNode.removeChild(statusIndicator);
+                        }
+                    }, 3000);
+                });
+        });
+    }
+
     // Handle segment control switching
     const segmentOptions = document.querySelectorAll('.segment-option');
     const folderContents = document.querySelectorAll('.folder-type-content');
@@ -355,24 +505,6 @@ function initializeFolderControls() {
     
     // Initialize Windows folder toggles
     initializeFolderToggles('win', ['Documents', 'Music', 'Pictures', 'Videos', 'Downloads']);
-    
-    // Handle app folder path change
-    const pathChangeButton = document.querySelector('.path-change-button');
-    if (pathChangeButton) {
-        pathChangeButton.addEventListener('click', () => {
-            // This would open a folder selection dialog
-            // window.electronAPI.selectAppFolderPath()
-            //    .then(path => {
-            //        if (path) {
-            //            document.querySelector('.path-value').textContent = path;
-            //            // Save the selected app folder path
-            //            // window.electronAPI.setAppFolderPath(path)
-            //            //    .catch(err => console.error('Error saving app folder path:', err));
-            //        }
-            //    })
-            //    .catch(err => console.error('Error selecting app folder path:', err));
-        });
-    }
 }
 
 // Initialize and handle folder toggles for a specific folder type (app or win)

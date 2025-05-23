@@ -1853,6 +1853,18 @@ window.api.onSearchbarStyleChanged((style) => {
     applySearchBarStyles();
 });
 
+// Listen for search mode changes from the settings window
+window.electronAPI.onSearchModeChanged((mode) => {
+    // Update search behavior based on mode
+    const searchInput = document.querySelector('.search-input');
+    if (searchInput) {
+        searchInput.setAttribute('data-search-mode', mode);
+        searchInput.placeholder = mode === 'all' ? 
+            'Search by name or description...' : 
+            'Search by name...';
+    }
+});
+
 // Handle folder button clicks - App Folders
 document.getElementById('appDocuments').addEventListener('click', () => {
     window.electronAPI.openFolder('app', 'documents');

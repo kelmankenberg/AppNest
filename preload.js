@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setFontSize: (size, iconSize) => ipcRenderer.invoke('set-font-size', size, iconSize),
     syncFontSize: (size, iconSize) => ipcRenderer.send('sync-font-size', size, iconSize),
     openSettings: () => ipcRenderer.invoke('open-settings'),
+    closeSettingsWindow: () => ipcRenderer.invoke('close-settings-window'),
     getAutoStart: () => ipcRenderer.invoke('get-auto-start'),
     setAutoStart: (enable) => ipcRenderer.invoke('set-auto-start', enable),
     getMinimizeOnPowerButton: () => ipcRenderer.invoke('get-minimize-on-power-button'),
@@ -187,7 +188,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
             console.log('Cleaning up update-status listener');
             ipcRenderer.removeListener('update-status', handler);
         };
-    }
+    },
+    
+    // App name operations
+    getAppName: () => ipcRenderer.invoke('get-app-name'),
+    setAppName: (name) => ipcRenderer.invoke('set-app-name', name),
+    
+    // Search mode operations
+    getSearchMode: () => ipcRenderer.invoke('get-search-mode'),
+    setSearchMode: (mode) => ipcRenderer.invoke('set-search-mode', mode),
+    syncSearchMode: (mode) => ipcRenderer.send('sync-search-mode', mode),
+    onSearchModeChanged: (callback) => ipcRenderer.on('search-mode-changed', (_, mode) => callback(mode)),
+    
+    // App folder path operations
+    getAppFolderPath: () => ipcRenderer.invoke('get-app-folder-path'),
+    setAppFolderPath: (path) => ipcRenderer.invoke('set-app-folder-path', path),
+    selectAppFolderPath: () => ipcRenderer.invoke('select-app-folder-path')
 });
 
 contextBridge.exposeInMainWorld('api', {

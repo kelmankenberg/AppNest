@@ -122,7 +122,8 @@ async function initializeStore() {
                             videos: true,
                             downloads: true
                         }
-                    }
+                    },
+                    'search-mode': 'name' // Default search mode
                 },
                 // Add a name to ensure consistency across processes
                 name: 'appnest-settings'
@@ -181,7 +182,8 @@ function initializeStoreSync() {
                         videos: true,
                         downloads: true
                     }
-                }
+                },
+                'search-mode': 'name' // Default search mode
             },
             // Add a name to ensure consistency across processes
             name: 'appnest-settings'
@@ -754,11 +756,18 @@ function registerIPCHandlers() {
             console.error('Error deleting app:', err);
             throw err;
         }
-    });
-
-    ipcMain.handle('open-settings', () => {
+    });    ipcMain.handle('open-settings', () => {
         createSettingsWindow();
         return true;
+    });
+    
+    // Add handler for closing settings window
+    ipcMain.handle('close-settings-window', () => {
+        if (settingsWindow && !settingsWindow.isDestroyed()) {
+            settingsWindow.close();
+            return true;
+        }
+        return false;
     });
 
     // Add searchbar style handlers
@@ -818,6 +827,35 @@ function registerIPCHandlers() {
         // If settings window exists, update it with the new searchbar style
         if (settingsWindow && !settingsWindow.isDestroyed()) {
             settingsWindow.webContents.send('searchbar-style-changed', styleOptions);
+        }
+    });
+
+    // Search mode handlers
+    ipcMain.handle('get-search-mode', async () => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            return storeToUse.get('search-mode', 'name');
+        } catch (error) {
+            console.error('Error getting search mode setting:', error);
+            return 'name';
+        }
+    });
+
+    ipcMain.handle('set-search-mode', async (_, value) => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            storeToUse.set('search-mode', value);
+            return true;
+        } catch (error) {
+            console.error('Error setting search mode:', error);
+            return false;
+        }
+    });
+
+    ipcMain.on('sync-search-mode', (_, mode) => {
+        // If the main window is open, sync the setting there
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('search-mode-changed', mode);
         }
     });
 
@@ -1072,6 +1110,40 @@ function registerIPCHandlers() {
         }
     });
 
+    // App folder path handlers
+    ipcMain.handle('get-app-folder-path', async () => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            return storeToUse.get('app-folder-path', './AppData');
+        } catch (error) {
+            console.error('Error getting app folder path:', error);
+            return './AppData';
+        }
+    });
+
+    ipcMain.handle('set-app-folder-path', async (_, path) => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            storeToUse.set('app-folder-path', path);
+            return true;
+        } catch (error) {
+            console.error('Error setting app folder path:', error);
+            return false;
+        }
+    });
+
+    ipcMain.handle('select-app-folder-path', async () => {
+        const result = await dialog.showOpenDialog(settingsWindow || mainWindow, {
+            properties: ['openDirectory'],
+            title: 'Select App Folder Path'
+        });
+
+        if (!result.canceled && result.filePaths.length > 0) {
+            return result.filePaths[0];
+        }
+        return null;
+    });
+
     // Version and release notes handlers
     ipcMain.handle('get-app-version', () => {
         try {
@@ -1242,6 +1314,28 @@ function registerIPCHandlers() {
         } catch (err) {
             console.error('Error adding Windows app:', err);
             throw err;
+        }
+    });
+
+    // App name handlers
+    ipcMain.handle('get-app-name', async () => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            return storeToUse.get('app-name', 'AppNest');
+        } catch (error) {
+            console.error('Error getting app name setting:', error);
+            return 'AppNest';
+        }
+    });
+
+    ipcMain.handle('set-app-name', async (_, value) => {
+        try {
+            const storeToUse = storeInitialized ? store : await initializeStore();
+            storeToUse.set('app-name', value);
+            return true;
+        } catch (error) {
+            console.error('Error setting app name:', error);
+            return false;
         }
     });
 }
@@ -1490,8 +1584,7 @@ function createSettingsWindow() {
     const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
     const windowWidth = 890;
     const windowHeight = 490;
-    
-    settingsWindow = new BrowserWindow({
+      settingsWindow = new BrowserWindow({
         width: windowWidth,
         height: windowHeight,
         resizable: false,
@@ -1503,8 +1596,8 @@ function createSettingsWindow() {
         frame: false,
         icon: path.join(__dirname, 'resources', 'images', 'nest-with-eggs.244x256.png'),
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
+            nodeIntegration: false,
+            contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
         }
     });
