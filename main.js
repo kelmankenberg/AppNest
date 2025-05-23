@@ -1422,37 +1422,35 @@ async function searchHelpContent(searchTerm) {
 function getDriveInfo() {
     return new Promise((resolve, reject) => {
         if (process.platform === 'win32') {
-            exec('wmic logicaldisk get caption,freespace,size', (error, stdout, stderr) => {
+            // Use PowerShell to get drive info (letter, free space, total size)
+            const psCommand = `powershell -NoProfile -Command "Get-CimInstance -ClassName Win32_LogicalDisk | Where-Object { $_.DriveType -eq 3 } | Select-Object DeviceID,FreeSpace,Size | ConvertTo-Json"`;
+            exec(psCommand, { maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
                 if (error) {
                     reject(error);
                     return;
                 }
-
-                const lines = stdout.trim().split('\n').slice(1);
-                const drives = [];
-
-                lines.forEach(line => {
-                    const parts = line.trim().split(/\s+/);
-                    if (parts.length >= 3) {
-                        const caption = parts[0];
-                        const freespace = parseFloat(parts[1]);
-                        const size = parseFloat(parts[2]);
-
-                        if (!isNaN(freespace) && !isNaN(size) && size > 0) {
-                            const used = size - freespace;
-                            const percentUsed = Math.round((used / size) * 100);
-
-                            drives.push({
-                                letter: caption,
-                                total: size,
-                                free: freespace,
-                                used: used,
-                                percentUsed: percentUsed
-                            });
-                        }
-                    }
-                });
-
+                let drives = [];
+                try {
+                    // Parse JSON output (could be array or single object)
+                    const data = JSON.parse(stdout);
+                    const driveList = Array.isArray(data) ? data : [data];
+                    drives = driveList.filter(Boolean).map(disk => {
+                        const total = parseFloat(disk.Size);
+                        const free = parseFloat(disk.FreeSpace);
+                        const used = total - free;
+                        const percentUsed = total > 0 ? Math.round((used / total) * 100) : 0;
+                        return {
+                            letter: disk.DeviceID,
+                            total,
+                            free,
+                            used,
+                            percentUsed
+                        };
+                    });
+                } catch (e) {
+                    reject(e);
+                    return;
+                }
                 resolve(drives);
             });
         } else {
@@ -1473,7 +1471,6 @@ function getDriveInfo() {
                     used: used,
                     percentUsed: percentUsed
                 });
-
                 resolve(drives);
             } catch (err) {
                 reject(err);
