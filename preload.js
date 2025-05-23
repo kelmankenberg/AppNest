@@ -8,11 +8,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Settings operations
     getTheme: () => ipcRenderer.invoke('get-theme'),
     setTheme: (theme) => ipcRenderer.invoke('set-theme', theme),
-    syncTheme: (theme) => ipcRenderer.send('sync-theme', theme),
-    getFontSize: () => ipcRenderer.invoke('get-font-size'),
+    syncTheme: (theme) => ipcRenderer.send('sync-theme', theme),    getFontSize: () => ipcRenderer.invoke('get-font-size'),
     getIconSize: () => ipcRenderer.invoke('get-icon-size'),
-    setFontSize: (size, iconSize) => ipcRenderer.invoke('set-font-size', size, iconSize),
-    syncFontSize: (size, iconSize) => ipcRenderer.send('sync-font-size', size, iconSize),
+    setFontSize: (size, iconSize) => {
+        // Validate font size range (9-14px)
+        const validatedSize = Math.max(9, Math.min(14, parseInt(size) || 10));
+        return ipcRenderer.invoke('set-font-size', validatedSize, iconSize);
+    },
+    syncFontSize: (size, iconSize) => {
+        // Validate font size range (9-14px)
+        const validatedSize = Math.max(9, Math.min(14, parseInt(size) || 10));
+        ipcRenderer.send('sync-font-size', validatedSize, iconSize);
+    },
     openSettings: () => ipcRenderer.invoke('open-settings'),
     closeSettingsWindow: () => ipcRenderer.invoke('close-settings-window'),
     getAutoStart: () => ipcRenderer.invoke('get-auto-start'),

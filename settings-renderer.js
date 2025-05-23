@@ -164,6 +164,20 @@ function initializeSliders() {
     const fontSizeValue = document.getElementById('fontSizeValue');
     
     if (fontSizeSlider && fontSizeValue) {
+        // Initialize slider value from stored settings
+        window.electronAPI.getFontSize()
+            .then(size => {
+                const validSize = Math.max(9, Math.min(14, parseInt(size) || 10));
+                fontSizeSlider.value = validSize;
+                fontSizeValue.textContent = `${validSize}px`;
+            })
+            .catch(err => {
+                console.error('Error getting font size setting:', err);
+                // Default to 10px if there's an error
+                fontSizeSlider.value = 10;
+                fontSizeValue.textContent = '10px';
+            });
+
         fontSizeSlider.addEventListener('input', () => {
             const value = fontSizeSlider.value;
             fontSizeValue.textContent = `${value}px`;

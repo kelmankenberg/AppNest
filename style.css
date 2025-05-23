@@ -85,7 +85,7 @@ body {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    font-size: 14px; /* Default font size matching the slider's default value */
+    font-size: 10px; /* Default font size matching the slider's default value */
 }
 
 .app-table th {

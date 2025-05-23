@@ -87,11 +87,10 @@ async function initializeStore() {
     storeInitPromise = (async () => {
         try {
             const Store = (await import('electron-store')).default;
-            store = new Store({
-                defaults: {
+            store = new Store({                defaults: {
                     'continue-iteration': true, // Set default value
                     'theme': 'light',
-                    'font-size': 16, // Default font size for app table
+                    'font-size': 10, // Default font size for app table (must be between 9-14px)
                     'start-with-windows': false, // Default auto-start setting
                     'minimize-on-power-button': false, // Default power button behavior is to quit
                     'searchbar-style': {
@@ -387,16 +386,17 @@ function registerIPCHandlers() {
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('font-size-changed', size, iconSize);
         }
-    });
-
-    // Font size handlers
+    });    // Font size handlers
     ipcMain.handle('get-font-size', async () => {
         try {
             const storeToUse = storeInitialized ? store : await initializeStore();
-            return storeToUse ? storeToUse.get('font-size', '16') : '16';
+            const storedSize = storeToUse ? storeToUse.get('font-size', '10') : '10';
+            // Ensure returned value is within valid range (9-14px)
+            const validSize = Math.max(9, Math.min(14, parseInt(storedSize) || 10));
+            return validSize.toString();
         } catch (error) {
             console.error('Error in get-font-size handler:', error);
-            return '16';
+            return '10';
         }
     });
 
