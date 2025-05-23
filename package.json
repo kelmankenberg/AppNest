@@ -1,6 +1,6 @@
 {
   "name": "AppNest",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "AppNest is designed to work in harmony with the Windows Start menu or as a standalone launcher. Its goal is to provide a seamless, efficient way to launch both installed and portable applications, enhancing workflow and organization for all types of users.",
   "license": "ISC",
   "author": "Kel Mankenberg",
@@ -15,6 +15,7 @@
     "pack": "electron-builder --dir",
     "test-and-build": "npm test && npm run build",
     "release": "npm run test-and-build && electron-builder --publish always",
+    "release:skip-tests": "electron-builder --publish always",
     "postinstall": "electron-builder install-app-deps"
   },
   "devDependencies": {
