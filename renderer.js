@@ -677,6 +677,67 @@ document.getElementById('editAppButton').addEventListener('click', () => {
     });
 });
 
+// Helper function to update icon preview in a dialog
+function updateIconPreview(iconContainer, iconPathInput, iconPath, appName) {
+    if (!iconContainer) return;
+    
+    // Clear previous content
+    iconContainer.innerHTML = '';
+    
+    if (iconPath) {
+        // Create image element for the icon
+        const iconImg = document.createElement('img');
+        iconImg.className = 'app-icon-img';
+        iconImg.alt = '';
+        iconImg.style.width = '100%';
+        iconImg.style.height = '100%';
+        iconImg.style.objectFit = 'contain';
+        
+        // Set up error handling for image load
+        iconImg.onerror = () => {
+            console.error('Failed to load icon image');
+            createFallbackIcon(iconContainer, appName);
+            iconPathInput.value = ''; // Clear the path since icon failed to load
+        };
+        
+        // Set the image source
+        iconImg.src = `file://${iconPath}`;
+        iconContainer.appendChild(iconImg);
+        
+        // Update the hidden input
+        if (iconPathInput) {
+            iconPathInput.value = iconPath;
+        }
+    } else {
+        createFallbackIcon(iconContainer, appName);
+        if (iconPathInput) {
+            iconPathInput.value = '';
+        }
+    }
+}
+
+// Helper function to create fallback icon
+function createFallbackIcon(container, appName) {
+    const letter = appName ? appName.charAt(0).toUpperCase() : 'A';
+    container.innerHTML = `<svg class="icon-svg" viewBox="0 0 32 32">
+        <rect width="32" height="32" fill="#a8a8a8"></rect>
+        <text x="50%" y="50%" font-size="16" text-anchor="middle" 
+             dominant-baseline="middle" fill="white">${letter}</text>
+    </svg>`;
+}
+
+// Helper function to create a hidden input field
+function createHiddenInput(id, formId) {
+    let input = document.getElementById(id);
+    if (!input) {
+        input = document.createElement('input');
+        input.type = 'hidden';
+        input.id = id;
+        document.getElementById(formId)?.appendChild(input);
+    }
+    return input;
+}
+
 // Function to update icon preview in the edit dialog
 function updateEditAppIcon(app) {
     const iconContainer = document.getElementById('editAppIconContainer');
@@ -699,15 +760,13 @@ function updateEditAppIcon(app) {
     iconContainer.appendChild(refreshIcon);
     
     // Set the hidden icon path input
-    const iconPathInput = document.getElementById('editAppIconPath');
-    if (iconPathInput) {
-        iconPathInput.value = app.icon_path || '';
-    }
+    const iconPathInput = document.getElementById('editAppIconPath') || createHiddenInput('editAppIconPath', 'editAppForm');
     
-    let hasIcon = false;
+    // Show/hide refresh button based on icon existence
+    refreshIcon.classList.toggle('active', !app.icon_path);
     
-    // Check if app has an icon (icon_data or icon_path)
-    if (app.icon_data || app.icon_path) {
+    // Update icon preview
+    if (app.icon_path) {
         // Create image element for the icon
         const iconImg = document.createElement('img');
         iconImg.className = 'app-icon-img';
@@ -719,38 +778,47 @@ function updateEditAppIcon(app) {
         // Set up error handling for image load
         iconImg.onerror = () => {
             console.error('Failed to load icon image');
-            hasIcon = false;
-            // Make the refresh button visible
+            iconImg.remove();
+            createFallbackIcon(iconContainer, app.name);
+            iconPathInput.value = '';
             refreshIcon.classList.add('active');
-            // Remove the failed image
-            if (iconContainer.contains(iconImg)) {
-                iconContainer.removeChild(iconImg);
-            }
         };
         
-        // Set the image source based on available data
-        if (app.icon_data) {
-            iconImg.src = app.icon_data;
-            hasIcon = true;
-        } else if (app.icon_path) {
-            iconImg.src = `file://${app.icon_path}`;
-            hasIcon = true;
-        }
-        
-        // If we have an icon, add it to the container
-        if (hasIcon) {
-            iconContainer.insertBefore(iconImg, refreshIcon);
-            refreshIcon.classList.remove('active'); // Hide refresh button when icon exists
-        } else {
-            refreshIcon.classList.add('active');  // Show refresh button when no icon
-        }
+        // Set the image source
+        iconImg.src = `file://${app.icon_path}`;
+        iconContainer.insertBefore(iconImg, refreshIcon);
+        iconPathInput.value = app.icon_path;
     } else {
-        // No icon available, show the refresh button
-        refreshIcon.classList.add('active');
+        createFallbackIcon(iconContainer, app.name);
+        iconPathInput.value = '';
     }
 }
 
-// Add event listener for the icon refresh button
+// Edit dialog file selection handler
+document.getElementById('editBrowseExecutable').addEventListener('click', () => {
+    window.electronAPI.openFileDialog().then(result => {
+        if (result) {
+            // Set the executable path
+            document.getElementById('editExecutablePath').value = result.path;
+            
+            // If we got an application name and the name field is empty, set it
+            const appNameField = document.getElementById('editAppName');
+            if (result.name && (!appNameField.value || appNameField.value.trim() === '')) {
+                appNameField.value = result.name;
+            }
+            
+            // Update icon preview
+            const iconContainer = document.getElementById('editAppIconContainer');
+            const iconPathInput = document.getElementById('editAppIconPath') || createHiddenInput('editAppIconPath', 'editAppForm');
+            updateIconPreview(iconContainer, iconPathInput, result.icon_path, appNameField.value);
+        }
+    }).catch(err => {
+        console.error('Error opening file dialog:', err);
+        alert('Error selecting file. Please try again.');
+    });
+});
+
+// Edit dialog icon refresh handler
 document.getElementById('editIconRefresh').addEventListener('click', () => {
     const executablePath = document.getElementById('editExecutablePath').value;
     
@@ -767,20 +835,10 @@ document.getElementById('editIconRefresh').addEventListener('click', () => {
     // Call the extractIcon API
     window.electronAPI.extractIcon(executablePath).then(result => {
         if (result && result.icon_path) {
-            // Update the hidden icon path field
-            const iconPathInput = document.getElementById('editAppIconPath');
-            if (iconPathInput) {
-                iconPathInput.value = result.icon_path;
-            }
-            
-            // Create a mock app object to update the icon
-            const mockApp = {
-                icon_path: result.icon_path,
-                name: document.getElementById('editAppName').value
-            };
-            
-            // Update the icon preview
-            updateEditAppIcon(mockApp);
+            const appNameField = document.getElementById('editAppName');
+            const iconContainer = document.getElementById('editAppIconContainer');
+            const iconPathInput = document.getElementById('editAppIconPath') || createHiddenInput('editAppIconPath', 'editAppForm');
+            updateIconPreview(iconContainer, iconPathInput, result.icon_path, appNameField.value);
         } else {
             alert('Could not extract icon from the specified executable.');
         }
@@ -859,59 +917,10 @@ document.getElementById('editBrowseExecutable').addEventListener('click', () => 
                 appNameField.value = result.name;
             }
             
-            // If we got a description and the description field is empty, set it
-            const descriptionField = document.getElementById('editAppDescription');
-            if (result.description && (!descriptionField.value || descriptionField.value.trim() === '')) {
-                descriptionField.value = result.description;
-            }
-            
-            // If we got an icon, display it in the icon container
-            if (result.icon_path) {
-                const iconContainer = document.getElementById('editAppIconContainer');
-                if (iconContainer) {
-                    // Clear previous content
-                    iconContainer.innerHTML = '';
-                    
-                    // Create image element for the icon
-                    const iconImg = document.createElement('img');
-                    iconImg.className = 'app-icon-img';
-                    iconImg.alt = '';
-                    iconImg.style.width = '100%';
-                    iconImg.style.height = '100%';
-                    iconImg.style.objectFit = 'contain';
-                    
-                    // Set up error handling for the image load
-                    iconImg.onerror = () => {
-                        console.error('Failed to load icon image');
-                        // Fallback to first letter of app name
-                        const appName = appNameField.value || result.name;
-                        const letter = appName ? appName.charAt(0).toUpperCase() : 'A';
-                        
-                        // Create SVG fallback
-                        iconContainer.innerHTML = `<svg class="icon-svg" viewBox="0 0 32 32">
-                            <rect width="32" height="32" fill="#a8a8a8"></rect>
-                            <text x="50%" y="50%" font-size="16" text-anchor="middle" 
-                                 dominant-baseline="middle" fill="white">${letter}</text>
-                        </svg>`;
-                    };
-                    
-                    // Set the image source to the extracted icon
-                    iconImg.src = `file://${result.icon_path}`;
-                    
-                    // Add the image to the container
-                    iconContainer.appendChild(iconImg);
-                    
-                    // Create a hidden input to store the icon path
-                    let iconPathInput = document.getElementById('editAppIconPath');
-                    if (!iconPathInput) {
-                        iconPathInput = document.createElement('input');
-                        iconPathInput.type = 'hidden';
-                        iconPathInput.id = 'editAppIconPath';
-                        document.getElementById('editAppForm').appendChild(iconPathInput);
-                    }
-                    iconPathInput.value = result.icon_path;
-                }
-            }
+            // Update icon preview
+            const iconContainer = document.getElementById('editAppIconContainer');
+            const iconPathInput = document.getElementById('editAppIconPath') || createHiddenInput('editAppIconPath', 'editAppForm');
+            updateIconPreview(iconContainer, iconPathInput, result.icon_path, appNameField.value);
         }
     }).catch(err => {
         console.error('Error opening file dialog:', err);
@@ -1638,53 +1647,7 @@ if (editFavoriteStar && editIsFavoriteInput) {
     });
 }
 
-// Add App Dialog close button handler
-document.getElementById('closeAddAppDialog').addEventListener('click', () => {
-    document.getElementById('addAppDialog').style.display = 'none';
-    clearAddAppForm();
-});
-
-// Add App Dialog cancel button handler
-document.getElementById('cancelAddApp').addEventListener('click', () => {
-    document.getElementById('addAppDialog').style.display = 'none';
-    clearAddAppForm();
-});
-
-// Add New App button event listener
-document.getElementById('addAppMenuItem').addEventListener('click', () => {
-    // Close apps menu
-    appsMenu.style.display = 'none';
-    
-    // Clear the form before showing it
-    clearAddAppForm();
-    
-    // Show the add app dialog
-    document.getElementById('addAppDialog').style.display = 'block';
-});
-
-// Add Escape key handler for Add New App dialog
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && document.getElementById('addAppDialog').style.display === 'block') {
-        document.getElementById('addAppDialog').style.display = 'none';
-        clearAddAppForm();
-    }
-});
-
-// Listen for Ctrl+Shift+A shortcut from main process
-window.electronAPI.onShowAddAppDialog(() => {
-    // Close apps menu if open
-    if (appsMenu) {
-        appsMenu.style.display = 'none';
-    }
-    
-    // Clear the form before showing it
-    clearAddAppForm();
-    
-    // Show the add app dialog
-    document.getElementById('addAppDialog').style.display = 'block';
-});
-
-// Browse executable button handler
+// Add App dialog file selection handler
 document.getElementById('browseExecutable').addEventListener('click', () => {
     window.electronAPI.openFileDialog().then(result => {
         if (result) {
@@ -1703,56 +1666,14 @@ document.getElementById('browseExecutable').addEventListener('click', () => {
                 descriptionField.value = result.description;
             }
             
-            // If we got an icon, display it in the icon container
-            if (result.icon_path) {
-                const iconContainer = document.getElementById('appIconContainer');
-                if (iconContainer) {
-                    // Clear previous content
-                    iconContainer.innerHTML = '';
-                    
-                    // Create image element for the icon
-                    const iconImg = document.createElement('img');
-                    iconImg.className = 'app-icon-img';
-                    iconImg.alt = '';
-                    iconImg.style.width = '100%';
-                    iconImg.style.height = '100%';
-                    iconImg.style.objectFit = 'contain';
-                    
-                    // Set up error handling for the image load
-                    iconImg.onerror = () => {
-                        console.error('Failed to load icon image');
-                        // Fallback to first letter of app name
-                        const appName = appNameField.value || result.name;
-                        const letter = appName ? appName.charAt(0).toUpperCase() : 'A';
-                        
-                        // Create SVG fallback
-                        iconContainer.innerHTML = `<svg class="icon-svg" viewBox="0 0 32 32">
-                            <rect width="32" height="32" fill="#a8a8a8"></rect>
-                            <text x="50%" y="50%" font-size="16" text-anchor="middle" 
-                                 dominant-baseline="middle" fill="white">${letter}</text>
-                        </svg>`;
-                    };
-                    
-                    // Set the image source to the extracted icon
-                    iconImg.src = `file://${result.icon_path}`;
-                    
-                    // Add the image to the container
-                    iconContainer.appendChild(iconImg);
-                    
-                    // Create a hidden input to store the icon path
-                    let iconPathInput = document.getElementById('appIconPath');
-                    if (!iconPathInput) {
-                        iconPathInput = document.createElement('input');
-                        iconPathInput.type = 'hidden';
-                        iconPathInput.id = 'appIconPath';
-                        document.getElementById('addAppForm').appendChild(iconPathInput);
-                    }
-                    iconPathInput.value = result.icon_path;
-                }
-            }
+            // Update icon preview
+            const iconContainer = document.getElementById('appIconContainer');
+            const iconPathInput = document.getElementById('appIconPath') || createHiddenInput('appIconPath', 'addAppForm');
+            updateIconPreview(iconContainer, iconPathInput, result.icon_path, appNameField.value);
         }
     }).catch(err => {
         console.error('Error opening file dialog:', err);
+        alert('Error selecting file. Please try again.');
     });
 });
 

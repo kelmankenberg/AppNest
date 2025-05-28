@@ -21,7 +21,6 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
     // Another instance is already running
     app.quit();
-    return;
 } else {
     // This is the first instance - set up the second-instance handler
     app.on('second-instance', (event, commandLine, workingDirectory) => {
@@ -547,10 +546,9 @@ function registerIPCHandlers() {
         } catch (err) {
             console.error('Error opening File Explorer:', err);
             return false;
-        }
-    });
-
-    // Enhanced file dialog handler with icon extraction
+        }    });    
+    
+    // Enhanced file dialog handler with icon extraction    
     ipcMain.handle('openFileDialog', async () => {
         try {
             const result = await dialog.showOpenDialog({
@@ -567,18 +565,46 @@ function registerIPCHandlers() {
 
             const filePath = result.filePaths[0];
             
-            // Extract metadata using PowerShell
-            const metadata = await getExecutableMetadata(filePath);
-            
-            // Extract icon using our dedicated icon manager
-            const iconPath = await iconManager.getIconForApp(filePath);
-            
-            return {
-                path: filePath,
-                name: metadata.name || path.basename(filePath, path.extname(filePath)),
-                description: metadata.description || '',
-                icon_path: iconPath
-            };
+            try {
+                // First attempt to get metadata
+                let metadata;
+                try {
+                    metadata = await getExecutableMetadata(filePath);
+                    console.log(`Extracted metadata for ${filePath}:`, metadata);
+                } catch (metadataErr) {
+                    console.warn('Metadata extraction failed, using fallback:', metadataErr);
+                    metadata = {
+                        name: path.basename(filePath, path.extname(filePath)),
+                        description: ''
+                    };
+                }
+
+                // Then attempt to extract icon independently
+                let iconPath = null;
+                try {
+                    iconPath = await iconManager.getIconForApp(filePath);
+                    console.log(`Extracted icon to ${iconPath}`);
+                } catch (iconErr) {
+                    console.warn('Icon extraction failed:', iconErr);
+                }
+
+                // Return all available information, even if some parts failed
+                return {
+                    path: filePath,
+                    name: metadata.name || path.basename(filePath, path.extname(filePath)),
+                    description: metadata.description || '',
+                    icon_path: iconPath
+                };
+            } catch (err) {
+                console.error('Error processing file:', err);
+                // Provide basic fallback even if both metadata and icon extraction fail
+                return {
+                    path: filePath,
+                    name: path.basename(filePath, path.extname(filePath)),
+                    description: '',
+                    icon_path: null
+                };
+            }
         } catch (err) {
             console.error('Error in file dialog:', err);
             return null;

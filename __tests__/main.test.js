@@ -1,5 +1,20 @@
 // __tests__/main.test.js
 // Mock Electron and other dependencies
+jest.mock('electron-log', () => ({
+  transports: {
+    file: {
+      level: 'info',
+      getFile: jest.fn(),
+      setAppName: jest.fn()
+    },
+    console: {
+      level: 'info'
+    }
+  },
+  info: jest.fn(),
+  error: jest.fn(),
+}));
+
 jest.mock('electron', () => {
   const mockIpcMain = {
     handle: jest.fn(),
@@ -16,7 +31,8 @@ jest.mock('electron', () => {
     webContents: {
       openDevTools: jest.fn(),
       toggleDevTools: jest.fn(),
-      send: jest.fn()
+      send: jest.fn(),
+      on: jest.fn(),
     },
     isDestroyed: jest.fn().mockReturnValue(false)
   }));
@@ -33,35 +49,45 @@ jest.mock('electron', () => {
     app: {
       getAppPath: jest.fn().mockReturnValue('/mock/path'),
       getPath: jest.fn().mockReturnValue('/mock/user/path'),
-      quit: jest.fn(),
-      on: mockAppOn,
-      whenReady: jest.fn().mockResolvedValue(),
-      // Expose the handlers for testing
-      _getHandler: (event) => handlers[event]
+      requestSingleInstanceLock: jest.fn().mockReturnValue(true),
+      name: 'AppNest',
+      whenReady: jest.fn().mockResolvedValue(undefined),
+      on: mockAppOn
     },
-    BrowserWindow: mockBrowserWindow,
     ipcMain: mockIpcMain,
+    BrowserWindow: mockBrowserWindow,
     globalShortcut: {
-      register: jest.fn()
+      register: jest.fn(),
+      unregister: jest.fn(),
+      unregisterAll: jest.fn()
     },
     screen: {
       getPrimaryDisplay: jest.fn().mockReturnValue({
-        workAreaSize: { width: 1920, height: 1080 }
+        workAreaSize: {
+          width: 1920,
+          height: 1080
+        }
       })
     },
     protocol: {
-      registerFileProtocol: jest.fn()
-    },
-    dialog: {
-      showOpenDialog: jest.fn()
+      registerFileProtocol: jest.fn(),
+      registerStringProtocol: jest.fn()
     }
   };
 });
 
 jest.mock('child_process', () => ({
-  exec: jest.fn((command, options, callback) => {
-    // Mock successful execution by default
-    if (callback) callback(null, 'mocked stdout', '');
+  exec: jest.fn((command, optionsOrCallback, callback) => {
+    // Handle case where options parameter is omitted
+    const realCallback = typeof optionsOrCallback === 'function' ? optionsOrCallback : callback;
+
+    if (command.includes('wmic')) {
+      // Mock drive info output in the expected format
+      realCallback(null, 'DeviceID FreeSpace Size\nC: 100000000 200000000', '');
+    } else {
+      // Default behavior for other commands
+      if (realCallback) realCallback(null, 'mocked stdout', '');
+    }
     return { stdout: { on: jest.fn() }, stderr: { on: jest.fn() } };
   })
 }));
@@ -72,7 +98,15 @@ jest.mock('fs', () => ({
     bsize: 1024,
     bfree: 500
   }),
-  existsSync: jest.fn().mockReturnValue(true)
+  existsSync: jest.fn().mockReturnValue(true),
+  promises: {
+    stat: jest.fn().mockResolvedValue({
+      size: 1024,
+      blocks: 1000,
+      bfree: 500,
+      bavail: 500
+    })
+  }
 }));
 
 jest.mock('../database', () => ({
@@ -276,32 +310,103 @@ describe('Main Process Tests', () => {
   });
   
   describe('Drive Info Functions', () => {
-    it('should get drive info on Windows platform', async () => {
-      // Mock the platform and exec command for Windows
+    let getDriveInfoHandler;
+
+    beforeEach(() => {
+      // Mock the platform for Windows
       Object.defineProperty(process, 'platform', { value: 'win32' });
       
-      childProcess.exec.mockImplementationOnce((cmd, callback) => {
-        callback(null, 'Caption FreeSpace Size\nC: 100000000 200000000', '');
-      });
-      
-      // Find the get-drive-info handler
-      const getDriveInfoHandler = electron.ipcMain.handle.mock.calls.find(
+      // Get the drive info handler
+      getDriveInfoHandler = electron.ipcMain.handle.mock.calls.find(
         call => call[0] === 'get-drive-info'
       )[1];
+    });
+
+    it('should get drive info on Windows platform', async () => {
+      // Mock exec with correct PowerShell JSON output format
+      const mockJsonOutput = JSON.stringify([
+        {
+          DeviceID: 'C:',
+          Size: '256289792000',
+          FreeSpace: '107374182400'
+        },
+        {
+          DeviceID: 'D:',
+          Size: '1099511627776',
+          FreeSpace: '429496729600'
+        }
+      ]);
+
+      childProcess.exec.mockImplementation((command, options, callback) => {
+        expect(command).toContain('Get-CimInstance');
+        callback(null, mockJsonOutput, '');
+      });
       
-      // Call the handler
       const result = await getDriveInfoHandler();
       
-      // Check the results
-      expect(result).toEqual([
-        expect.objectContaining({
-          letter: 'C:',
-          total: 200000000,
-          free: 100000000,
-          used: 100000000,
-          percentUsed: 50
-        })
-      ]);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        letter: 'C:',
+        total: 256289792000,
+        free: 107374182400,
+        used: 148915609600,
+        percentUsed: 58
+      });
+      expect(result[1]).toEqual({
+        letter: 'D:',
+        total: 1099511627776,
+        free: 429496729600,
+        used: 670014898176,
+        percentUsed: 61
+      });
+    });
+    
+    it('should handle empty drive data', async () => {
+      // Mock exec with empty array
+      childProcess.exec.mockImplementation((command, options, callback) => {
+        callback(null, '[]', '');
+      });
+
+      const result = await getDriveInfoHandler();
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle single drive data', async () => {
+      // Mock exec with a single drive object
+      const mockJsonOutput = JSON.stringify({
+        DeviceID: 'C:',
+        Size: '256289792000',
+        FreeSpace: '107374182400'
+      });
+
+      childProcess.exec.mockImplementation((command, options, callback) => {
+        callback(null, mockJsonOutput, '');
+      });
+
+      const result = await getDriveInfoHandler();
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        letter: 'C:',
+        total: 256289792000,
+        free: 107374182400,
+        used: 148915609600,
+        percentUsed: 58
+      });
+    });
+
+    it('should handle errors in drive info retrieval', async () => {
+      // Mock exec with an error
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      
+      childProcess.exec.mockImplementation((command, options, callback) => {
+        callback(new Error('Command failed'), '', 'Some error');
+      });
+
+      const result = await getDriveInfoHandler();
+      expect(result).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith('Error getting drive information:', expect.any(Error));
+      
+      consoleSpy.mockRestore();
     });
   });
   
