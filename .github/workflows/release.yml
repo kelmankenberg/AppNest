@@ -28,6 +28,7 @@ jobs:
       run: npm run build
       env:
         NODE_OPTIONS: --openssl-legacy-provider
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
