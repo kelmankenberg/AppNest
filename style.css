@@ -89,7 +89,7 @@ body {
 }
 
 .app-table th {
-    padding: 10px;
+    /* padding: 10px; */
     text-align: left;
     border-bottom: 2px solid var(--border-color);
     color: var(--text-secondary);

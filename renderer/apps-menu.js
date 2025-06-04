@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
  * Setup the search button in the apps menu
  */
 function setupSearchButton() {
-    const searchButton = document.getElementById('searchButton');
+    const searchButton = document.getElementById('searchMenuItem');
     if (searchButton) {
         searchButton.addEventListener('click', () => {
             // Show search and focus via the search.js module

@@ -11,7 +11,7 @@
 
 /* Search input */
 .search-input {
-    /* width: 100%; */
+    width: 100%;
     padding: 8px 12px;
     border: none;
     border-bottom: 1px solid var(--border-color, #ddd);

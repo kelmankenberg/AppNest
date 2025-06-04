@@ -130,6 +130,28 @@ function initializeAppsMenu() {
             }, 100);
         }
     });
+
+    // Attach click handler to Add New App menu item
+    addAppMenuItem.addEventListener('click', () => {
+        // Show the Add App dialog
+        const addAppDialog = document.getElementById('addAppDialog');
+        if (addAppDialog) {
+            addAppDialog.style.display = 'block';
+        }
+        // Clear the form
+        if (typeof window.clearAddAppForm === 'function') {
+            window.clearAddAppForm();
+        }
+        // Load categories
+        if (typeof window.loadCategories === 'function') {
+            window.loadCategories();
+        }
+        // Hide the menu after opening
+        const appsMenu = document.getElementById('appsMenu');
+        if (appsMenu) {
+            appsMenu.style.display = 'none';
+        }
+    });
 }
 
 // Position the submenu next to its parent menu item

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, screen, ipcMain, globalShortcut, dialog, protocol } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, globalShortcut, dialog, protocol, shell } = require('electron');
 const { powerDownApp } = require('./functions');
 const db = require('./database');
 const iconManager = require('./icon-manager');
@@ -1059,16 +1059,16 @@ function registerIPCHandlers() {
 
     // Register folder-related IPC handlers
     ipcMain.handle('open-folder', async (_, folderType, folderName) => {
+        log.info(`[open-folder] Called with: folderType=${folderType}, folderName=${folderName}`);
         try {
-            console.log(`Opening folder: ${folderType}/${folderName}`);
-            
             if (folderType === 'windows') {
                 // Check if it's a drive letter
                 if (folderName.length === 1) {
-                    exec(`explorer ${folderName}:`);
+                    log.info(`[open-folder] Opening drive: ${folderName}:`);
+                    await shell.openPath(`${folderName}:\\`);
                     return true;
                 }
-                
+
                 // Open Windows standard user folders
                 const userFolders = {
                     'documents': os.homedir() + '\\Documents',
@@ -1077,33 +1077,35 @@ function registerIPCHandlers() {
                     'videos': os.homedir() + '\\Videos',
                     'downloads': os.homedir() + '\\Downloads'
                 };
-                
+
                 if (userFolders[folderName]) {
-                    exec(`explorer "${userFolders[folderName]}"`);
+                    log.info(`[open-folder] Opening user folder: ${userFolders[folderName]}`);
+                    await shell.openPath(userFolders[folderName]);
                     return true;
+                } else {
+                    log.warn(`[open-folder] Unknown windows folder: ${folderName}`);
+                    return false;
                 }
-                return false;
             } else if (folderType === 'app') {
                 // Open app-specific folders
                 const storeToUse = storeInitialized ? store : await initializeStore();
                 const rootPath = storeToUse.get('appFoldersRootPath', app.getPath('userData'));
-                
-                // Create the folder path
                 const folderPath = path.join(rootPath, folderName.charAt(0).toUpperCase() + folderName.slice(1));
-                
+                log.info(`[open-folder] App folder root: ${rootPath}`);
+                log.info(`[open-folder] Full app folder path: ${folderPath}`);
                 // Ensure folder exists
                 if (!fs.existsSync(folderPath)) {
+                    log.info(`[open-folder] Folder does not exist, creating: ${folderPath}`);
                     fs.mkdirSync(folderPath, { recursive: true });
                 }
-                
-                // Open the folder
-                exec(`explorer "${folderPath}"`);
+                await shell.openPath(folderPath);
                 return true;
+            } else {
+                log.warn(`[open-folder] Unknown folderType: ${folderType}`);
+                return false;
             }
-            
-            return false;
         } catch (err) {
-            console.error(`Error opening folder ${folderName}:`, err);
+            log.error(`[open-folder] Error:`, err);
             return false;
         }
     });
@@ -1751,7 +1753,7 @@ function createWindow() {
         }
     });
 
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
 
     // Position the window to be flush with the taskbar in the bottom right
     // Subtract window width from screen width and account for taskbar offset when positioning

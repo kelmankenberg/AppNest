@@ -2025,3 +2025,50 @@ window.electronAPI.onRefreshApps(() => {
         })
         .catch(err => console.error('Error refreshing apps:', err));
 });
+
+// Add event listeners for Add App dialog close and cancel buttons
+const closeAddAppDialogBtn = document.getElementById('closeAddAppDialog');
+if (closeAddAppDialogBtn) {
+    closeAddAppDialogBtn.addEventListener('click', () => {
+        const addAppDialog = document.getElementById('addAppDialog');
+        if (addAppDialog) addAppDialog.style.display = 'none';
+        if (typeof clearAddAppForm === 'function') clearAddAppForm();
+    });
+}
+const cancelAddAppBtn = document.getElementById('cancelAddApp');
+if (cancelAddAppBtn) {
+    cancelAddAppBtn.addEventListener('click', () => {
+        const addAppDialog = document.getElementById('addAppDialog');
+        if (addAppDialog) addAppDialog.style.display = 'none';
+        if (typeof clearAddAppForm === 'function') clearAddAppForm();
+    });
+}
+
+// Listen for show-add-app-dialog event from main process (Ctrl+Shift+A)
+if (window.electronAPI && window.electronAPI.onShowAddAppDialog) {
+    window.electronAPI.onShowAddAppDialog(() => {
+        const addAppDialog = document.getElementById('addAppDialog');
+        if (addAppDialog) {
+            addAppDialog.style.display = 'block';
+        }
+        if (typeof clearAddAppForm === 'function') {
+            clearAddAppForm();
+        }
+        if (typeof loadCategories === 'function') {
+            loadCategories();
+        }
+    });
+}
+
+document.getElementById('appDocuments').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'documents');
+});
+document.getElementById('appMusic').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'music');
+});
+document.getElementById('appPictures').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'pictures');
+});
+document.getElementById('appVideos').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'videos');
+});

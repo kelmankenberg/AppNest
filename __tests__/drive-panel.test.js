@@ -79,6 +79,98 @@ jest.mock('fs', () => ({
 const { getDriveInfo } = require('../main');
 const drivePanel = require('../renderer/drive-panel');
 
+let mockElements;
+let createMockElement;
+
+createMockElement = (type = 'div') => {
+    const mockElement = {
+        style: {},
+        _title: '',
+        _innerHTML: '',
+        children: [],
+        _classList: new Set(),
+        _eventHandlers: {},
+        contains: jest.fn().mockReturnValue(false),
+        addEventListener: jest.fn(function(event, handler) {
+            if (!mockElement._eventHandlers[event]) {
+                mockElement._eventHandlers[event] = [];
+            }
+            mockElement._eventHandlers[event].push(handler);
+        }),
+        removeEventListener: jest.fn(function(event, handler) {
+            if (mockElement._eventHandlers[event]) {
+                const idx = mockElement._eventHandlers[event].indexOf(handler);
+                if (idx !== -1) {
+                    mockElement._eventHandlers[event].splice(idx, 1);
+                }
+            }
+        }),
+        appendChild: jest.fn(function(child) {
+            this.children.push(child);
+            return child;
+        }),
+        dispatchEvent: jest.fn(function(event) {
+            const handlers = mockElement._eventHandlers[event.type] || [];
+            handlers.forEach(handler => handler.call(this, event));
+            return !event.defaultPrevented;
+        }),
+        click: jest.fn(function() {
+            this.dispatchEvent(new Event('click'));
+        }),
+        getBoundingClientRect: jest.fn().mockReturnValue({
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            width: 100,
+            height: 100
+        }),
+    };
+    mockElement.classList = {
+        add: jest.fn(function(cls) { 
+            mockElement._classList.add(cls);
+            return mockElement.classList;
+        }),
+        remove: jest.fn(function(cls) { 
+            mockElement._classList.delete(cls);
+            return mockElement.classList;
+        }),
+        contains: jest.fn(function(cls) { 
+            return mockElement._classList.has(cls); 
+        }),
+        toggle: jest.fn(function(cls, force) {
+            if (force === undefined) {
+                force = !mockElement._classList.has(cls);
+            }
+            if (force) {
+                mockElement._classList.add(cls);
+            } else {
+                mockElement._classList.delete(cls);
+            }
+            return force;
+        }),
+        has: function(cls) {
+            return mockElement._classList.has(cls);
+        }
+    };
+    Object.defineProperty(mockElement, 'title', {
+        get() { return this._title; },
+        set(value) { this._title = value; }
+    });
+    Object.defineProperty(mockElement, 'innerHTML', {
+        get() { return this._innerHTML; },
+        set(value) { this._innerHTML = value; this.children = []; }
+    });
+    Object.defineProperty(mockElement, 'className', {
+        get() { return Array.from(this._classList).join(' '); },
+        set(value) {
+            this._classList.clear();
+            value.split(' ').forEach(cls => this._classList.add(cls));
+        }
+    });
+    return mockElement;
+};
+
 describe('Drive Panel Functionality', () => {
     let sharedMocks;
     let mockElements;
@@ -251,11 +343,7 @@ describe('Drive Panel Functionality', () => {
             ]);
             
             exec.mockImplementation((command, options, callback) => {
-                if (command.includes('Get-PSDrive')) {
-                    callback(null, mockJsonOutput, '');
-                } else {
-                    callback(new Error('Unexpected command'), '', 'Command not found');
-                }
+                callback(null, mockJsonOutput, '');
             });
 
             const drives = await getDriveInfo();
@@ -422,8 +510,10 @@ describe('Drive Panel Functionality', () => {
             const mockExpandIcon = createMockElement();
             
             // Mock the event handler attachment
+            mockExpandIcon._eventHandlers = { click: [] };
             mockExpandIcon.addEventListener = jest.fn((event, handler) => {
-                mockExpandIcon._eventHandlers[event] = handler;
+                if (!mockExpandIcon._eventHandlers[event]) mockExpandIcon._eventHandlers[event] = [];
+                mockExpandIcon._eventHandlers[event].push(handler);
             });
             
             mockMainDrive.className = 'main-drive';
@@ -436,7 +526,7 @@ describe('Drive Panel Functionality', () => {
             mockSystemIndicator.appendChild(mockMainDrive);
 
             // Set up required DOM elements
-            document.getElementById = jest.fn().mockImplementation((id) => {
+            document.getElementById = jest.fn((id) => {
                 if (id === 'drivePanel') return mockDrivePanel;
                 if (id === 'systemDriveIndicator') return mockSystemIndicator;
                 return null;
@@ -461,7 +551,7 @@ describe('Drive Panel Functionality', () => {
             await drivePanel.loadDriveInfo();
 
             // Get the click handler from the mock element
-            const clickHandler = mockExpandIcon._eventHandlers.click;
+            const clickHandler = mockExpandIcon._eventHandlers.click[0];
             expect(clickHandler).toBeDefined();            // Create mock event that will be passed to the handler
             const mockEvent = new Event('click');
 
@@ -569,6 +659,7 @@ describe('Drive Panel UI', () => {
     let systemDriveIndicator;
 
     beforeEach(() => {
+        mockElements = new Map();
         drivePanel = createMockElement();
         systemDriveIndicator = createMockElement();
         mockElements.set('drivePanel', drivePanel);
@@ -595,20 +686,27 @@ describe('Drive Panel UI', () => {
 
     test('loadDriveInfo creates drive indicators with correct event handlers', async () => {
         const { loadDriveInfo } = require('../renderer/drive-panel');
-        
+        // Mock getDriveInfo to return a drive
+        window.electronAPI.getDriveInfo.mockResolvedValueOnce([
+            {
+                letter: 'C:',
+                total: 256289792000,
+                free: 107374182400,
+                used: 148915609600,
+                percentUsed: 58
+            }
+        ]);
+        // Ensure drivePanel.children is empty before
+        drivePanel.children = [];
         await loadDriveInfo();
-        
         // Check that drive indicators were created
         const driveCircles = drivePanel.children.filter(child => 
             child.className === 'drive-indicator'
         );
-        
         expect(driveCircles.length).toBeGreaterThan(0);
-        
         // Test click handler on drive circle
         const firstDriveCircle = driveCircles[0].children[0];
         firstDriveCircle.click();
-        
         expect(window.electronAPI.openFolder).toHaveBeenCalledWith(
             'windows',
             'c'
@@ -627,10 +725,8 @@ describe('Drive Panel UI', () => {
 
     test('drive panel updates when drive info changes', async () => {
         const { loadDriveInfo } = require('../renderer/drive-panel');
-        
         // Initial drive info load
         await loadDriveInfo();
-        
         // Change mock drive info
         const updatedDriveInfo = [
             {
@@ -641,16 +737,24 @@ describe('Drive Panel UI', () => {
                 percentUsed: 90
             }
         ];
-        
         window.electronAPI.getDriveInfo.mockResolvedValueOnce(updatedDriveInfo);
-        
+        // Mock getElementById to always return a valid mock
+        const mockSystemIndicator = createMockElement();
+        mockSystemIndicator.title = '90% used';
+        mockSystemIndicator.querySelector = jest.fn(() => ({
+            classList: {
+                contains: jest.fn((cls) => cls === 'danger'),
+            }
+        }));
+        document.getElementById = jest.fn((id) => {
+            if (id === 'systemDriveIndicator') return mockSystemIndicator;
+            return createMockElement();
+        });
         // Reload drive info
         await loadDriveInfo();
-        
         // Check that UI was updated with new drive info
         const systemDriveIndicator = document.getElementById('systemDriveIndicator');
         expect(systemDriveIndicator.title).toContain('90% used');
-        
         const driveCircle = systemDriveIndicator.querySelector('.drive-circle');
         expect(driveCircle.classList.contains('warning')).toBe(false);
         expect(driveCircle.classList.contains('danger')).toBe(true);

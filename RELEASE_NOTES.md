@@ -1,5 +1,16 @@
 # AppNest Release Notes
 
+## Version 0.3.8 (June 7, 2025)
+
+### Features
+- Embedded App Icon in toolbar
+
+### Technical Enhancements
+- GitHub Action created to publish file
+
+### Other
+- Working on issues (various bug fixes and improvements in progress)
+
 ## Version 0.3.3 (May 12, 2025)
 
 ### Improvements

@@ -121,7 +121,7 @@
 
 /* Current version highlighting */
 #releaseNotesModal .version-section.current-version {
-    background-color: var(--current-version-bg, rgba(92, 124, 250, 0.08));
+    background: #f8f9fb;
     border-radius: 6px;
     padding: 12px;
     margin-left: -12px;
@@ -151,26 +151,76 @@
 }
 
 /* Dark theme specific adjustments */
-body.dark-theme #releaseNotesModal .version-section.current-version {
-    background-color: var(--current-version-bg-dark, rgba(92, 124, 250, 0.15));
+body.dark-theme #releaseNotesModal,
+body.dark-theme #releaseNotesModal .modal-overlay,
+body.dark-theme #releaseNotesModal .modal-container,
+body.dark-theme #releaseNotesModal .modal-header,
+body.dark-theme #releaseNotesModal .modal-body,
+body.dark-theme #releaseNotesModal .modal-footer,
+body.dark-theme #releaseNotesModal .markdown-content {
+    color: var(--text-primary, #fff) !important;
+    border-color: var(--border-color, #444) !important;
 }
-
-body.dark-theme #releaseNotesModal .feature-list li::marker {
-    color: var(--feature-color-dark, #81c784);
+body.dark-theme #releaseNotesModal .markdown-content h1,
+body.dark-theme #releaseNotesModal .markdown-content h2,
+body.dark-theme #releaseNotesModal .markdown-content h3,
+body.dark-theme #releaseNotesModal .markdown-content h4 {
+    color: var(--text-primary, #fff);
 }
-
-body.dark-theme #releaseNotesModal .improvement-list li::marker {
-    color: var(--improvement-color-dark, #64b5f6);
+body.dark-theme #releaseNotesModal .change-subcategory {
+    color: var(--text-secondary, #ccc);
 }
-
-body.dark-theme #releaseNotesModal .bugfix-list li::marker {
-    color: var(--bugfix-color-dark, #ffb74d);
-}
-
-body.dark-theme #releaseNotesModal .notes-list li::marker {
-    color: var(--notes-color-dark, #bdbdbd);
-}
-
 body.dark-theme #releaseNotesModal .change-subcategory + ul {
-    border-left-color: var(--border-subtle-dark, #444);
+    border-left-color: var(--border-color, #444);
+}
+body.dark-theme #releaseNotesModal .version-section {
+    background: none;
+    border-radius: 6px;
+}
+body.dark-theme #releaseNotesModal .version-section.current-version {
+    background: #2d2d2d !important;
+}
+body.dark-theme #releaseNotesModal .loading-indicator {
+    color: var(--text-secondary, #ccc);
+}
+body.dark-theme #releaseNotesModal .error-message {
+    color: var(--error-color, #f44336);
+}
+body.dark-theme #releaseNotesModal .change-category {
+    color: #fff;
+}
+
+#releaseNotesModal.modal-overlay {
+    background: rgba(40, 40, 50, 0.45) !important;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#releaseNotesModal .modal-container {
+    background: #fff;
+    color: var(--text-primary, #333);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    max-width: 700px;
+    width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+}
+#releaseNotesModal .modal-body,
+#releaseNotesModal .markdown-content {
+    background: transparent;
+    color: inherit;
+}
+body.dark-theme #releaseNotesModal .modal-container {
+    background: #1e1e1e;
+    color: #f3f3f3;
+    border: #2d2d2d 2pt solid;
+}
+body.dark-theme #releaseNotesModal .modal-body,
+body.dark-theme #releaseNotesModal .markdown-content {
+    background: transparent;
+    color: inherit;
 }

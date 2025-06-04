@@ -227,12 +227,22 @@ describe('Database Module', () => {
       const query = mockDb.prepare.mock.calls[0][0];
       expect(query).toContain('INSERT INTO Applications');
       // Verify stmt.run was called with the correct parameters
-      expect(stmt.run).toHaveBeenCalledWith([
+      expect(stmt.run).toHaveBeenCalledWith(
         newApp.name,
         newApp.executable_path,
-        newApp.is_portable,
-        newApp.category_id
-      ]);
+        newApp.is_portable ? 1 : 0,
+        newApp.category_id,
+        undefined, // icon_path
+        undefined, // launch_arguments
+        undefined, // working_directory
+        undefined, // description
+        undefined, // version
+        undefined, // publisher
+        undefined, // launch_mode
+        undefined, // display_order
+        0, // is_favorite
+        0  // is_hidden
+      );
       // Verify the returned ID
       expect(result).toBe(123);
     });
@@ -305,12 +315,22 @@ describe('addApplication', () => {
     const query = mockDb.prepare.mock.calls[0][0];
     expect(query).toContain('INSERT INTO Applications');
     // Verify stmt.run was called with the correct parameters
-    expect(stmt.run).toHaveBeenCalledWith([
+    expect(stmt.run).toHaveBeenCalledWith(
       newApp.name,
       newApp.executable_path,
-      newApp.is_portable,
-      newApp.category_id
-    ]);
+      newApp.is_portable ? 1 : 0,
+      newApp.category_id,
+      undefined, // icon_path
+      undefined, // launch_arguments
+      undefined, // working_directory
+      undefined, // description
+      undefined, // version
+      undefined, // publisher
+      undefined, // launch_mode
+      undefined, // display_order
+      0, // is_favorite
+      0  // is_hidden
+    );
     // Verify the returned ID
     expect(result).toBe(123);
   });
