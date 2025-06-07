@@ -437,14 +437,14 @@ function initializeFolderControls() {
     
     if (pathChangeButton && pathValueElement) {
         // Initialize path display from stored settings
-        window.electronAPI.getAppFolderPath()
+        window.electronAPI.getAppFoldersRootPath()
             .then(path => {
                 if (path) {
                     pathValueElement.textContent = path;
                 }
             })
             .catch(err => {
-                console.error('Error getting app folder path:', err);
+                console.error('Error getting app folders root path:', err);
             });
 
         pathChangeButton.addEventListener('click', () => {
@@ -454,7 +454,7 @@ function initializeFolderControls() {
                         pathValueElement.textContent = path;
                         
                         // Save the selected app folder path
-                        return window.electronAPI.setAppFolderPath(path);
+                        return window.electronAPI.setAppFoldersRootPath(path);
                     }
                 })
                 .then(() => {
@@ -473,7 +473,7 @@ function initializeFolderControls() {
                     }
                 })
                 .catch(err => {
-                    console.error('Error setting app folder path:', err);
+                    console.error('Error setting app folders root path:', err);
                     // Add error feedback
                     const statusIndicator = document.createElement('span');
                     statusIndicator.className = 'setting-status error';

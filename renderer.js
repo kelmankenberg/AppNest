@@ -1852,27 +1852,26 @@ document.getElementById('winDownloads').addEventListener('click', () => {
     window.electronAPI.openFolder('windows', 'downloads');
 });
 
-// Helper function to calculate proportional icon size based on font size
-function calculateIconSize(fontSize) {
-    // Base calculation: 14px font = 20px icon, 9px font = 14px icon
-    // This creates a linear relationship between font size and icon size
-    const minFontSize = 9;
-    const maxFontSize = 14;
-    const minIconSize = 14;
-    const maxIconSize = 20;
-    
-    // Clamp font size within our defined range
-    const clampedFontSize = Math.max(minFontSize, Math.min(maxFontSize, fontSize));
-    
-    // Calculate the proportion of the font size within its range
-    const fontSizeProportion = (clampedFontSize - minFontSize) / (maxFontSize - minFontSize);
-    
-    // Use that proportion to calculate icon size
-    const iconSize = minIconSize + (fontSizeProportion * (maxIconSize - minIconSize));
-    
-    // Round to nearest integer
-    return Math.round(iconSize);
-}
+// Handle folder button clicks - App Folders
+document.getElementById('appDocuments').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'documents');
+});
+
+document.getElementById('appMusic').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'music');
+});
+
+document.getElementById('appPictures').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'pictures');
+});
+
+document.getElementById('appVideos').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'videos');
+});
+
+document.getElementById('appDownloads').addEventListener('click', () => {
+    window.electronAPI.openFolder('app', 'downloads');
+});
 
 // Set up interval to refresh drive info every minute
 setInterval(loadDriveInfo, 60000);
@@ -2070,8 +2069,12 @@ document.getElementById('cancelAddApp').addEventListener('click', () => {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         const addAppDialog = document.getElementById('addAppDialog');
+        const editAppDialog = document.getElementById('editAppDialog');
         if (addAppDialog && addAppDialog.style.display === 'block') {
             addAppDialog.style.display = 'none';
+        }
+        if (editAppDialog && editAppDialog.style.display === 'block') {
+            editAppDialog.style.display = 'none';
         }
     }
 });

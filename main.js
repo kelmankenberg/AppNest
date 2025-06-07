@@ -1111,6 +1111,8 @@ function registerIPCHandlers() {
             } else if (folderType === 'app') {
                 // Open app-specific folders
                 const storeToUse = storeInitialized ? store : await initializeStore();
+                log.info('Store initialized:', storeInitialized);
+                
                 const rootPath = storeToUse.get('appFoldersRootPath', app.getPath('userData'));
                 log.info(`App folder root path: ${rootPath}`);
                 
@@ -1121,7 +1123,13 @@ function registerIPCHandlers() {
                 // Ensure folder exists
                 if (!fs.existsSync(folderPath)) {
                     log.info(`Creating folder: ${folderPath}`);
-                    fs.mkdirSync(folderPath, { recursive: true });
+                    try {
+                        fs.mkdirSync(folderPath, { recursive: true });
+                        log.info(`Successfully created folder: ${folderPath}`);
+                    } catch (err) {
+                        log.error(`Error creating folder ${folderPath}:`, err);
+                        return false;
+                    }
                 }
                 
                 // Open the folder
@@ -1839,6 +1847,14 @@ function createWindow() {
         mainWindow.webContents.send('show-add-app-dialog');
     });
 
+    // Register DevTools shortcuts
+    globalShortcut.register('CommandOrControl+Shift+I', () => {
+        mainWindow.webContents.toggleDevTools();
+    });
+    globalShortcut.register('F12', () => {
+        mainWindow.webContents.toggleDevTools();
+    });
+
     mainWindow.loadFile('index.html');
     
     // Initialize the auto-updater after the main window is created
@@ -2136,3 +2152,22 @@ function isWindowsBuiltInApp(executablePath) {
     const basename = path.basename(executablePath).toLowerCase();
     return WINDOWS_BUILTIN_APPS.hasOwnProperty(basename);
 }
+
+// Function to check app folders root path
+async function checkAppFoldersRootPath() {
+    try {
+        const storeToUse = storeInitialized ? store : await initializeStore();
+        const rootPath = storeToUse.get('appFoldersRootPath', app.getPath('userData'));
+        log.info(`Current app folders root path: ${rootPath}`);
+        return rootPath;
+    } catch (err) {
+        log.error('Error checking app folders root path:', err);
+        return app.getPath('userData');
+    }
+}
+
+// Call the function when the app starts
+app.whenReady().then(async () => {
+    await checkAppFoldersRootPath();
+    // ... rest of the startup code ...
+});
