@@ -1,5 +1,14 @@
 # AppNest Release Notes
 
+## Version 0.3.9 (June 7, 2025)
+
+### Bug Fixes
+- Fixed keyboard shortcut behavior: Ctrl+Shift+I now only triggers DevTools when the AppNest window is focused, allowing browser DevTools to work normally when using web browsers
+
+### Technical Enhancements
+- Improved keyboard shortcut handling with better focus detection
+- Added null checks to prevent potential errors in keyboard event handling
+
 ## Version 0.3.8 (June 7, 2025)
 
 ### Features
