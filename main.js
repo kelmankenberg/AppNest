@@ -1,4 +1,4 @@
-const { app, BrowserWindow, screen, ipcMain, globalShortcut, dialog, protocol, shell } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, globalShortcut, dialog, protocol } = require('electron');
 const { powerDownApp } = require('./functions');
 const db = require('./database');
 const iconManager = require('./icon-manager');
@@ -1059,16 +1059,16 @@ function registerIPCHandlers() {
 
     // Register folder-related IPC handlers
     ipcMain.handle('open-folder', async (_, folderType, folderName) => {
-        log.info(`[open-folder] Called with: folderType=${folderType}, folderName=${folderName}`);
         try {
+            console.log(`Opening folder: ${folderType}/${folderName}`);
+            
             if (folderType === 'windows') {
                 // Check if it's a drive letter
                 if (folderName.length === 1) {
-                    log.info(`[open-folder] Opening drive: ${folderName}:`);
-                    await shell.openPath(`${folderName}:\\`);
+                    exec(`explorer ${folderName}:`);
                     return true;
                 }
-
+                
                 // Open Windows standard user folders
                 const userFolders = {
                     'documents': os.homedir() + '\\Documents',
@@ -1077,35 +1077,33 @@ function registerIPCHandlers() {
                     'videos': os.homedir() + '\\Videos',
                     'downloads': os.homedir() + '\\Downloads'
                 };
-
+                
                 if (userFolders[folderName]) {
-                    log.info(`[open-folder] Opening user folder: ${userFolders[folderName]}`);
-                    await shell.openPath(userFolders[folderName]);
+                    exec(`explorer "${userFolders[folderName]}"`);
                     return true;
-                } else {
-                    log.warn(`[open-folder] Unknown windows folder: ${folderName}`);
-                    return false;
                 }
+                return false;
             } else if (folderType === 'app') {
                 // Open app-specific folders
                 const storeToUse = storeInitialized ? store : await initializeStore();
                 const rootPath = storeToUse.get('appFoldersRootPath', app.getPath('userData'));
+                
+                // Create the folder path
                 const folderPath = path.join(rootPath, folderName.charAt(0).toUpperCase() + folderName.slice(1));
-                log.info(`[open-folder] App folder root: ${rootPath}`);
-                log.info(`[open-folder] Full app folder path: ${folderPath}`);
+                
                 // Ensure folder exists
                 if (!fs.existsSync(folderPath)) {
-                    log.info(`[open-folder] Folder does not exist, creating: ${folderPath}`);
                     fs.mkdirSync(folderPath, { recursive: true });
                 }
-                await shell.openPath(folderPath);
+                
+                // Open the folder
+                exec(`explorer "${folderPath}"`);
                 return true;
-            } else {
-                log.warn(`[open-folder] Unknown folderType: ${folderType}`);
-                return false;
             }
+            
+            return false;
         } catch (err) {
-            log.error(`[open-folder] Error:`, err);
+            console.error(`Error opening folder ${folderName}:`, err);
             return false;
         }
     });
@@ -1604,7 +1602,7 @@ function getDriveInfo() {
 // Create and show settings window
 function createSettingsWindow() {
     // If settings window already exists, focus it instead of creating a new one
-    if (settingsWindow) {
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
         settingsWindow.focus();
         return;
     }
@@ -1612,13 +1610,10 @@ function createSettingsWindow() {
     const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
     const windowWidth = 890;
     const windowHeight = 490;
-      settingsWindow = new BrowserWindow({
+    
+    settingsWindow = new BrowserWindow({
         width: windowWidth,
         height: windowHeight,
-        resizable: false,
-        maximizable: false,
-        minimizable: true,
-        fullscreenable: false,
         parent: mainWindow,
         modal: true,
         frame: false,
@@ -1630,7 +1625,7 @@ function createSettingsWindow() {
         }
     });
 
-    // Calculate and set the window position to center it on the screen
+    // Center the window on screen
     const x = Math.floor((screenWidth - windowWidth) / 2);
     const y = Math.floor((screenHeight - windowHeight) / 2);
     settingsWindow.setPosition(x, y);
@@ -1639,7 +1634,17 @@ function createSettingsWindow() {
 
     // Add keyboard shortcut for Developer Tools
     settingsWindow.webContents.on('before-input-event', (event, input) => {
-        if (input.control && input.shift && input.key.toLowerCase() === 'i') {
+        // Check if target is embedded web content
+        const webContent = event.sender.hostWebContents ? event.sender : null;
+        
+        // For Ctrl+Shift+I or F12
+        if ((input.control && input.shift && input.key.toLowerCase() === 'i') || 
+            input.key === 'F12') {
+            // If this is embedded web content, let the browser handle it
+            if (webContent) {
+                return;
+            }
+            // Otherwise toggle DevTools for the settings window
             settingsWindow.webContents.toggleDevTools();
             event.preventDefault();
         }
@@ -1753,23 +1758,30 @@ function createWindow() {
         }
     });
 
-    // mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
     // Position the window to be flush with the taskbar in the bottom right
     // Subtract window width from screen width and account for taskbar offset when positioning
     // mainWindow.setPosition(width - windowWidth, height - (windowHeight - taskbarOffset));
-    mainWindow.setPosition(width - windowWidth, height - (windowHeight));
-
-    globalShortcut.register('CommandOrControl+Shift+I', () => {
-        if (mainWindow) {
-            mainWindow.webContents.toggleDevTools();
+    mainWindow.setPosition(width - windowWidth, height - (windowHeight));    // Handle DevTools shortcuts per-window instead of globally
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+        // Check if target is embedded web content
+        const webContent = event.sender.hostWebContents ? event.sender : null;
+        
+        // For Ctrl+Shift+I or F12
+        if ((input.control && input.shift && input.key.toLowerCase() === 'i') || 
+            input.key === 'F12') {
+            // If this is embedded web content, let the browser handle it
+            if (webContent) {
+                return;
+            }
+            // Only handle the shortcut if the main window is focused
+            if (mainWindow.isFocused()) {
+                mainWindow.webContents.toggleDevTools();
+                event.preventDefault();
+            }
         }
     });
-
-    globalShortcut.register('F12', () => {
-        if (mainWindow) {
-            mainWindow.webContents.toggleDevTools();
-        }    });
 
     // Set up local keyboard shortcuts
     mainWindow.webContents.on('before-input-event', (event, input) => {
