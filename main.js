@@ -1758,7 +1758,7 @@ function createWindow() {
         }
     });
 
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
 
     // Position the window to be flush with the taskbar in the bottom right
     // Subtract window width from screen width and account for taskbar offset when positioning
@@ -1766,7 +1766,7 @@ function createWindow() {
     mainWindow.setPosition(width - windowWidth, height - (windowHeight));    // Handle DevTools shortcuts per-window instead of globally
     mainWindow.webContents.on('before-input-event', (event, input) => {
         // Check if target is embedded web content
-        const webContent = event.sender.hostWebContents ? event.sender : null;
+        const webContent = event.sender && event.sender.hostWebContents ? event.sender : null;
         
         // For Ctrl+Shift+I or F12
         if ((input.control && input.shift && input.key.toLowerCase() === 'i') || 
@@ -1776,7 +1776,7 @@ function createWindow() {
                 return;
             }
             // Only handle the shortcut if the main window is focused
-            if (mainWindow.isFocused()) {
+            if (mainWindow && mainWindow.isFocused()) {
                 mainWindow.webContents.toggleDevTools();
                 event.preventDefault();
             }
