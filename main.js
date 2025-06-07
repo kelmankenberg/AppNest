@@ -1060,12 +1060,24 @@ function registerIPCHandlers() {
     // Register folder-related IPC handlers
     ipcMain.handle('open-folder', async (_, folderType, folderName) => {
         try {
-            console.log(`Opening folder: ${folderType}/${folderName}`);
+            log.info(`Opening folder: ${folderType}/${folderName}`);
             
             if (folderType === 'windows') {
                 // Check if it's a drive letter
                 if (folderName.length === 1) {
-                    exec(`explorer ${folderName}:`);
+                    const command = `cmd.exe /c start explorer.exe ${folderName}:`;
+                    log.info(`Executing command: ${command}`);
+                    
+                    exec(command, (error, stdout, stderr) => {
+                        if (error) {
+                            log.error(`Error executing explorer command: ${error.message}`);
+                            log.error(`Command stderr: ${stderr}`);
+                            return;
+                        }
+                        if (stdout) {
+                            log.info(`Command stdout: ${stdout}`);
+                        }
+                    });
                     return true;
                 }
                 
@@ -1079,31 +1091,60 @@ function registerIPCHandlers() {
                 };
                 
                 if (userFolders[folderName]) {
-                    exec(`explorer "${userFolders[folderName]}"`);
+                    const command = `cmd.exe /c start explorer.exe "${userFolders[folderName]}"`;
+                    log.info(`Executing command: ${command}`);
+                    
+                    exec(command, (error, stdout, stderr) => {
+                        if (error) {
+                            log.error(`Error executing explorer command: ${error.message}`);
+                            log.error(`Command stderr: ${stderr}`);
+                            return;
+                        }
+                        if (stdout) {
+                            log.info(`Command stdout: ${stdout}`);
+                        }
+                    });
                     return true;
                 }
+                log.warn(`Unknown folder name: ${folderName}`);
                 return false;
             } else if (folderType === 'app') {
                 // Open app-specific folders
                 const storeToUse = storeInitialized ? store : await initializeStore();
                 const rootPath = storeToUse.get('appFoldersRootPath', app.getPath('userData'));
+                log.info(`App folder root path: ${rootPath}`);
                 
                 // Create the folder path
                 const folderPath = path.join(rootPath, folderName.charAt(0).toUpperCase() + folderName.slice(1));
+                log.info(`Full folder path: ${folderPath}`);
                 
                 // Ensure folder exists
                 if (!fs.existsSync(folderPath)) {
+                    log.info(`Creating folder: ${folderPath}`);
                     fs.mkdirSync(folderPath, { recursive: true });
                 }
                 
                 // Open the folder
-                exec(`explorer "${folderPath}"`);
+                const command = `cmd.exe /c start explorer.exe "${folderPath}"`;
+                log.info(`Executing command: ${command}`);
+                
+                exec(command, (error, stdout, stderr) => {
+                    if (error) {
+                        log.error(`Error executing explorer command: ${error.message}`);
+                        log.error(`Command stderr: ${stderr}`);
+                        return;
+                    }
+                    if (stdout) {
+                        log.info(`Command stdout: ${stdout}`);
+                    }
+                });
                 return true;
             }
             
+            log.warn(`Unknown folder type: ${folderType}`);
             return false;
         } catch (err) {
-            console.error(`Error opening folder ${folderName}:`, err);
+            log.error(`Error opening folder ${folderName}:`, err);
             return false;
         }
     });

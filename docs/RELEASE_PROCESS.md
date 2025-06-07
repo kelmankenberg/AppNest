@@ -21,8 +21,8 @@ Before creating a release, update the version number in `package.json`:
 ### 2. Commit Changes
 
 ```bash
-git add package.json
-git commit -m "Bump version to vX.Y.Z"
+git add package.json RELEASE_NOTES.md
+git commit -m "Prepare for v0.3.9 release"
 git push origin main
 ```
 

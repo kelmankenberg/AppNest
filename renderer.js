@@ -1159,8 +1159,21 @@ function createDriveIndicator(drive) {
     `;
     
     // Add click event to open the drive in the system file manager
-    driveCircle.addEventListener('click', () => {
-        window.electronAPI.openFolder('windows', drive.letter.charAt(0).toLowerCase());
+    driveCircle.addEventListener('click', (e) => {
+        console.log(`Drive circle clicked for drive ${drive.letter}`);
+        e.stopPropagation(); // Prevent panel toggle
+        const driveLetter = drive.letter.charAt(0).toLowerCase();
+        console.log(`Attempting to open drive ${driveLetter}`);
+        window.electronAPI.openFolder('windows', driveLetter)
+            .then(result => {
+                console.log(`Open folder result for drive ${driveLetter}:`, result);
+                if (!result) {
+                    console.error(`Failed to open drive ${driveLetter}`);
+                }
+            })
+            .catch(err => {
+                console.error(`Error opening drive ${driveLetter}:`, err);
+            });
         // Close the drive panel
         isPanelActive = false;
         drivePanel.classList.remove('active');
@@ -1173,19 +1186,25 @@ function createDriveIndicator(drive) {
 
 // Function to toggle the drive panel
 function toggleDrivePanel() {
+    console.log('Toggling drive panel, current state:', isPanelActive);
     isPanelActive = !isPanelActive;
     
     if (isPanelActive) {
+        console.log('Opening drive panel');
         drivePanel.classList.add('active');
         systemDriveIndicator.classList.add('expanded');
     } else {
+        console.log('Closing drive panel');
         drivePanel.classList.remove('active');
         systemDriveIndicator.classList.remove('expanded');
     }
 }
 
 // Add click event to toggle the drive panel
-systemDriveIndicator.addEventListener('click', toggleDrivePanel);
+systemDriveIndicator.addEventListener('click', (e) => {
+    console.log('System drive indicator clicked');
+    toggleDrivePanel();
+});
 
 // Close the drive panel when clicking elsewhere
 document.addEventListener('click', (e) => {
