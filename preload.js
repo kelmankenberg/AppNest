@@ -210,7 +210,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // App folder path operations
     getAppFolderPath: () => ipcRenderer.invoke('get-app-folder-path'),
     setAppFolderPath: (path) => ipcRenderer.invoke('set-app-folder-path', path),
-    selectAppFolderPath: () => ipcRenderer.invoke('select-app-folder-path')
+    selectAppFolderPath: () => ipcRenderer.invoke('select-app-folder-path'),
+    
+    // IPC event listeners
+    on: (channel, callback) => {
+        ipcRenderer.on(channel, (event, ...args) => callback(...args));
+    }
 });
 
 contextBridge.exposeInMainWorld('api', {

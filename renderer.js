@@ -2026,49 +2026,33 @@ window.electronAPI.onRefreshApps(() => {
         .catch(err => console.error('Error refreshing apps:', err));
 });
 
-// Add event listeners for Add App dialog close and cancel buttons
-const closeAddAppDialogBtn = document.getElementById('closeAddAppDialog');
-if (closeAddAppDialogBtn) {
-    closeAddAppDialogBtn.addEventListener('click', () => {
-        const addAppDialog = document.getElementById('addAppDialog');
-        if (addAppDialog) addAppDialog.style.display = 'none';
-        if (typeof clearAddAppForm === 'function') clearAddAppForm();
-    });
-}
-const cancelAddAppBtn = document.getElementById('cancelAddApp');
-if (cancelAddAppBtn) {
-    cancelAddAppBtn.addEventListener('click', () => {
-        const addAppDialog = document.getElementById('addAppDialog');
-        if (addAppDialog) addAppDialog.style.display = 'none';
-        if (typeof clearAddAppForm === 'function') clearAddAppForm();
-    });
-}
+// Listen for show-add-app-dialog event from main process
+window.electronAPI.on('show-add-app-dialog', () => {
+    const addAppDialog = document.getElementById('addAppDialog');
+    if (addAppDialog) {
+        addAppDialog.style.display = 'block';
+        // Clear the form
+        clearAddAppForm();
+        // Load categories
+        loadCategories();
+    }
+});
 
-// Listen for show-add-app-dialog event from main process (Ctrl+Shift+A)
-if (window.electronAPI && window.electronAPI.onShowAddAppDialog) {
-    window.electronAPI.onShowAddAppDialog(() => {
-        const addAppDialog = document.getElementById('addAppDialog');
-        if (addAppDialog) {
-            addAppDialog.style.display = 'block';
-        }
-        if (typeof clearAddAppForm === 'function') {
-            clearAddAppForm();
-        }
-        if (typeof loadCategories === 'function') {
-            loadCategories();
-        }
-    });
-}
+// Add App Dialog handlers
+document.getElementById('closeAddAppDialog').addEventListener('click', () => {
+    document.getElementById('addAppDialog').style.display = 'none';
+});
 
-document.getElementById('appDocuments').addEventListener('click', () => {
-    window.electronAPI.openFolder('app', 'documents');
+document.getElementById('cancelAddApp').addEventListener('click', () => {
+    document.getElementById('addAppDialog').style.display = 'none';
 });
-document.getElementById('appMusic').addEventListener('click', () => {
-    window.electronAPI.openFolder('app', 'music');
-});
-document.getElementById('appPictures').addEventListener('click', () => {
-    window.electronAPI.openFolder('app', 'pictures');
-});
-document.getElementById('appVideos').addEventListener('click', () => {
-    window.electronAPI.openFolder('app', 'videos');
+
+// Add Escape key handler for Add App Dialog
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const addAppDialog = document.getElementById('addAppDialog');
+        if (addAppDialog && addAppDialog.style.display === 'block') {
+            addAppDialog.style.display = 'none';
+        }
+    }
 });
