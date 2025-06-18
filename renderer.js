@@ -1159,21 +1159,8 @@ function createDriveIndicator(drive) {
     `;
     
     // Add click event to open the drive in the system file manager
-    driveCircle.addEventListener('click', (e) => {
-        console.log(`Drive circle clicked for drive ${drive.letter}`);
-        e.stopPropagation(); // Prevent panel toggle
-        const driveLetter = drive.letter.charAt(0).toLowerCase();
-        console.log(`Attempting to open drive ${driveLetter}`);
-        window.electronAPI.openFolder('windows', driveLetter)
-            .then(result => {
-                console.log(`Open folder result for drive ${driveLetter}:`, result);
-                if (!result) {
-                    console.error(`Failed to open drive ${driveLetter}`);
-                }
-            })
-            .catch(err => {
-                console.error(`Error opening drive ${driveLetter}:`, err);
-            });
+    driveCircle.addEventListener('click', () => {
+        window.electronAPI.openFolder('windows', drive.letter.charAt(0).toLowerCase());
         // Close the drive panel
         isPanelActive = false;
         drivePanel.classList.remove('active');
@@ -1186,25 +1173,19 @@ function createDriveIndicator(drive) {
 
 // Function to toggle the drive panel
 function toggleDrivePanel() {
-    console.log('Toggling drive panel, current state:', isPanelActive);
     isPanelActive = !isPanelActive;
     
     if (isPanelActive) {
-        console.log('Opening drive panel');
         drivePanel.classList.add('active');
         systemDriveIndicator.classList.add('expanded');
     } else {
-        console.log('Closing drive panel');
         drivePanel.classList.remove('active');
         systemDriveIndicator.classList.remove('expanded');
     }
 }
 
 // Add click event to toggle the drive panel
-systemDriveIndicator.addEventListener('click', (e) => {
-    console.log('System drive indicator clicked');
-    toggleDrivePanel();
-});
+systemDriveIndicator.addEventListener('click', toggleDrivePanel);
 
 // Close the drive panel when clicking elsewhere
 document.addEventListener('click', (e) => {
@@ -1852,26 +1833,27 @@ document.getElementById('winDownloads').addEventListener('click', () => {
     window.electronAPI.openFolder('windows', 'downloads');
 });
 
-// Handle folder button clicks - App Folders
-document.getElementById('appDocuments').addEventListener('click', () => {
-    window.electronAPI.openFolder('app', 'documents');
-});
-
-document.getElementById('appMusic').addEventListener('click', () => {
-    window.electronAPI.openFolder('app', 'music');
-});
-
-document.getElementById('appPictures').addEventListener('click', () => {
-    window.electronAPI.openFolder('app', 'pictures');
-});
-
-document.getElementById('appVideos').addEventListener('click', () => {
-    window.electronAPI.openFolder('app', 'videos');
-});
-
-document.getElementById('appDownloads').addEventListener('click', () => {
-    window.electronAPI.openFolder('app', 'downloads');
-});
+// Helper function to calculate proportional icon size based on font size
+function calculateIconSize(fontSize) {
+    // Base calculation: 14px font = 20px icon, 9px font = 14px icon
+    // This creates a linear relationship between font size and icon size
+    const minFontSize = 9;
+    const maxFontSize = 14;
+    const minIconSize = 14;
+    const maxIconSize = 20;
+    
+    // Clamp font size within our defined range
+    const clampedFontSize = Math.max(minFontSize, Math.min(maxFontSize, fontSize));
+    
+    // Calculate the proportion of the font size within its range
+    const fontSizeProportion = (clampedFontSize - minFontSize) / (maxFontSize - minFontSize);
+    
+    // Use that proportion to calculate icon size
+    const iconSize = minIconSize + (fontSizeProportion * (maxIconSize - minIconSize));
+    
+    // Round to nearest integer
+    return Math.round(iconSize);
+}
 
 // Set up interval to refresh drive info every minute
 setInterval(loadDriveInfo, 60000);
@@ -2042,39 +2024,4 @@ window.electronAPI.onRefreshApps(() => {
             window.appData.apps = apps;
         })
         .catch(err => console.error('Error refreshing apps:', err));
-});
-
-// Listen for show-add-app-dialog event from main process
-window.electronAPI.on('show-add-app-dialog', () => {
-    const addAppDialog = document.getElementById('addAppDialog');
-    if (addAppDialog) {
-        addAppDialog.style.display = 'block';
-        // Clear the form
-        clearAddAppForm();
-        // Load categories
-        loadCategories();
-    }
-});
-
-// Add App Dialog handlers
-document.getElementById('closeAddAppDialog').addEventListener('click', () => {
-    document.getElementById('addAppDialog').style.display = 'none';
-});
-
-document.getElementById('cancelAddApp').addEventListener('click', () => {
-    document.getElementById('addAppDialog').style.display = 'none';
-});
-
-// Add Escape key handler for Add App Dialog
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        const addAppDialog = document.getElementById('addAppDialog');
-        const editAppDialog = document.getElementById('editAppDialog');
-        if (addAppDialog && addAppDialog.style.display === 'block') {
-            addAppDialog.style.display = 'none';
-        }
-        if (editAppDialog && editAppDialog.style.display === 'block') {
-            editAppDialog.style.display = 'none';
-        }
-    }
 });

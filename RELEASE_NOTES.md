@@ -1,28 +1,55 @@
 # AppNest Release Notes
 
+## Version 0.4.1 (June 18, 2025)
+
+### Enhancements
+
+- Application icon now has transparent background
+
+## Version 0.4.0 (June 7, 2025)
+
+### Technical Enhancements
+
+- Added Escape key handler for Add New App dialog
+- Added detailed logging to open-folder handler for better debugging
+- Added checkAppFoldersRootPath function to verify app folder paths
+- Updated settings-renderer to use correct IPC handlers for app folders
+- Added error handling for folder creation in app folders
+- Log store initialization status and folder paths
+
+### Bug Fixes
+
+- Issue with Drive indicator buttons not displaying file manager window now resolved.
+
 ## Version 0.3.9 (June 7, 2025)
 
 ### Bug Fixes
+
 - Fixed keyboard shortcut behavior: Ctrl+Shift+I now only triggers DevTools when the AppNest window is focused, allowing browser DevTools to work normally when using web browsers
 
 ### Technical Enhancements
+
 - Improved keyboard shortcut handling with better focus detection
 - Added null checks to prevent potential errors in keyboard event handling
 
 ## Version 0.3.8 (June 7, 2025)
 
 ### Features
+
 - Embedded App Icon in toolbar
 
 ### Technical Enhancements
+
 - GitHub Action created to publish file
 
 ### Other
+
 - Working on issues (various bug fixes and improvements in progress)
 
 ## Version 0.3.3 (May 12, 2025)
 
 ### Improvements
+
 - Windows app icon extraction and system path resolution
 - App Config section of setting temporarily removed
 - Improved icon extraction reliability
@@ -30,16 +57,19 @@
 ## Version 0.3.2 (May 10, 2025)
 
 ### Features
+
 - Drive Panel icons now open the system file manager to the associated system drive when clicked.
 
 ## Version 0.3.1 (May 5, 2025)
 
 ### Bug Fixes
+
 - Fixed Help and Settings windows positioning issue - windows now properly appear centered on screen
 - Resolved issue where modal windows would inherit position from main application window
 - Improved window management for multi-monitor setups
 
 ### Technical Enhancements
+
 - Refactored window creation code for better position handling
 - Enhanced screen coordinates calculation for proper window centering
 - Standardized window creation APIs for Help and Settings windows
@@ -47,6 +77,7 @@
 ## Version 0.3.0 (May 5, 2025)
 
 ### Features
+
 - Added new Help menu with access to documentation and release notes
 - Implemented dark/light theme toggle for better customization
 - Added support for categorizing applications
@@ -55,6 +86,7 @@
 - Restructured Settings & Customization help section to mirror Settings file organization (General, Appearance, App Config, Folders)
 
 ### Improvements
+
 - Enhanced search functionality with better filtering options
 - Improved application icons extraction for better visual display
 - Optimized startup performance for faster load times
@@ -62,12 +94,14 @@
 - Better theme synchronization across Help window and main application
 
 ### Bug Fixes
+
 - Fixed issue with folder paths containing special characters
 - Resolved display problems on high-DPI monitors
 - Fixed memory leak when refreshing application list repeatedly
 - Fixed Help menu positioning issues on smaller screens
 
 ### Developer Improvements
+
 - Added comprehensive test suite for Help menu functionality
 - Implemented tests for Help documentation window
 - Added tests for Release Notes modal
@@ -79,15 +113,15 @@
 
 #### Settings Reset Functionality
 - Added a "Reset to Default Settings" button in the settings window
-- Implemented confirmation dialog to prevent accidental resets
-- All settings now properly reset to carefully chosen default values:
-  - Theme: Light
-  - App Menu Font Size: 14px
-  - Folder Button Visibility: App Folders
-  - All folder visibility toggles: ON (for both App Folders and User Folders)
-  - App Folders Path: './AppData'
-  - Start with Windows: OFF
-  - Search Mode: Name Only
+  - Implemented confirmation dialog to prevent accidental resets
+  - All settings now properly reset to carefully chosen default values:
+    - Theme: Light
+    - App Menu Font Size: 14px
+    - Folder Button Visibility: App Folders
+    - All folder visibility toggles: ON (for both App Folders and User Folders)
+    - App Folders Path: './AppData'
+    - Start with Windows: OFF
+    - Search Mode: Name Only
 
 #### Improvements
 - Added visual feedback after settings reset with a temporary status message
@@ -95,32 +129,36 @@
 - Enhanced folder visibility controls with better toggle state preservation
 
 #### Developer Improvements
+
 - Added comprehensive unit tests for settings reset functionality
 - Implemented dependency injection in key components for better testability
 - Improved error handling for settings operations
 
 ### Bug Fixes
+
 - Fixed issue where folder visibility preferences weren't correctly preserved
 - Addressed theme inconsistencies between settings and main windows
 - Resolved startup issues with application auto-launch configuration
 
 ### Technical Enhancements
+
 - Refactored settings management for better maintainability
 - Improved synchronization between main process and renderer processes
 - Enhanced error handling for all settings operations
 
 ### Known Issues
+
 - Custom folder path selection dialog may not appear on some Windows configurations
 
 ## Version 0.1.0 (March 15, 2025)
 
 ### Features
+
 - Initial release with basic application management
 - Support for portable and installed applications
 - Drive space visualization
 - Folder navigation for application content
 - Basic search functionality
-
-### Notes
-- This is the first public release of AppNest
-- Compatible with Windows 10 and 11
+  ### Notes
+  - This is the first public release of AppNest
+  - Compatible with Windows 10 and 11

@@ -77,10 +77,16 @@
     margin-top: 0.2em;
 }
 
+#releaseNotesModal .markdown-content ul ul {
+    margin-left: 20px; /* Or use 'em' or 'rem' units for responsiveness */
+    /* padding-left: 0; /* You might reset padding if needed */ */
+}
+
 /* Subcategory lists styling */
 #releaseNotesModal .settings-reset-functionality-list li,
-#releaseNotesModal .improvements-list li,
-#releaseNotesModal .developer-improvements-list li {
+#releaseNotesModal .change-category li {
+/* #releaseNotesModal .improvements-list li, */
+/* #releaseNotesModal .developer-improvements-list li { */
     margin-left: 12px;
 }
 

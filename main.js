@@ -1,3 +1,7 @@
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error);
+});
+
 const { app, BrowserWindow, screen, ipcMain, globalShortcut, dialog, protocol } = require('electron');
 const { powerDownApp } = require('./functions');
 const db = require('./database');
@@ -1060,24 +1064,12 @@ function registerIPCHandlers() {
     // Register folder-related IPC handlers
     ipcMain.handle('open-folder', async (_, folderType, folderName) => {
         try {
-            log.info(`Opening folder: ${folderType}/${folderName}`);
+            console.log(`Opening folder: ${folderType}/${folderName}`);
             
             if (folderType === 'windows') {
                 // Check if it's a drive letter
                 if (folderName.length === 1) {
-                    const command = `cmd.exe /c start explorer.exe ${folderName}:`;
-                    log.info(`Executing command: ${command}`);
-                    
-                    exec(command, (error, stdout, stderr) => {
-                        if (error) {
-                            log.error(`Error executing explorer command: ${error.message}`);
-                            log.error(`Command stderr: ${stderr}`);
-                            return;
-                        }
-                        if (stdout) {
-                            log.info(`Command stdout: ${stdout}`);
-                        }
-                    });
+                    exec(`explorer ${folderName}:`);
                     return true;
                 }
                 
@@ -1091,68 +1083,31 @@ function registerIPCHandlers() {
                 };
                 
                 if (userFolders[folderName]) {
-                    const command = `cmd.exe /c start explorer.exe "${userFolders[folderName]}"`;
-                    log.info(`Executing command: ${command}`);
-                    
-                    exec(command, (error, stdout, stderr) => {
-                        if (error) {
-                            log.error(`Error executing explorer command: ${error.message}`);
-                            log.error(`Command stderr: ${stderr}`);
-                            return;
-                        }
-                        if (stdout) {
-                            log.info(`Command stdout: ${stdout}`);
-                        }
-                    });
+                    exec(`explorer "${userFolders[folderName]}"`);
                     return true;
                 }
-                log.warn(`Unknown folder name: ${folderName}`);
                 return false;
             } else if (folderType === 'app') {
                 // Open app-specific folders
                 const storeToUse = storeInitialized ? store : await initializeStore();
-                log.info('Store initialized:', storeInitialized);
-                
                 const rootPath = storeToUse.get('appFoldersRootPath', app.getPath('userData'));
-                log.info(`App folder root path: ${rootPath}`);
                 
                 // Create the folder path
                 const folderPath = path.join(rootPath, folderName.charAt(0).toUpperCase() + folderName.slice(1));
-                log.info(`Full folder path: ${folderPath}`);
                 
                 // Ensure folder exists
                 if (!fs.existsSync(folderPath)) {
-                    log.info(`Creating folder: ${folderPath}`);
-                    try {
-                        fs.mkdirSync(folderPath, { recursive: true });
-                        log.info(`Successfully created folder: ${folderPath}`);
-                    } catch (err) {
-                        log.error(`Error creating folder ${folderPath}:`, err);
-                        return false;
-                    }
+                    fs.mkdirSync(folderPath, { recursive: true });
                 }
                 
                 // Open the folder
-                const command = `cmd.exe /c start explorer.exe "${folderPath}"`;
-                log.info(`Executing command: ${command}`);
-                
-                exec(command, (error, stdout, stderr) => {
-                    if (error) {
-                        log.error(`Error executing explorer command: ${error.message}`);
-                        log.error(`Command stderr: ${stderr}`);
-                        return;
-                    }
-                    if (stdout) {
-                        log.info(`Command stdout: ${stdout}`);
-                    }
-                });
+                exec(`explorer "${folderPath}"`);
                 return true;
             }
             
-            log.warn(`Unknown folder type: ${folderType}`);
             return false;
         } catch (err) {
-            log.error(`Error opening folder ${folderName}:`, err);
+            console.error(`Error opening folder ${folderName}:`, err);
             return false;
         }
     });
@@ -1668,11 +1623,13 @@ function createSettingsWindow() {
         frame: false,
         icon: path.join(__dirname, 'resources', 'images', 'nest-with-eggs.244x256.png'),
         webPreferences: {
+            devTools: false,
             nodeIntegration: false,
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
         }
     });
+    console.log('Settings window web preferences:', settingsWindow.webPreferences);
 
     // Center the window on screen
     const x = Math.floor((screenWidth - windowWidth) / 2);
@@ -1683,12 +1640,13 @@ function createSettingsWindow() {
 
     // Add keyboard shortcut for Developer Tools
     settingsWindow.webContents.on('before-input-event', (event, input) => {
-        // Check if target is embedded web content
-        const webContent = event.sender.hostWebContents ? event.sender : null;
-        
-        // For Ctrl+Shift+I or F12
-        if ((input.control && input.shift && input.key.toLowerCase() === 'i') || 
-            input.key === 'F12') {
+        try {
+            const sender = event.sender;
+            const webContent = sender && sender.hostWebContents ? sender : null;
+
+            // For Ctrl+Shift+I or F12
+            if ((input.control && input.shift && input.key.toLowerCase() === 'i') || 
+                input.key === 'F12') {
             // If this is embedded web content, let the browser handle it
             if (webContent) {
                 return;
@@ -1696,6 +1654,9 @@ function createSettingsWindow() {
             // Otherwise toggle DevTools for the settings window
             settingsWindow.webContents.toggleDevTools();
             event.preventDefault();
+            }
+        } catch (error) {
+            console.error('Error in before-input-event handler:', error);
         }
     });
 
@@ -1806,6 +1767,7 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js')
         }
     });
+    console.log('Main window web preferences:', mainWindow.webPreferences);
 
     // mainWindow.webContents.openDevTools();
 
@@ -1815,7 +1777,7 @@ function createWindow() {
     mainWindow.setPosition(width - windowWidth, height - (windowHeight));    // Handle DevTools shortcuts per-window instead of globally
     mainWindow.webContents.on('before-input-event', (event, input) => {
         // Check if target is embedded web content
-        const webContent = event.sender && event.sender.hostWebContents ? event.sender : null;
+        const webContent = event.sender.hostWebContents ? event.sender : null;
         
         // For Ctrl+Shift+I or F12
         if ((input.control && input.shift && input.key.toLowerCase() === 'i') || 
@@ -1824,11 +1786,9 @@ function createWindow() {
             if (webContent) {
                 return;
             }
-            // Only handle the shortcut if the main window is focused
-            if (mainWindow && mainWindow.isFocused()) {
-                mainWindow.webContents.toggleDevTools();
-                event.preventDefault();
-            }
+            // Otherwise toggle DevTools for the main window
+            mainWindow.webContents.toggleDevTools();
+            event.preventDefault();
         }
     });
 
@@ -1845,14 +1805,6 @@ function createWindow() {
     // Register Ctrl+Shift+A shortcut for adding new app
     globalShortcut.register('CommandOrControl+Shift+A', () => {
         mainWindow.webContents.send('show-add-app-dialog');
-    });
-
-    // Register DevTools shortcuts
-    globalShortcut.register('CommandOrControl+Shift+I', () => {
-        mainWindow.webContents.toggleDevTools();
-    });
-    globalShortcut.register('F12', () => {
-        mainWindow.webContents.toggleDevTools();
     });
 
     mainWindow.loadFile('index.html');
@@ -2152,22 +2104,3 @@ function isWindowsBuiltInApp(executablePath) {
     const basename = path.basename(executablePath).toLowerCase();
     return WINDOWS_BUILTIN_APPS.hasOwnProperty(basename);
 }
-
-// Function to check app folders root path
-async function checkAppFoldersRootPath() {
-    try {
-        const storeToUse = storeInitialized ? store : await initializeStore();
-        const rootPath = storeToUse.get('appFoldersRootPath', app.getPath('userData'));
-        log.info(`Current app folders root path: ${rootPath}`);
-        return rootPath;
-    } catch (err) {
-        log.error('Error checking app folders root path:', err);
-        return app.getPath('userData');
-    }
-}
-
-// Call the function when the app starts
-app.whenReady().then(async () => {
-    await checkAppFoldersRootPath();
-    // ... rest of the startup code ...
-});
