@@ -39,7 +39,11 @@ jobs:
           dist/*.exe
           dist/*.exe.blockmap
           dist/latest.yml
-          dist/win-unpacked/**/*
+          dist/win-unpacked/AppNest.exe
+          dist/win-unpacked/resources/
+          dist/win-unpacked/locales/
+          dist/win-unpacked/*.dll
+          dist/win-unpacked/*.dat
         generate_release_notes: true
         draft: false
         prerelease: false
